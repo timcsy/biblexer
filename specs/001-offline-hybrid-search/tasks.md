@@ -112,10 +112,10 @@ description: "離線混合檢索（全本和合本）的任務清單"
 - [X] T033 [P] 在 `src/core/hit.ts` 實作命中判定，並確認 T018 通過
 - [X] T034 [P] 在 `src/core/artifacts.ts` 實作資料產物讀寫，並確認 T020 通過
 - [X] T035 在 `src/core/search.ts` 實作 `search()`，組裝 `SearchResponse`（contracts/search-api.md §2），並確認 T019 通過（依賴 T024、T030～T032）
-- [ ] T036 建立 `scripts/sources.json`，列出各來源的 URL、sha1／sha256 與用途說明（例：「eBible：只用分段邊界，不用任何文字」）；再建立 `scripts/fetch-sources.ts` 下載並核對雜湊到 `.cache/sources/`。下載需使用自訂 User-Agent，因為 Python-urllib 的 UA 會被 403；確認 T021 通過
-- [ ] T037 建立 `scripts/build-text.ts`：讀取 `bible_little.db` 的 `unv` 表（先用 `node:sqlite`，不可用時改用 `better-sqlite3`），輸出 `public/data/books.<hash>.json` 與 `verses.<hash>.json`（依賴 T023、T025、T026、T034、T036）
-- [ ] T038 建立 `scripts/build-passages.ts`：以 eBible 分段邊界產生 `passages.<hash>.bin` 與 `units.<hash>.bin`；11 節異文經節併入其前一節所屬的段落；主控台印出段落數與單元數（依賴 T027、T028、T037）
-- [ ] T039 建立 `scripts/build-keyword.ts` 以產生 `keyword.<hash>.bin`，再建立 `scripts/build-data.ts` 依序串接 T036～T039，並接到 `npm run build:data`；執行後確認 T022 通過（依賴 T030、T038）
+- [X] T036 建立 `scripts/sources.json`，列出各來源的 URL、sha1／sha256 與用途說明（例：「eBible：只用分段邊界，不用任何文字」）；再建立 `scripts/fetch-sources.ts` 下載並核對雜湊到 `.cache/sources/`。下載需使用自訂 User-Agent，因為 Python-urllib 的 UA 會被 403；確認 T021 通過
+- [X] T037 建立 `scripts/build-text.ts`：讀取 `bible_little.db` 的 `unv` 表（先用 `node:sqlite`，不可用時改用 `better-sqlite3`），輸出 `public/data/books.<hash>.json` 與 `verses.<hash>.json`（依賴 T023、T025、T026、T034、T036）
+- [X] T038 建立 `scripts/build-passages.ts`：以 eBible 分段邊界產生 `passages.<hash>.bin` 與 `units.<hash>.bin`；11 節異文經節併入其前一節所屬的段落；主控台印出段落數與單元數（依賴 T027、T028、T037）
+- [X] T039 建立 `scripts/build-keyword.ts` 以產生 `keyword.<hash>.bin`，再建立 `scripts/build-data.ts` 依序串接 T036～T039，並接到 `npm run build:data`；執行後確認 T022 通過（依賴 T030、T038）
 
 **Checkpoint**：`npm test` 全綠；`npm run build:data` 產生經文、段落、關鍵字索引，且 `npm run test:data` 全綠。
 

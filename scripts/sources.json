@@ -1,0 +1,18 @@
+{
+  "fhl": {
+    "name": "信望愛聖經工具 FHL 和合本（unv，神版）",
+    "url": "http://ftp.fhl.net/FHL/COBS/data/bible_little.zip",
+    "file": "bible_little.zip",
+    "hash": { "algo": "sha1", "value": "4d30d5be5f4613c5f61027adac4bb15c0fab0701" },
+    "use": "經文正文與和合本譯註（unv 表）。移除 Strong's 標記，不使用 Strong's 編號與原文字典。",
+    "license": "和合本（1919）經文已超過著作權保護期；信望愛的打字、標點與資料庫之使用授權待與信望愛確認（下載目錄 LICENCE 標示「僅作為測試用途」）。"
+  },
+  "ebible": {
+    "name": "eBible.org 新標點和合本（簡體、神版）USFM",
+    "url": "https://ebible.org/Scriptures/cmn-cu89s_usfm.zip",
+    "file": "cmn-cu89s_usfm.zip",
+    "hash": { "algo": "sha256", "value": "68df122e9195e071dc286f19ef53e530fcaadb3a16a7dc34b8430b7062f70598" },
+    "use": "只用分段邊界（\\p、\\b、\\m 之後的第一節）。不使用任何文字、標點、標題或註腳。",
+    "license": "eBible.org 標示為 Public Domain；新標點和合本（1988）之分段是否屬公有領域有灰色地帶，本專案只取邊界位置。"
+  }
+}
