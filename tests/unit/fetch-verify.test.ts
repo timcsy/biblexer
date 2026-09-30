@@ -8,7 +8,7 @@ import { USER_AGENT, fetchVerified } from '../../scripts/lib/fetch.ts';
 
 const body = new TextEncoder().encode('和合本');
 const sha256 = createHash('sha256').update(body).digest('hex');
-const fakeFetch = () => vi.fn(async () => new Response(body, { status: 200 }));
+const fakeFetch = () => vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => new Response(body, { status: 200 }));
 
 describe('下載核對', () => {
   test('雜湊相符時寫入檔案，並帶自訂 User-Agent', async () => {
@@ -17,7 +17,7 @@ describe('下載核對', () => {
     const dest = join(dir, 'a.bin');
     await fetchVerified({ url: 'https://example.org/a', dest, hash: { algo: 'sha256', value: sha256 }, fetchImpl: f });
     expect(readFileSync(dest)).toEqual(Buffer.from(body));
-    const init = f.mock.calls[0]![1] as RequestInit;
+    const init = f.mock.calls[0]![1]!;
     expect(new Headers(init.headers).get('user-agent')).toBe(USER_AGENT);
     expect(USER_AGENT).not.toMatch(/python-urllib/i);
   });

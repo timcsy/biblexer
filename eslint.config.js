@@ -34,6 +34,11 @@ export default tseslint.config(
   ...tseslint.configs.strict,
   {
     rules: {
+      // noUncheckedIndexedAccess 下，非空斷言是索引存取的必要寫法
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      // 神版經文「　神」的全形空白是刻意保留的
+      'no-irregular-whitespace': ['error', { skipStrings: true, skipTemplates: true, skipComments: true }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-restricted-imports': ['error', transformersOnlyInEmbedder],
       'no-restricted-syntax': [
         'error',

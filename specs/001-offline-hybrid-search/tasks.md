@@ -99,19 +99,19 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作（讓上面的測試通過）
 
-- [ ] T023 [P] 在 `src/core/canon.ts` 實作 66 卷清單（id、code、short、name、testament、category），並確認 T008 通過
-- [ ] T024 [P] 在 `src/core/refs.ts` 實作 VerseRef／VerseRange、比較與 `overlaps`，並確認 T009 通過
-- [ ] T025 [P] 在 `src/core/text.ts` 實作 `toSearchText`、`extractNotes`，並確認 T010 通過（建置時與執行時共用同一函式）
-- [ ] T026 [P] 在 `scripts/lib/fhl.ts` 實作 `unv` 列解析（標記移除、合併節、異文標記），並確認 T011 通過
-- [ ] T027 [P] 在 `scripts/lib/usfm.ts` 實作分段邊界解析，並確認 T012 通過
-- [ ] T028 在 `src/core/passages.ts` 實作「分段邊界 → 段落 → 檢索單元」，`segmentation` 為 `cu89-paragraphs`；確認 T013 通過（依賴 T024）
-- [ ] T029 [P] 在 `src/core/tokenize.ts` 實作 unigram 與 bigram 斷詞，並確認 T014 通過
-- [ ] T030 在 `src/core/bm25.ts` 實作索引建立、序列化（`keyword.bin` 格式）與 `bm25Search`，並確認 T015 通過（依賴 T029）
-- [ ] T031 [P] 在 `src/core/vectors.ts` 實作 int8 量化、`vectors.bin` 讀寫、`dotInt8`、`semanticSearch`，並確認 T016 通過
-- [ ] T032 [P] 在 `src/core/fusion.ts` 實作 `rrf` 與 `aggregateToPassages`，並確認 T017 通過
-- [ ] T033 [P] 在 `src/core/hit.ts` 實作命中判定，並確認 T018 通過
-- [ ] T034 [P] 在 `src/core/artifacts.ts` 實作資料產物讀寫，並確認 T020 通過
-- [ ] T035 在 `src/core/search.ts` 實作 `search()`，組裝 `SearchResponse`（contracts/search-api.md §2），並確認 T019 通過（依賴 T024、T030～T032）
+- [X] T023 [P] 在 `src/core/canon.ts` 實作 66 卷清單（id、code、short、name、testament、category），並確認 T008 通過
+- [X] T024 [P] 在 `src/core/refs.ts` 實作 VerseRef／VerseRange、比較與 `overlaps`，並確認 T009 通過
+- [X] T025 [P] 在 `src/core/text.ts` 實作 `toSearchText`、`extractNotes`，並確認 T010 通過（建置時與執行時共用同一函式）
+- [X] T026 [P] 在 `scripts/lib/fhl.ts` 實作 `unv` 列解析（標記移除、合併節、異文標記），並確認 T011 通過
+- [X] T027 [P] 在 `scripts/lib/usfm.ts` 實作分段邊界解析，並確認 T012 通過
+- [X] T028 在 `src/core/passages.ts` 實作「分段邊界 → 段落 → 檢索單元」，`segmentation` 為 `cu89-paragraphs`；確認 T013 通過（依賴 T024）
+- [X] T029 [P] 在 `src/core/tokenize.ts` 實作 unigram 與 bigram 斷詞，並確認 T014 通過
+- [X] T030 在 `src/core/bm25.ts` 實作索引建立、序列化（`keyword.bin` 格式）與 `bm25Search`，並確認 T015 通過（依賴 T029）
+- [X] T031 [P] 在 `src/core/vectors.ts` 實作 int8 量化、`vectors.bin` 讀寫、`dotInt8`、`semanticSearch`，並確認 T016 通過
+- [X] T032 [P] 在 `src/core/fusion.ts` 實作 `rrf` 與 `aggregateToPassages`，並確認 T017 通過
+- [X] T033 [P] 在 `src/core/hit.ts` 實作命中判定，並確認 T018 通過
+- [X] T034 [P] 在 `src/core/artifacts.ts` 實作資料產物讀寫，並確認 T020 通過
+- [X] T035 在 `src/core/search.ts` 實作 `search()`，組裝 `SearchResponse`（contracts/search-api.md §2），並確認 T019 通過（依賴 T024、T030～T032）
 - [ ] T036 建立 `scripts/sources.json`，列出各來源的 URL、sha1／sha256 與用途說明（例：「eBible：只用分段邊界，不用任何文字」）；再建立 `scripts/fetch-sources.ts` 下載並核對雜湊到 `.cache/sources/`。下載需使用自訂 User-Agent，因為 Python-urllib 的 UA 會被 403；確認 T021 通過
 - [ ] T037 建立 `scripts/build-text.ts`：讀取 `bible_little.db` 的 `unv` 表（先用 `node:sqlite`，不可用時改用 `better-sqlite3`），輸出 `public/data/books.<hash>.json` 與 `verses.<hash>.json`（依賴 T023、T025、T026、T034、T036）
 - [ ] T038 建立 `scripts/build-passages.ts`：以 eBible 分段邊界產生 `passages.<hash>.bin` 與 `units.<hash>.bin`；11 節異文經節併入其前一節所屬的段落；主控台印出段落數與單元數（依賴 T027、T028、T037）
