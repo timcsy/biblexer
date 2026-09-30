@@ -60,4 +60,12 @@ describe('embedder', () => {
     expect(c![0]! / c![2]!).toBeCloseTo(1, 5);
     expect(m![0]! / m![2]!).toBeCloseTo(2, 5);
   });
+
+  test('last pooling 取每筆最後一個有效 token（不論左側或右側補齊）', async () => {
+    const e = createEmbedder({ ...base, pooling: 'last' }, fakeBackend([]));
+    // 右側補齊：'甲乙丙' 最後有效 token 在位置 3、'甲' 在位置 1
+    const [a, b] = await e.embed(['甲乙丙', '甲'], 'passage');
+    expect(a![0]! / a![2]!).toBeCloseTo(3, 5);
+    expect(b![0]! / b![2]!).toBeCloseTo(1, 5);
+  });
 });

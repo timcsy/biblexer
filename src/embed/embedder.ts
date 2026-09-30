@@ -2,7 +2,7 @@
 // 只使用 AutoTokenizer 與 AutoModel 做特徵擷取，不使用 pipeline、不含任何生成任務。
 import { AutoModel, AutoTokenizer, env } from '@huggingface/transformers';
 
-export type Pooling = 'cls' | 'mean';
+export type Pooling = 'cls' | 'mean' | 'last';
 
 export interface EmbedderConfig {
   pooling: Pooling;
@@ -37,6 +37,12 @@ function pool(b: EncodedBatch, pooling: Pooling): Float32Array[] {
     const v = new Float32Array(b.dim);
     if (pooling === 'cls') {
       v.set(b.hidden.subarray(i * b.seq * b.dim, i * b.seq * b.dim + b.dim));
+    } else if (pooling === 'last') {
+      // 最後一個有效 token（依 mask 判斷，左右補齊皆適用）
+      let t = b.seq - 1;
+      while (t > 0 && !b.mask[i * b.seq + t]) t--;
+      const o = (i * b.seq + t) * b.dim;
+      v.set(b.hidden.subarray(o, o + b.dim));
     } else {
       let n = 0;
       for (let t = 0; t < b.seq; t++) {

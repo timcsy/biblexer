@@ -25,6 +25,8 @@ export interface Arm {
   passagePrefix: string;
   toSimplified: boolean;
   oversize?: boolean;
+  /** 只用於診斷、不交付（例如超過大小上限的大模型） */
+  diagnostic?: boolean;
   files: Array<{ path: string; hash: ExpectedHash }>;
 }
 

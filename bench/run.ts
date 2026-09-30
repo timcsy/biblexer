@@ -47,8 +47,11 @@ async function main() {
 
   const { selected, reason } = selectArm(summary, { sizeLimitBytes: SIZE_LIMIT_BYTES, required: REQUIRED_HITS });
   const armMeta = arms.map(({ files: _f, ...rest }) => rest);
-  writeFileSync(join(import.meta.dirname, 'report.json'), buildReport({ dataVersion: ds.manifest.dataVersion, arms: armMeta, results, summary, selected, reason }));
-  writeFileSync(join(import.meta.dirname, 'report.md'), renderMarkdown(arms, queries.map((q) => q.id), queries.filter((q) => q.heldOut).map((q) => q.id), results, summary, selected, reason, latency));
+  // 單臂模式（--arm）只做探索，輸出到 .cache/，不覆蓋正式報告
+  const outDir = only ? join(import.meta.dirname, '../.cache') : import.meta.dirname;
+  const prefix = only ? `bench-${only}.` : '';
+  writeFileSync(join(outDir, `${prefix}report.json`), buildReport({ dataVersion: ds.manifest.dataVersion, arms: armMeta, results, summary, selected, reason }));
+  writeFileSync(join(outDir, `${prefix}report.md`), renderMarkdown(arms, queries.map((q) => q.id), queries.filter((q) => q.heldOut).map((q) => q.id), results, summary, selected, reason, latency));
   console.log(`\n選中：${selected ?? '（無）'}——${reason}`);
 }
 
