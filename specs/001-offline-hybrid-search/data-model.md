@@ -55,6 +55,9 @@
 | `id` | int | 全書唯一、依正典順序遞增 |
 | `range` | VerseRange `{start: VerseRef, end: VerseRef}` | 不跨章；`start ≤ end` |
 | `book` | Book.id | |
+| `segmentation` | string | 分段視角 id；本功能為 `cu89-paragraphs`（新標點和合本分段） |
+
+段落邊界是一種**視角**，不是唯一的事實：不同的神學與釋經判斷會切出不同的段落。資料模型允許多組分段並存，每組以 `segmentation` 區分；本功能只載入一組。
 
 來源：eBible 分段邊界（R2）。規則：
 - 段落不跨章；章首一律是段落起點。

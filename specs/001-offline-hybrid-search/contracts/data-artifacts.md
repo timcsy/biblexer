@@ -21,6 +21,7 @@
 {
   "schema": 1,
   "dataVersion": "<經文+段落內容雜湊>",
+  "segmentation": { "id": "cu89-paragraphs", "source": "eBible cmn-cu89s \\p \\b \\m markers (boundaries only)" },
   "model": { "id": "Xenova/bge-small-zh-v1.5", "revision": "<sha>", "dtype": "q8",
              "dim": 512, "pooling": "cls", "queryPrefix": "", "toSimplified": false },
   "files": {
