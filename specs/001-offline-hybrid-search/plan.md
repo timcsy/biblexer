@@ -39,7 +39,7 @@
 - 建置時計算向量 ≤ 15 分鐘
 
 **Constraints**：
-- 首次下載總量 ≤ 200 MB
+- 首次下載總量 ≤ 200 MB（含模型、向量、經文、ORT、app shell；若選中轉簡體臂，含 t2cn 轉換器），由守護測試檢查
 - 首次載入後完全離線
 - 執行期只發同源請求，且不含查詢內容
 - 不含任何文字生成模型
@@ -102,14 +102,23 @@ scripts/                     # 建置資料（Node + TS）
 ├── build-text.ts            # 信望愛 unv → verses、books（正規化、譯註抽出、合併節）
 ├── build-passages.ts        # eBible USFM 分段 → passages、units
 ├── build-keyword.ts         # BM25 索引
+├── build-keyword.ts
 ├── build-vectors.ts         # 以選定模型計算 int8 向量
-└── copy-runtime.ts          # 模型檔與 ORT wasm → public/
+├── build-data.ts            # 串接資料建置
+├── fetch-models.ts          # 依 arms.json 下載並核對模型
+├── write-manifest.ts        # 依評測結果寫 manifest、複製模型與向量
+├── copy-runtime.ts          # ORT wasm → public/ort/
+└── lib/                     # fhl.ts（信望愛解析）、usfm.ts（分段解析）
 
 src/
 ├── core/                    # 純函式；Node 與 Worker 共用
 │   ├── text.ts              # searchText 正規化、譯註抽出
 │   ├── refs.ts              # VerseRef/Range、overlaps、parseReference
 │   ├── canon.ts             # 66 卷、約、類別
+│   ├── passages.ts          # 分段邊界 → 段落 → 檢索單元
+│   ├── artifacts.ts         # 資料產物讀寫
+│   ├── normalize.ts         # 查詢正規化
+│   ├── simplified.ts        # 簡繁轉換（延遲載入）
 │   ├── tokenize.ts
 │   ├── bm25.ts
 │   ├── vectors.ts           # int8 量化、dotInt8、semanticSearch
@@ -133,6 +142,7 @@ bench/
 tests/
 ├── unit/                    # 對應 src/core 各檔
 ├── property/                # fast-check 性質測試
+├── integration/             # 建置產物完整性（npm run test:data）
 ├── acceptance/              # 7/7 驗收（Node，選定臂）
 └── guards/                  # 原則 4、6 的靜態守護（掃描 src、strings、models）
 

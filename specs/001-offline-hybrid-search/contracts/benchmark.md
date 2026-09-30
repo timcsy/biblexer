@@ -5,7 +5,7 @@
 ```bash
 npm run bench                 # 對 bench/arms.json 的全部臂執行評測，輸出報告
 npm run bench -- --arm <id>   # 只跑單一臂
-npm test -- acceptance        # 驗收：以 manifest 選定的臂跑 7 個固定查詢，須 7/7
+npm run test:acceptance       # 驗收：以 manifest 選定的臂跑 7 個固定查詢，須 7/7
 ```
 
 ## `bench/queries.json`
@@ -36,7 +36,7 @@ npm test -- acceptance        # 驗收：以 manifest 選定的臂跑 7 個固�
 
 ## 報告：`bench/report.json` 與 `bench/report.md`
 
-欄位見 data-model 的 EvaluationReport。`report.md` 為人讀的表格：列 = 臂，欄 = 每個查詢的最佳名次（未進前 5 標示 ✗），最後為命中數、平均最佳名次、下載大小、是否符合大小上限、是否被選中。
+欄位見 data-model 的 EvaluationReport。報告另附每臂在 Node 上的 `search()` 延遲中位數（僅供參考，SC-004 以手機手動驗證為準；不列入 report.json 以維持決定性）。`report.md` 為人讀的表格：列 = 臂，欄 = 每個查詢的最佳名次（未進前 5 標示 ✗），最後為命中數、平均最佳名次、下載大小、是否符合大小上限、是否被選中。
 
 ## 規則
 

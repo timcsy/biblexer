@@ -31,7 +31,8 @@ npm run bench
 
 ```bash
 npm test                  # 單元 + 性質測試
-npm test -- acceptance    # 選定臂的 7 個固定查詢須 7/7（SC-001）
+npm run test:data         # 建置產物的完整性（66 卷、1,189 章、31,103 節等）
+npm run test:acceptance   # 選定臂的 7 個固定查詢須 7/7（SC-001）
 npm run lint              # 含「不得 import 生成用 pipeline」規則（原則 4）
 npm run e2e               # build + preview 後以 Chromium 執行
 ```
@@ -52,7 +53,7 @@ npm run e2e               # build + preview 後以 Chromium 執行
 
 ## 4. 手動驗證（無法自動化的部分）
 
-在實體手機（約 3 年內的主流 Android 或 iPhone）上：
+在 **iPhone（Safari，加入主畫面）與 Android（Chrome）各一台**（約 3 年內的主流機種）上，分別執行：
 
 1. 以約 20 Mbps 的網路首次開啟，計時到「已可離線使用」：須 ≤ 2 分鐘（SC-005）。
 2. 開啟飛航模式，重新開啟 app，連續搜尋 20 次，計時送出到結果出現：95% ≤ 1 秒（SC-004）。

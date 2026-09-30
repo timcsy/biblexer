@@ -22,13 +22,13 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 **Purpose**：專案初始化與工具設定
 
-- [ ] T001 建立 `package.json`：npm scripts `dev`、`build`、`preview`、`test`、`test:acceptance`、`lint`、`typecheck`、`e2e`、`build:data`、`bench`；相依套件固定版本 `vite@^8.3`、`vite-plugin-pwa@^1.3`、`@huggingface/transformers@4.3.0`、`preact`、`@preact/preset-vite`、`opencc-js@^1.4.2`；開發相依 `typescript@~6.0.3`、`vitest@^5`、`fast-check@^4`、`@fast-check/vitest`、`@playwright/test@^1.63`、`eslint@^10`、`typescript-eslint@^8.71`、`tsx`；執行 `npm install`
+- [ ] T001 建立 `package.json`：npm scripts `dev`、`build`、`preview`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`、`build:data`、`bench`；相依套件固定版本 `vite@^8.3`、`vite-plugin-pwa@^1.3`、`@huggingface/transformers@4.3.0`、`preact`、`@preact/preset-vite`、`opencc-js@^1.4.2`；開發相依 `typescript@~6.0.3`、`vitest@^5`、`fast-check@^4`、`@fast-check/vitest`、`@playwright/test@^1.63`、`eslint@^10`、`typescript-eslint@^8.71`、`tsx`；執行 `npm install`
 - [ ] T002 [P] 建立 `tsconfig.json`：`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noImplicitOverride`、`verbatimModuleSyntax`、`isolatedModules`、`moduleResolution: "bundler"`、`jsx: "react-jsx"`、`jsxImportSource: "preact"`
-- [ ] T003 [P] 建立 `vite.config.ts`（Preact preset、`worker: { format: 'es' }`、`optimizeDeps.exclude: ['@huggingface/transformers']`）與 `vitest.config.ts`（專案 `unit`＝`tests/unit/**`＋`tests/property/**`＋`tests/guards/**`，Node 環境；專案 `acceptance`＝`tests/acceptance/**`，只在 `npm run test:acceptance` 時執行）
+- [ ] T003 [P] 建立 `vite.config.ts`（Preact preset、`worker: { format: 'es' }`、`optimizeDeps.exclude: ['@huggingface/transformers']`）與 `vitest.config.ts`（專案 `unit`＝`tests/unit/**`＋`tests/property/**`＋`tests/guards/**`，Node 環境；專案 `data`＝`tests/integration/**`，只在 `npm run test:data` 時執行；專案 `acceptance`＝`tests/acceptance/**`，只在 `npm run test:acceptance` 時執行）
 - [ ] T004 [P] 建立 `eslint.config.js`：typescript-eslint strict；`no-restricted-imports` 規定 `@huggingface/transformers` 只能在 `src/embed/embedder.ts` 被 import，且任何檔案都不得 import `pipeline`；`no-restricted-syntax` 禁止呼叫 `pipeline(...)`（原則 4）
 - [ ] T005 [P] 建立 `playwright.config.ts`：只用 Chromium 專案、`serviceWorkers: 'allow'`、`webServer` 執行 `npm run build && npm run preview`（不可用 dev server，因為 dev server 不註冊 Service Worker）
 - [ ] T006 [P] 更新 `.gitignore`：加入 `public/data/`、`public/models/`、`public/ort/`、`.cache/`、`test-results/`、`playwright-report/`、`dist/`
-- [ ] T007 [P] 依 plan.md 建立目錄骨架與進入點：`index.html`、`src/main.tsx`（空白 app）、`src/core/`、`src/embed/`、`src/worker/`、`src/ui/`、`src/pwa/`、`scripts/lib/`、`bench/`、`tests/{unit,property,acceptance,guards}/`、`e2e/`；執行 `npm test`、`npm run lint`、`npm run typecheck` 確認空專案都能跑
+- [ ] T007 [P] 依 plan.md 建立目錄骨架與進入點：`index.html`、`src/main.tsx`（空白 app）、`src/core/`、`src/embed/`、`src/worker/`、`src/ui/`、`src/pwa/`、`scripts/lib/`、`bench/`、`tests/{unit,property,integration,acceptance,guards}/`、`e2e/`；執行 `npm test`、`npm run lint`、`npm run typecheck` 確認空專案都能跑
 
 ---
 
@@ -91,29 +91,33 @@ description: "離線混合檢索（全本和合本）的任務清單"
   - `semanticReady=false` 時只用關鍵字（FR-020）
   - 查詢超過 `MAX_QUERY_CHARS = 512` 時截斷並設 `truncated=true`
   - 空白或只有標點的查詢不搜尋
+  - 關鍵字在語料中完全不存在時，仍回傳語意結果
+  - 相鄰段落各自為一筆結果、不合併，同一節經文不會是兩筆結果的主體
 - [ ] T020 [P] 在 `tests/unit/artifacts.test.ts` 撰寫資料產物讀寫測試：`passages.bin`、`units.bin` 的 Int32 小端序格式，以及 `verses.json` 陣列格式與 `flags` 位元（1=merged、2=variant），寫入後讀回結果相同（contracts/data-artifacts.md）
+- [ ] T021 [P] 在 `tests/unit/fetch-verify.test.ts` 撰寫下載核對測試（以假 fetch 注入）：雜湊不符時拒絕並刪除檔案；請求帶自訂 User-Agent；快取中已有且雜湊正確時不重新下載
+- [ ] T022 [P] 在 `tests/integration/data-build.test.ts` 撰寫建置產物完整性測試（`npm run test:data`，在 `build:data` 之前執行必須失敗）：恰 66 卷、1,189 章、31,103 節；71 個合併節皆有 `mergedInto`；11 節異文皆標為 variant 且歸入前一節所屬段落；每節恰屬一段；產物中不含任何段落標題文字；manifest 各檔 `bytes` 與實際檔案相符
 
 ### 實作（讓上面的測試通過）
 
-- [ ] T021 [P] 在 `src/core/canon.ts` 實作 66 卷清單（id、code、short、name、testament、category），並確認 T008 通過
-- [ ] T022 [P] 在 `src/core/refs.ts` 實作 VerseRef／VerseRange、比較與 `overlaps`，並確認 T009 通過
-- [ ] T023 [P] 在 `src/core/text.ts` 實作 `toSearchText`、`extractNotes`，並確認 T010 通過（建置時與執行時共用同一函式）
-- [ ] T024 [P] 在 `scripts/lib/fhl.ts` 實作 `unv` 列解析（標記移除、合併節、異文標記），並確認 T011 通過
-- [ ] T025 [P] 在 `scripts/lib/usfm.ts` 實作分段邊界解析，並確認 T012 通過
-- [ ] T026 在 `src/core/passages.ts` 實作「分段邊界 → 段落 → 檢索單元」，`segmentation` 為 `cu89-paragraphs`；確認 T013 通過（依賴 T022）
-- [ ] T027 [P] 在 `src/core/tokenize.ts` 實作 unigram 與 bigram 斷詞，並確認 T014 通過
-- [ ] T028 在 `src/core/bm25.ts` 實作索引建立、序列化（`keyword.bin` 格式）與 `bm25Search`，並確認 T015 通過（依賴 T027）
-- [ ] T029 [P] 在 `src/core/vectors.ts` 實作 int8 量化、`vectors.bin` 讀寫、`dotInt8`、`semanticSearch`，並確認 T016 通過
-- [ ] T030 [P] 在 `src/core/fusion.ts` 實作 `rrf` 與 `aggregateToPassages`，並確認 T017 通過
-- [ ] T031 [P] 在 `src/core/hit.ts` 實作命中判定，並確認 T018 通過
-- [ ] T032 [P] 在 `src/core/artifacts.ts` 實作資料產物讀寫，並確認 T020 通過
-- [ ] T033 在 `src/core/search.ts` 實作 `search()`，組裝 `SearchResponse`（contracts/search-api.md §2），並確認 T019 通過（依賴 T022、T028～T030）
-- [ ] T034 建立 `scripts/sources.json`，列出各來源的 URL、sha1／sha256 與用途說明（例：「eBible：只用分段邊界，不用任何文字」）；再建立 `scripts/fetch-sources.ts` 下載並核對雜湊到 `.cache/sources/`。下載需使用自訂 User-Agent，因為 Python-urllib 的 UA 會被 403
-- [ ] T035 建立 `scripts/build-text.ts`：讀取 `bible_little.db` 的 `unv` 表（先用 `node:sqlite`，不可用時改用 `better-sqlite3`），輸出 `public/data/books.<hash>.json` 與 `verses.<hash>.json`；斷言 66 卷、1,189 章、31,103 節（依賴 T021、T023、T024、T032、T034）
-- [ ] T036 建立 `scripts/build-passages.ts`：以 eBible 分段邊界產生 `passages.<hash>.bin` 與 `units.<hash>.bin`；11 節異文經節併入其前一節所屬的段落；主控台印出段落數與單元數（依賴 T025、T026、T035）
-- [ ] T037 建立 `scripts/build-keyword.ts` 以產生 `keyword.<hash>.bin`，再建立 `scripts/build-data.ts` 依序串接 T034～T037，並接到 `npm run build:data`（依賴 T028、T036）
+- [ ] T023 [P] 在 `src/core/canon.ts` 實作 66 卷清單（id、code、short、name、testament、category），並確認 T008 通過
+- [ ] T024 [P] 在 `src/core/refs.ts` 實作 VerseRef／VerseRange、比較與 `overlaps`，並確認 T009 通過
+- [ ] T025 [P] 在 `src/core/text.ts` 實作 `toSearchText`、`extractNotes`，並確認 T010 通過（建置時與執行時共用同一函式）
+- [ ] T026 [P] 在 `scripts/lib/fhl.ts` 實作 `unv` 列解析（標記移除、合併節、異文標記），並確認 T011 通過
+- [ ] T027 [P] 在 `scripts/lib/usfm.ts` 實作分段邊界解析，並確認 T012 通過
+- [ ] T028 在 `src/core/passages.ts` 實作「分段邊界 → 段落 → 檢索單元」，`segmentation` 為 `cu89-paragraphs`；確認 T013 通過（依賴 T024）
+- [ ] T029 [P] 在 `src/core/tokenize.ts` 實作 unigram 與 bigram 斷詞，並確認 T014 通過
+- [ ] T030 在 `src/core/bm25.ts` 實作索引建立、序列化（`keyword.bin` 格式）與 `bm25Search`，並確認 T015 通過（依賴 T029）
+- [ ] T031 [P] 在 `src/core/vectors.ts` 實作 int8 量化、`vectors.bin` 讀寫、`dotInt8`、`semanticSearch`，並確認 T016 通過
+- [ ] T032 [P] 在 `src/core/fusion.ts` 實作 `rrf` 與 `aggregateToPassages`，並確認 T017 通過
+- [ ] T033 [P] 在 `src/core/hit.ts` 實作命中判定，並確認 T018 通過
+- [ ] T034 [P] 在 `src/core/artifacts.ts` 實作資料產物讀寫，並確認 T020 通過
+- [ ] T035 在 `src/core/search.ts` 實作 `search()`，組裝 `SearchResponse`（contracts/search-api.md §2），並確認 T019 通過（依賴 T024、T030～T032）
+- [ ] T036 建立 `scripts/sources.json`，列出各來源的 URL、sha1／sha256 與用途說明（例：「eBible：只用分段邊界，不用任何文字」）；再建立 `scripts/fetch-sources.ts` 下載並核對雜湊到 `.cache/sources/`。下載需使用自訂 User-Agent，因為 Python-urllib 的 UA 會被 403；確認 T021 通過
+- [ ] T037 建立 `scripts/build-text.ts`：讀取 `bible_little.db` 的 `unv` 表（先用 `node:sqlite`，不可用時改用 `better-sqlite3`），輸出 `public/data/books.<hash>.json` 與 `verses.<hash>.json`（依賴 T023、T025、T026、T034、T036）
+- [ ] T038 建立 `scripts/build-passages.ts`：以 eBible 分段邊界產生 `passages.<hash>.bin` 與 `units.<hash>.bin`；11 節異文經節併入其前一節所屬的段落；主控台印出段落數與單元數（依賴 T027、T028、T037）
+- [ ] T039 建立 `scripts/build-keyword.ts` 以產生 `keyword.<hash>.bin`，再建立 `scripts/build-data.ts` 依序串接 T036～T039，並接到 `npm run build:data`；執行後確認 T022 通過（依賴 T030、T038）
 
-**Checkpoint**：`npm test` 全綠；`npm run build:data` 產生經文、段落、關鍵字索引。
+**Checkpoint**：`npm test` 全綠；`npm run build:data` 產生經文、段落、關鍵字索引，且 `npm run test:data` 全綠。
 
 ---
 
@@ -125,32 +129,35 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T038 [P] [US3] 在 `tests/acceptance/benchmark.test.ts` 撰寫驗收測試：讀取 `public/data/manifest.json` 選定的臂，以完整混合檢索跑 `bench/queries.json` 中 `heldOut: false` 的 7 筆查詢，斷言 7 筆全部命中。尚未有資料與模型時，這個測試必須失敗（Red）
-- [ ] T039 [P] [US3] 在 `tests/unit/bench-select.test.ts` 撰寫選擇規則與報告測試（research R3）：
+- [ ] T040 [P] [US3] 在 `tests/acceptance/benchmark.test.ts` 撰寫驗收測試：讀取 `public/data/manifest.json` 選定的臂，以完整混合檢索跑 `bench/queries.json` 中 `heldOut: false` 的 7 筆查詢，斷言 7 筆全部命中。尚未有資料與模型時，這個測試必須失敗（Red）
+- [ ] T041 [P] [US3] 在 `tests/unit/bench-select.test.ts` 撰寫選擇規則與報告測試（research R3）：
   - 選擇順序：大小 ≤ 200 MB → 命中數最高 → 平均最佳名次較佳 → 較小者
   - 報告不含時間戳記，同一輸入序列化後逐位元相同
   - 沒有任何臂達到 7/7 時，`selected` 為 null 並回報原因
-- [ ] T040 [P] [US3] 在 `tests/unit/embedder.test.ts` 撰寫 embedder 設定測試（以假模型注入）：`queryPrefix` 只加在查詢端；`toSimplified` 只影響送進模型的文字；pooling 依設定使用 CLS 或 mean；輸出經過 L2 正規化
-- [ ] T041 [P] [US3] 在 `tests/guards/models-dir.test.ts` 撰寫守護測試：`public/models/` 只含 manifest 指定的那一個 embedding 模型檔案組（原則 4）
+- [ ] T042 [P] [US3] 在 `tests/unit/embedder.test.ts` 撰寫 embedder 設定測試（以假模型注入）：`queryPrefix` 只加在查詢端；`toSimplified` 只影響送進模型的文字；pooling 依設定使用 CLS 或 mean；輸出經過 L2 正規化
+- [ ] T043 [P] [US3] 在 `tests/guards/models-dir.test.ts` 撰寫守護測試：`public/models/` 只含 manifest 指定的那一個 embedding 模型檔案組（原則 4）
+- [ ] T044 [P] [US3] 在 `tests/unit/fetch-models.test.ts` 撰寫模型下載測試（以假 fetch 注入）：URL 使用 `bench/arms.json` 的固定 revision；每個檔案核對 sha256，不符時拒絕
+- [ ] T045 [P] [US3] 在 `tests/unit/manifest.test.ts` 撰寫 manifest 產生測試：依 report 的 `selected` 臂寫入 `model`（id、revision、dtype、dim、pooling、queryPrefix、toSimplified）與 `segmentation`；各檔 `bytes` 與雜湊檔名正確；`selected` 為 null 時拋出錯誤
 
 ### 實作
 
-- [ ] T042 [P] [US3] 建立 `bench/queries.json`：7 筆驗收查詢（與 `knowledge/vision.md` 階段 1、data-model 的表格一致），另加 5～8 筆 `heldOut: true` 的保留查詢；經文以信望愛 `engs` 代碼加 `章:節` 表示
-- [ ] T043 [P] [US3] 建立 `bench/arms.json` 並固定 HF revision。要包含的臂：
+- [ ] T046 [P] [US3] 建立 `bench/queries.json`：7 筆驗收查詢（與 `knowledge/vision.md` 階段 1、data-model 的表格一致），另加 5～8 筆 `heldOut: true` 的保留查詢；經文以信望愛 `engs` 代碼加 `章:節` 表示
+- [ ] T047 [P] [US3] 建立 `bench/arms.json` 並固定 HF revision。要包含的臂：
   - `Xenova/bge-small-zh-v1.5`：繁體、繁體＋查詢指令、轉簡體
   - `onnx-community/granite-embedding-97m-multilingual-r2`：繁體、轉簡體
   - `Xenova/jina-embeddings-v2-base-zh`：繁體、轉簡體
   - `onnx-community/gte-multilingual-base`：只作品質上限參考，標記 `oversize: true`
-- [ ] T044 [US3] 建立 `scripts/fetch-models.ts`：依 `bench/arms.json` 下載每個模型在固定 revision 的 `config.json`、`tokenizer*.json`、`onnx/model_quantized.onnx` 到 `.cache/models/`，並核對 sha256
-- [ ] T045 [US3] 在 `src/embed/embedder.ts` 實作 embedder，並確認 T040 通過：
+- [ ] T048 [US3] 建立 `scripts/fetch-models.ts`：依 `bench/arms.json` 下載每個模型在固定 revision 的 `config.json`、`tokenizer*.json`、`onnx/model_quantized.onnx` 到 `.cache/models/`，並核對 sha256；確認 T044 通過
+- [ ] T049 [US3] 在 `src/embed/embedder.ts` 實作 embedder，並確認 T042 通過：
   - 這是唯一 import `@huggingface/transformers` 的檔案，只用 `AutoTokenizer` 與 `AutoModel`，不用 `pipeline`
   - 支援 `pooling`、`queryPrefix`、`toSimplified`（`opencc-js/t2cn`，`{from:'tw', to:'cn'}`，逐字轉換）
   - Node 與瀏覽器共用
-- [ ] T046 [US3] 在 `src/embed/env.ts` 實作離線設定：`allowRemoteModels = false`、`allowLocalModels = true`、`localModelPath`、`backends.onnx.wasm.wasmPaths = '/ort/'`；Node 端以 `.cache/models/` 為模型路徑
-- [ ] T047 [US3] 建立 `scripts/build-vectors.ts`：以指定臂的模型在 Node 計算所有檢索單元的 int8 向量，輸出到 `.cache/bench/<armId>/vectors.bin`；批次大小 32（依賴 T029、T036、T045）
-- [ ] T048 [US3] 在 `bench/run.ts` 實作評測主程式：對每個臂建立向量後，以 `src/core/search.ts` 跑全部查詢，輸出 `bench/report.json` 與 `bench/report.md`（格式見 contracts/benchmark.md），並依選擇規則標示選中的臂；確認 T039 通過（依賴 T031、T033、T047）
-- [ ] T049 [US3] 建立 `scripts/write-manifest.ts`：依 `bench/report.json` 選中的臂，把該臂的向量複製成 `public/data/vectors.<hash>.bin`、模型檔複製到 `public/models/`，並寫出 `public/data/manifest.json`（含 `model`、`segmentation`、`sources`）；確認 T041 通過
-- [ ] T050 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T038 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**
+  - `toSimplified=true` 時，轉換器在 embedder 初始化時載入（不是延遲載入）
+- [ ] T050 [US3] 在 `src/embed/env.ts` 實作離線設定：`allowRemoteModels = false`、`allowLocalModels = true`、`localModelPath`、`backends.onnx.wasm.wasmPaths = '/ort/'`；Node 端以 `.cache/models/` 為模型路徑
+- [ ] T051 [US3] 建立 `scripts/build-vectors.ts`：以指定臂的模型在 Node 計算所有檢索單元的 int8 向量，輸出到 `.cache/bench/<armId>/vectors.bin`；批次大小 32（依賴 T031、T038、T049）
+- [ ] T052 [US3] 在 `bench/run.ts` 實作評測主程式：對每個臂建立向量後，以 `src/core/search.ts` 跑全部查詢，輸出 `bench/report.json` 與 `bench/report.md`（格式見 contracts/benchmark.md），並依選擇規則標示選中的臂；`report.md` 另附每臂在 Node 上的 `search()` 延遲中位數（僅供參考，不寫入 report.json）；確認 T041 通過（依賴 T033、T035、T051）
+- [ ] T053 [US3] 建立 `scripts/write-manifest.ts`：依 `bench/report.json` 選中的臂，把該臂的向量複製成 `public/data/vectors.<hash>.bin`、模型檔複製到 `public/models/`，並寫出 `public/data/manifest.json`（含 `model`、`segmentation`、`sources`）；若選中轉簡體的臂，一併準備 `opencc-js/t2cn` 轉換器隨模型預先下載（research R6 例外）；確認 T043、T045 通過
+- [ ] T054 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T040 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**
 
 **Checkpoint**：已選定模型且驗收 7/7。之後才開始做介面。
 
@@ -164,33 +171,34 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T051 [P] [US1] 在 `tests/guards/no-generation.test.ts` 撰寫守護測試：掃描 `src/**`，不得出現 `text-generation`、`text2text`、`AutoModelForCausalLM`、`Seq2Seq`、`pipeline(`（原則 4）
-- [ ] T052 [P] [US1] 在 `tests/guards/strings.test.ts` 撰寫守護測試：`src/ui/strings.ts` 不得含「最佳」「推薦」「最正確」「答案」「解釋」「建議」；結果區標題為「可能相關的段落」（FR-014）
-- [ ] T053 [P] [US1] 在 `tests/unit/worker-protocol.test.ts` 撰寫 Worker 協定測試：`init`、`progress`、`ready`、`search`、`result`、`error` 各訊息的形狀與 id 對應；`error.code` 只能是 `NOT_DOWNLOADED`、`QUOTA`、`CORRUPT`、`INTERNAL` 之一（contracts/search-api.md §3）
-- [ ] T054 [P] [US1] 在 `e2e/search-meaning.spec.ts` 撰寫 E2E：
+- [ ] T055 [P] [US1] 在 `tests/guards/no-generation.test.ts` 撰寫守護測試：掃描 `src/**`，不得出現 `text-generation`、`text2text`、`AutoModelForCausalLM`、`Seq2Seq`、`pipeline(`（原則 4）
+- [ ] T056 [P] [US1] 在 `tests/guards/strings.test.ts` 撰寫守護測試：`src/ui/strings.ts` 不得含「最佳」「推薦」「最正確」「答案」「解釋」「建議」；結果區標題為「可能相關的段落」（FR-014）
+- [ ] T057 [P] [US1] 在 `tests/unit/worker-protocol.test.ts` 撰寫 Worker 協定測試：`init`、`progress`、`ready`、`search`、`result`、`error` 各訊息的形狀與 id 對應；`error.code` 只能是 `NOT_DOWNLOADED`、`QUOTA`、`CORRUPT`、`INTERNAL` 之一（contracts/search-api.md §3）
+- [ ] T058 [P] [US1] 在 `e2e/search-meaning.spec.ts` 撰寫 E2E：
   - 對 4 個意思型固定查詢，斷言期望經文出現在前 5 筆
   - 每筆結果顯示卷、章、節範圍與約／類別
   - 沒有孤立單節（SC-006）
   - 畫面無數值分數
   - 結果區標題為「可能相關的段落」
+  - 預設顯示 10 筆，按「載入更多」後顯示後續結果且不重複（FR-003）
 
 ### 實作
 
-- [ ] T055 [US1] 在 `src/worker/search.worker.ts` 實作 Worker：
+- [ ] T059 [US1] 在 `src/worker/search.worker.ts` 實作 Worker：
   - 依 manifest 載入經文、段落、單元、關鍵字索引、向量與模型
   - 以 `progress` 回報進度
   - 處理 `search` 訊息，呼叫 `src/core/search.ts`
   - 只向同源請求 `/data/`、`/models/`、`/ort/`
-- [ ] T056 [P] [US1] 在 `src/worker/client.ts` 實作型別化的 Worker 用戶端（`postMessage` 加上請求 id 對應），並確認 T053 通過
-- [ ] T057 [P] [US1] 建立 `src/ui/strings.ts`，集中所有固定介面文字；確認 T052 通過
-- [ ] T058 [P] [US1] 在 `src/ui/SearchBox.tsx` 實作搜尋框：空白或只有標點的查詢不送出並顯示提示；查詢被截斷時顯示提示
-- [ ] T059 [P] [US1] 在 `src/ui/PassageCard.tsx` 實作段落卡片：
+- [ ] T060 [P] [US1] 在 `src/worker/client.ts` 實作型別化的 Worker 用戶端（`postMessage` 加上請求 id 對應），並確認 T057 通過
+- [ ] T061 [P] [US1] 建立 `src/ui/strings.ts`，集中所有固定介面文字；確認 T056 通過
+- [ ] T062 [P] [US1] 在 `src/ui/SearchBox.tsx` 實作搜尋框：空白或只有標點的查詢不送出並顯示提示；查詢被截斷時顯示提示
+- [ ] T063 [P] [US1] 在 `src/ui/PassageCard.tsx` 實作段落卡片：
   - 顯示 `display` 經文，保留「　神」
   - 譯註以次要樣式呈現
   - 前後文以淡色呈現
   - 標示卷章節範圍與約／類別
   - 不顯示分數
-- [ ] T060 [US1] 在 `src/ui/ResultList.tsx` 與 `src/main.tsx` 組裝頁面：顯示「可能相關的段落」清單，預設 10 筆，可「載入更多」；確認 T051、T054 通過
+- [ ] T064 [US1] 在 `src/ui/ResultList.tsx` 與 `src/main.tsx` 組裝頁面：顯示「可能相關的段落」清單，預設 10 筆，可「載入更多」；確認 T055、T058 通過
 
 **Checkpoint**：MVP。口語查詢可用，且符合原則 4、5、6。
 
@@ -204,17 +212,17 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T061 [P] [US2] 在 `tests/unit/parse-reference.test.ts` 撰寫出處解析測試：
+- [ ] T065 [P] [US2] 在 `tests/unit/parse-reference.test.ts` 撰寫出處解析測試：
   - 可解析「羅 8:28」、「羅馬書8章28節」、「羅8:28-30」、「約一 1:9」
   - 66 卷的全名與簡稱都能解析
   - 章或節不存在時回傳 null
   - 出處查詢時，該段落為第 1 筆（FR-004）
-- [ ] T062 [P] [US2] 在 `tests/unit/normalize.test.ts` 撰寫查詢正規化測試：
+- [ ] T066 [P] [US2] 在 `tests/unit/normalize.test.ts` 撰寫查詢正規化測試：
   - 能偵測簡體字，並以 `opencc-js` 的 `cn2t`（`{from:'cn', to:'tw'}`，逐字轉換）將「麦基洗德」轉為「麥基洗德」
   - 不含簡體字時不載入轉換器
   - 統一全形與半形（FR-005）
-- [ ] T063 [P] [US2] 在 `tests/unit/matched-terms.test.ts` 撰寫命中字詞測試：`matchedTerms` 只列出查詢中實際出現在段落的字詞；標示範圍不會切斷字元（FR-006）
-- [ ] T064 [P] [US2] 在 `e2e/search-keyword.spec.ts` 撰寫 E2E：
+- [ ] T067 [P] [US2] 在 `tests/unit/matched-terms.test.ts` 撰寫命中字詞測試：`matchedTerms` 只列出查詢中實際出現在段落的字詞；標示範圍不會切斷字元（FR-006）
+- [ ] T068 [P] [US2] 在 `e2e/search-keyword.spec.ts` 撰寫 E2E：
   - 3 個關鍵字固定查詢都命中前 5 筆
   - 「羅 8:28」為第 1 筆
   - 簡體與繁體輸入的結果相同
@@ -222,9 +230,9 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T065 [US2] 在 `src/core/refs.ts` 實作 `parseReference`（全名、簡稱、`章:節`、`章章節節`、範圍），並在 `src/core/search.ts` 中讓出處段落排第 1；確認 T061 通過
-- [ ] T066 [P] [US2] 在 `src/core/normalize.ts` 與 `src/core/simplified.ts` 實作查詢正規化，簡轉繁的轉換器用動態 import 延遲載入；確認 T062 通過
-- [ ] T067 [US2] 在 `src/core/search.ts` 計算 `matchedTerms`，並在 `src/ui/PassageCard.tsx` 標示命中字詞；確認 T063、T064 通過
+- [ ] T069 [US2] 在 `src/core/refs.ts` 實作 `parseReference`（全名、簡稱、`章:節`、`章章節節`、範圍），並在 `src/core/search.ts` 中讓出處段落排第 1；確認 T065 通過
+- [ ] T070 [P] [US2] 在 `src/core/normalize.ts` 與 `src/core/simplified.ts` 實作查詢正規化，簡轉繁的轉換器用動態 import 延遲載入；確認 T066 通過
+- [ ] T071 [US2] 在 `src/core/search.ts` 計算 `matchedTerms`，並在 `src/ui/PassageCard.tsx` 標示命中字詞；確認 T067、T068 通過
 
 **Checkpoint**：混合檢索完整；spec 的 7 個固定查詢都能在瀏覽器中驗證。
 
@@ -238,15 +246,15 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T068 [P] [US4] 在 `tests/unit/copy.test.ts` 撰寫複製格式測試：內容為段落經文加出處（如「約翰福音 2:1–11」）；不含系統產生的文字（FR-011）
-- [ ] T069 [P] [US4] 在 `tests/unit/chapter.test.ts` 撰寫全章資料測試：Worker 的 `chapter` 訊息回傳該章所有經節與段落；合併節顯示為範圍；不含標題（FR-011a）
-- [ ] T070 [P] [US4] 在 `e2e/expand-chapter.spec.ts` 撰寫 E2E：展開全章後顯示該章所有經文，命中段落有標示且位於視窗中；可收合回結果清單
+- [ ] T072 [P] [US4] 在 `tests/unit/copy.test.ts` 撰寫複製格式測試：內容為段落經文加出處（如「約翰福音 2:1–11」）；不含系統產生的文字（FR-011）
+- [ ] T073 [P] [US4] 在 `tests/unit/chapter.test.ts` 撰寫全章資料測試：Worker 的 `chapter` 訊息回傳該章所有經節與段落；合併節顯示為範圍；不含標題（FR-011a）
+- [ ] T074 [P] [US4] 在 `e2e/expand-chapter.spec.ts` 撰寫 E2E：展開全章後顯示該章所有經文，命中段落有標示且位於視窗中；可收合回結果清單
 
 ### 實作
 
-- [ ] T071 [US4] 在 `src/worker/search.worker.ts` 處理 `chapter` 與 `chapterResult` 訊息；確認 T069 通過
-- [ ] T072 [P] [US4] 在 `src/ui/copy.ts` 實作附出處的複製功能；確認 T068 通過
-- [ ] T073 [US4] 在 `src/ui/ChapterView.tsx` 實作全章檢視（標示命中段落、捲動到該段、收合），並接到 `PassageCard` 的「展開全章」；確認 T070 通過
+- [ ] T075 [US4] 在 `src/worker/search.worker.ts` 處理 `chapter` 與 `chapterResult` 訊息；確認 T073 通過
+- [ ] T076 [P] [US4] 在 `src/ui/copy.ts` 實作附出處的複製功能；確認 T072 通過
+- [ ] T077 [US4] 在 `src/ui/ChapterView.tsx` 實作全章檢視（標示命中段落、捲動到該段、收合），並接到 `PassageCard` 的「展開全章」；確認 T074 通過
 
 ---
 
@@ -258,8 +266,8 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T074 [P] [US5] 在 `tests/unit/filter.test.ts` 撰寫篩選測試：以 `(testament, category)` 為鍵，所以舊約歷史書與新約歷史書可以分開選取；選整個約等於選該約所有類別；`counts` 為篩選前的數量（FR-016）
-- [ ] T075 [P] [US5] 在 `e2e/filter.spec.ts` 撰寫 E2E：
+- [ ] T078 [P] [US5] 在 `tests/unit/filter.test.ts` 撰寫篩選測試：以 `(testament, category)` 為鍵，所以舊約歷史書與新約歷史書可以分開選取；選整個約等於選該約所有類別；`counts` 為篩選前的數量（FR-016）
+- [ ] T079 [P] [US5] 在 `e2e/filter.spec.ts` 撰寫 E2E：
   - 選「書信」後，每筆結果都來自書信
   - 選「舊約」後，每筆結果都來自舊約，且可再細分類別
   - 數量標示正確
@@ -267,8 +275,8 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T076 [US5] 在 `src/core/search.ts` 補上 `filter` 與 `counts` 的邊界情況；確認 T074 通過
-- [ ] T077 [US5] 在 `src/ui/FilterBar.tsx` 實作兩層篩選列（約 → 類別，附數量），以及空結果訊息與清除按鈕；確認 T075 通過
+- [ ] T080 [US5] 在 `src/core/search.ts` 補上 `filter` 與 `counts` 的邊界情況；確認 T078 通過
+- [ ] T081 [US5] 在 `src/ui/FilterBar.tsx` 實作兩層篩選列（約 → 類別，附數量），以及空結果訊息與清除按鈕；確認 T079 通過
 
 ---
 
@@ -280,49 +288,52 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T078 [P] [US6] 在 `tests/unit/download.test.ts` 撰寫下載測試：
+- [ ] T082 [P] [US6] 在 `tests/unit/download.test.ts` 撰寫下載測試：
   - 依 `Content-Length` 與串流計算進度
   - 以有版本號的 Cache Storage 名稱存放
   - 雜湊檔名更新時整批替換
   - `QuotaExceededError` 轉為 `QUOTA` 錯誤
-- [ ] T079 [P] [US6] 在 `e2e/first-load.spec.ts` 撰寫 E2E：
+- [ ] T083 [P] [US6] 在 `e2e/first-load.spec.ts` 撰寫 E2E：
   - 首次開啟時顯示下載進度，完成後顯示「已可離線使用」（FR-019）
   - 模型就緒前可用關鍵字搜尋，並顯示「語意搜尋準備中」
   - 模型就緒後，畫面上的查詢會自動更新為混合結果（FR-020）
-- [ ] T080 [P] [US6] 在 `e2e/offline.spec.ts` 撰寫 E2E（SC-002）：
+- [ ] T084 [P] [US6] 在 `e2e/offline.spec.ts` 撰寫 E2E（SC-002）：
   - 在測試中自行啟動 preview server，等 `navigator.serviceWorker.ready` 與「已可離線使用」
   - **關閉伺服器**並執行 `context.setOffline(true)`，重新載入
   - 驗證搜尋、展開全章、篩選都可用
   - 這個測試不得使用 `route()`
-- [ ] T081 [P] [US6] 在 `e2e/privacy.spec.ts` 撰寫 E2E（SC-003）：
+- [ ] T085 [P] [US6] 在 `e2e/privacy.spec.ts` 撰寫 E2E（SC-003）：
   - 在導航前掛上 `context.on('request')`（不可呼叫 `request.frame()`）與 `page.on('websocket')`
   - 以「以馬內利測試」搜尋
   - 斷言所有請求都同源
   - 斷言沒有任何請求的 URL、POST 內容或標頭含查詢字串，包括它的 URL 編碼、簡體與繁體形式
-- [ ] T082 [P] [US6] 在 `e2e/not-downloaded.spec.ts` 撰寫 E2E：從未下載過又沒有網路時，顯示「需要先連網完成一次下載」的說明
+- [ ] T086 [P] [US6] 在 `e2e/not-downloaded.spec.ts` 撰寫 E2E：從未下載過又沒有網路時，顯示「需要先連網完成一次下載」的說明
+- [ ] T087 [P] [US6] 在 `e2e/storage-cleared.spec.ts` 撰寫 E2E：完成首次載入後以程式清除 Cache Storage；有網路時重新開啟會重新下載並顯示進度；無網路時顯示「需要重新下載」的說明
+- [ ] T088 [P] [US6] 在 `tests/unit/copy-runtime.test.ts` 撰寫測試：複製的 onnxruntime-web 版本等於 `@huggingface/transformers` 所相依的版本；只複製 `.wasm` 與 `.mjs`
+- [ ] T089 [P] [US6] 在 `tests/guards/download-size.test.ts` 撰寫守護測試（在 `npm run build` 之後執行）：首次下載總量＝manifest 所列檔案＋`public/models/`＋`public/ort/`＋`dist/` app shell（若 `toSimplified=true` 再加 t2cn 轉換器）≤ 200 MB（SC-005、plan Constraints）
 
 ### 實作
 
-- [ ] T083 [US6] 建立 `scripts/copy-runtime.ts`：把 `onnxruntime-web` 的 `.wasm` 與 `.mjs` 複製到 `public/ort/`，版本須與 `@huggingface/transformers` 的相依一致；接進 `npm run build:data`
-- [ ] T084 [US6] 在 `vite.config.ts` 設定 vite-plugin-pwa：
+- [ ] T090 [US6] 建立 `scripts/copy-runtime.ts`：把 `onnxruntime-web` 的 `.wasm` 與 `.mjs` 複製到 `public/ort/`，版本須與 `@huggingface/transformers` 的相依一致；接進 `npm run build:data`；確認 T088 通過
+- [ ] T091 [US6] 在 `vite.config.ts` 設定 vite-plugin-pwa：
   - precache app shell 與 `public/data/` 中除了 `vectors.*` 以外的檔案
   - `runtimeCaching` 以 `CacheFirst` 處理 `/models/**`、`/ort/**`、`/data/vectors.*`
   - 調整 `maximumFileSizeToCacheInBytes`
   - 補上 manifest（名稱 BibLexer、繁體中文）
-- [ ] T085 [US6] 在 `src/pwa/download.ts` 實作模型與向量的串流下載：回報進度、存入有版本號的 Cache Storage、成功後呼叫 `navigator.storage.persist()`；確認 T078 通過
-- [ ] T086 [US6] 在 `src/ui/ProgressBanner.tsx` 實作載入狀態 UI，狀態依 data-model 的載入狀態轉換（未安裝 → 關鍵字可用 → 完全就緒；未下載又離線時顯示說明）；提示使用者安裝到主畫面以避免被瀏覽器清除；確認 T079、T082 通過
-- [ ] T087 [US6] 執行 `npm run e2e`，確認 T080、T081 通過。若發現對外請求（例如 jsdelivr 或 Hugging Face），修正 `src/embed/env.ts` 或快取設定，不可放寬測試
+- [ ] T092 [US6] 在 `src/pwa/download.ts` 實作模型與向量的串流下載：回報進度、存入有版本號的 Cache Storage、成功後呼叫 `navigator.storage.persist()`；確認 T082 通過
+- [ ] T093 [US6] 在 `src/ui/ProgressBanner.tsx` 實作載入狀態 UI，狀態依 data-model 的載入狀態轉換（未安裝 → 關鍵字可用 → 完全就緒；未下載又離線時顯示說明）；提示使用者安裝到主畫面以避免被瀏覽器清除；確認 T083、T086、T087 通過
+- [ ] T094 [US6] 執行 `npm run build` 與 `npm run e2e`，確認 T084、T085、T089 通過。若發現對外請求（例如 jsdelivr 或 Hugging Face），修正 `src/embed/env.ts` 或快取設定，不可放寬測試
 
 ---
 
 ## Phase 9：Polish 與跨切面
 
-- [ ] T088 [P] 撰寫 `README.md`（繁體中文）：專案用途、「工具只指路，不代言」的定位、建置與測試指令（連到 quickstart.md）
-- [ ] T089 [P] 撰寫 `docs/資料來源.md`：由 `scripts/sources.json` 整理出經文、分段邊界、模型、ONNX Runtime 各自的來源、版本、用途與授權現況，並標出使用了哪些非經文本身的資料（分段邊界），供使用者與信望愛溝通時使用
-- [ ] T090 依 quickstart.md 第 4 節在實體手機做手動驗證（SC-004、SC-005、SC-009），把結果記錄在 `specs/001-offline-hybrid-search/manual-verification.md`
-- [ ] T091 完整執行 quickstart.md 第 1～3 節（`build:data`、`bench`、`test`、`test:acceptance`、`lint`、`typecheck`、`e2e`），全部通過
-- [ ] T092 知識回流：
-  - 更新 `knowledge/vision.md` 的「現狀」與階段 1 勾選框（標完成日期）
+- [ ] T095 [P] 撰寫 `README.md`（繁體中文）：專案用途、「工具只指路，不代言」的定位、建置與測試指令（連到 quickstart.md）
+- [ ] T096 [P] 撰寫 `docs/資料來源.md`：由 `scripts/sources.json` 整理出經文、分段邊界、模型、ONNX Runtime 各自的來源、版本、用途與授權現況，並標出使用了哪些非經文本身的資料（分段邊界），供使用者與信望愛溝通時使用
+- [ ] T097 依 quickstart.md 第 4 節在 iPhone（Safari，加入主畫面）與 Android（Chrome）**各一台**做手動驗證（SC-004、SC-005、SC-009），把結果記錄在 `specs/001-offline-hybrid-search/manual-verification.md`
+- [ ] T098 完整執行 quickstart.md 第 1～3 節（`build:data`、`bench`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`），全部通過
+- [ ] T099 知識回流：
+  - 更新 `knowledge/vision.md` 的「現狀」與階段 1 勾選框（標完成日期）；把「腓 4:6 附近」改為與 spec 一致的重疊定義
   - 實作中的教訓依四段式寫進 `knowledge/experience.md`
   - `knowledge/draft/2026-09-30-前端檢索技術選型.md` 已定案的部分依 knowie 的「分派」原則移出
 
@@ -334,7 +345,7 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 - **Setup（Phase 1）** → **Foundational（Phase 2）** → **US3 評測（Phase 3，檢查點）** → 其餘故事
 - **US1（Phase 4）**：依賴 US3 選定的模型（manifest）
-- **US2（Phase 5）**：依賴 US1 的 Worker 與 UI 骨架（T055～T060）
+- **US2（Phase 5）**：依賴 US1 的 Worker 與 UI 骨架（T059～T064）
 - **US4、US5（Phase 6、7）**：依賴 US1；兩者可平行
 - **US6（Phase 8）**：依賴 US1；可與 US2、US4、US5 平行（主要改動在 `vite.config.ts`、`src/pwa/`、`src/embed/env.ts`）
 - **Polish（Phase 9）**：所有故事完成後
@@ -346,7 +357,7 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 關鍵路徑
 
-T001 → T007 → Phase 2 測試 → T021～T033 → T034～T037 → T038～T050（評測檢查點）→ T055 → T060 → 其餘故事
+T001 → T007 → Phase 2 測試 → T023～T035 → T036～T039 → T040～T054（評測檢查點）→ T059 → T064 → 其餘故事
 
 ---
 
@@ -356,31 +367,31 @@ T001 → T007 → Phase 2 測試 → T021～T033 → T034～T037 → T038～T050
 
 ```text
 T008 canon、T009 refs、T010 text、T011 fhl、T012 usfm、T013 passages、
-T014 tokenize、T015 bm25、T016 vectors、T017 fusion、T018 hit、T019 search、T020 artifacts
+T014 tokenize、T015 bm25、T016 vectors、T017 fusion、T018 hit、T019 search、T020 artifacts、T021 下載核對、T022 產物完整性
 ```
 
 ### Phase 2 實作（可平行的一組）
 
 ```text
-T021 canon、T022 refs、T023 text、T024 fhl、T025 usfm、T027 tokenize、
-T029 vectors、T030 fusion、T031 hit、T032 artifacts
+T023 canon、T024 refs、T025 text、T026 fhl、T027 usfm、T029 tokenize、
+T031 vectors、T032 fusion、T033 hit、T034 artifacts
 ```
 
 ### US3
 
 ```text
-平行：T038 驗收、T039 選擇規則、T040 embedder、T041 models 守護、T042 queries、T043 arms
-依序：T044 → T045 → T046 → T047 → T048 → T049 → T050
+平行：T040 驗收、T041 選擇規則、T042 embedder、T043 models 守護、T044 模型下載、T045 manifest、T046 queries、T047 arms
+依序：T048 → T049 → T050 → T051 → T052 → T053 → T054
 ```
 
 ### US1
 
 ```text
-平行：T051、T052、T053、T054（測試）；T056、T057、T058、T059（實作）
-依序：T055 → T060
+平行：T055、T056、T057、T058（測試）；T060、T061、T062、T063（實作）
+依序：T059 → T064
 ```
 
-### US4 與 US5 可由不同人同時進行；US6 的測試 T078～T082 可全部平行
+### US4 與 US5 可由不同人同時進行；US6 的測試 T082～T086、T087～T089 可全部平行
 
 ---
 
