@@ -3,3 +3,27 @@
 
 # OS / editor
 .DS_Store
+
+# Node / build
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env*
+
+# Generated data (rebuilt by npm run build:data)
+public/data/
+public/models/
+public/ort/
+.cache/
+
+# Test output
+test-results/
+playwright-report/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+Thumbs.db

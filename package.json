@@ -1,0 +1,43 @@
+{
+  "name": "biblexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BibLexer：離線語意串珠聖經（和合本）",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "test": "vitest run --project unit",
+    "test:data": "vitest run --project data",
+    "test:acceptance": "vitest run --project acceptance",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "build:data": "tsx scripts/build-data.ts",
+    "bench": "tsx bench/run.ts"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.3.0",
+    "opencc-js": "^1.4.2",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@fast-check/vitest": "^0.5.0",
+    "@playwright/test": "^1.63.0",
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^26.6.3",
+    "eslint": "^10.11.0",
+    "fast-check": "^4.10.2",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.1",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^5.0.2"
+  }
+}

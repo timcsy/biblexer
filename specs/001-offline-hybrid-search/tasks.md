@@ -22,13 +22,13 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 **Purpose**：專案初始化與工具設定
 
-- [ ] T001 建立 `package.json`：npm scripts `dev`、`build`、`preview`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`、`build:data`、`bench`；相依套件固定版本 `vite@^8.3`、`vite-plugin-pwa@^1.3`、`@huggingface/transformers@4.3.0`、`preact`、`@preact/preset-vite`、`opencc-js@^1.4.2`；開發相依 `typescript@~6.0.3`、`vitest@^5`、`fast-check@^4`、`@fast-check/vitest`、`@playwright/test@^1.63`、`eslint@^10`、`typescript-eslint@^8.71`、`tsx`；執行 `npm install`
-- [ ] T002 [P] 建立 `tsconfig.json`：`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noImplicitOverride`、`verbatimModuleSyntax`、`isolatedModules`、`moduleResolution: "bundler"`、`jsx: "react-jsx"`、`jsxImportSource: "preact"`
-- [ ] T003 [P] 建立 `vite.config.ts`（Preact preset、`worker: { format: 'es' }`、`optimizeDeps.exclude: ['@huggingface/transformers']`）與 `vitest.config.ts`（專案 `unit`＝`tests/unit/**`＋`tests/property/**`＋`tests/guards/**`，Node 環境；專案 `data`＝`tests/integration/**`，只在 `npm run test:data` 時執行；專案 `acceptance`＝`tests/acceptance/**`，只在 `npm run test:acceptance` 時執行）
-- [ ] T004 [P] 建立 `eslint.config.js`：typescript-eslint strict；`no-restricted-imports` 規定 `@huggingface/transformers` 只能在 `src/embed/embedder.ts` 被 import，且任何檔案都不得 import `pipeline`；`no-restricted-syntax` 禁止呼叫 `pipeline(...)`（原則 4）
-- [ ] T005 [P] 建立 `playwright.config.ts`：只用 Chromium 專案、`serviceWorkers: 'allow'`、`webServer` 執行 `npm run build && npm run preview`（不可用 dev server，因為 dev server 不註冊 Service Worker）
-- [ ] T006 [P] 更新 `.gitignore`：加入 `public/data/`、`public/models/`、`public/ort/`、`.cache/`、`test-results/`、`playwright-report/`、`dist/`
-- [ ] T007 [P] 依 plan.md 建立目錄骨架與進入點：`index.html`、`src/main.tsx`（空白 app）、`src/core/`、`src/embed/`、`src/worker/`、`src/ui/`、`src/pwa/`、`scripts/lib/`、`bench/`、`tests/{unit,property,integration,acceptance,guards}/`、`e2e/`；執行 `npm test`、`npm run lint`、`npm run typecheck` 確認空專案都能跑
+- [X] T001 建立 `package.json`：npm scripts `dev`、`build`、`preview`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`、`build:data`、`bench`；相依套件固定版本 `vite@^8.3`、`vite-plugin-pwa@^1.3`、`@huggingface/transformers@4.3.0`、`preact`、`@preact/preset-vite`、`opencc-js@^1.4.2`；開發相依 `typescript@~6.0.3`、`vitest@^5`、`fast-check@^4`、`@fast-check/vitest`、`@playwright/test@^1.63`、`eslint@^10`、`typescript-eslint@^8.71`、`tsx`；執行 `npm install`
+- [X] T002 [P] 建立 `tsconfig.json`：`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noImplicitOverride`、`verbatimModuleSyntax`、`isolatedModules`、`moduleResolution: "bundler"`、`jsx: "react-jsx"`、`jsxImportSource: "preact"`
+- [X] T003 [P] 建立 `vite.config.ts`（Preact preset、`worker: { format: 'es' }`、`optimizeDeps.exclude: ['@huggingface/transformers']`）與 `vitest.config.ts`（專案 `unit`＝`tests/unit/**`＋`tests/property/**`＋`tests/guards/**`，Node 環境；專案 `data`＝`tests/integration/**`，只在 `npm run test:data` 時執行；專案 `acceptance`＝`tests/acceptance/**`，只在 `npm run test:acceptance` 時執行）
+- [X] T004 [P] 建立 `eslint.config.js`：typescript-eslint strict；`no-restricted-imports` 規定 `@huggingface/transformers` 只能在 `src/embed/embedder.ts` 被 import，且任何檔案都不得 import `pipeline`；`no-restricted-syntax` 禁止呼叫 `pipeline(...)`（原則 4）
+- [X] T005 [P] 建立 `playwright.config.ts`：只用 Chromium 專案、`serviceWorkers: 'allow'`、`webServer` 執行 `npm run build && npm run preview`（不可用 dev server，因為 dev server 不註冊 Service Worker）
+- [X] T006 [P] 更新 `.gitignore`：加入 `public/data/`、`public/models/`、`public/ort/`、`.cache/`、`test-results/`、`playwright-report/`、`dist/`
+- [X] T007 [P] 依 plan.md 建立目錄骨架與進入點：`index.html`、`src/main.tsx`（空白 app）、`src/core/`、`src/embed/`、`src/worker/`、`src/ui/`、`src/pwa/`、`scripts/lib/`、`bench/`、`tests/{unit,property,integration,acceptance,guards}/`、`e2e/`；執行 `npm test`、`npm run lint`、`npm run typecheck` 確認空專案都能跑
 
 ---
 
