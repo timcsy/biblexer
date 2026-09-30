@@ -7,7 +7,7 @@ import { dirname } from 'node:path';
 export const USER_AGENT = 'BibLexer-build/0.1 (+offline Bible search; build-time data fetch)';
 
 export interface ExpectedHash {
-  algo: 'sha1' | 'sha256';
+  algo: 'sha1' | 'sha256' | 'git-blob-sha1';
   value: string;
 }
 
@@ -18,8 +18,11 @@ export interface FetchVerifiedOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** git-blob-sha1：Hugging Face 對非 LFS 小檔公布的 oid（git blob 物件雜湊） */
 export const digest = (algo: ExpectedHash['algo'], data: Uint8Array): string =>
-  createHash(algo).update(data).digest('hex');
+  algo === 'git-blob-sha1'
+    ? createHash('sha1').update(`blob ${data.byteLength}\0`).update(data).digest('hex')
+    : createHash(algo).update(data).digest('hex');
 
 export async function fetchVerified(opts: FetchVerifiedOptions): Promise<{ downloaded: boolean }> {
   const { url, dest, hash } = opts;

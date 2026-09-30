@@ -65,7 +65,11 @@ function findTerm(terms: readonly string[], t: string): number {
 export function bm25Search(idx: KeywordIndex, query: string, topK: number): Ranked[] {
   const scores = new Map<number, number>();
   const { numDocs: N, avgLen, k1, b } = idx;
-  for (const t of new Set(tokenize(query))) {
+  // 查詢含兩字以上的詞段時只用 bigram：中文的意義單位至少是兩字，
+  // 單字（的、很、人…）在口語查詢中幾乎全是雜訊；單字查詢（如「愛」）才用 unigram。
+  const all = tokenize(query);
+  const bigrams = all.filter((t) => [...t].length >= 2);
+  for (const t of new Set(bigrams.length ? bigrams : all)) {
     const ti = findTerm(idx.terms, t);
     if (ti < 0) continue;
     const from = idx.offsets[ti]!, to = idx.offsets[ti + 1]!;

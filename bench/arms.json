@@ -1,0 +1,90 @@
+[
+  {
+    "id": "bge-small-trad", "model": "Xenova/bge-small-zh-v1.5", "revision": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+    "dtype": "q8", "dim": 512, "pooling": "cls", "queryPrefix": "", "passagePrefix": "", "toSimplified": false,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "d590a6643f5dcdd0cfb0477e3c291488c16fc2d7" } },
+      { "path": "tokenizer.json", "hash": { "algo": "git-blob-sha1", "value": "cdb3043fc938fc918c06e66cf704c2ba58f88747" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "3a59388f0fd1bd22dec2ce7902c1be8e1fb84107" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "a8b3208c2884c4efb86e49300fdd3dc877220cdf" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc" } }
+    ]
+  },
+  {
+    "id": "bge-small-trad-instr", "model": "Xenova/bge-small-zh-v1.5", "revision": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+    "dtype": "q8", "dim": 512, "pooling": "cls", "queryPrefix": "为这个句子生成表示以用于检索相关文章：", "passagePrefix": "", "toSimplified": false,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "d590a6643f5dcdd0cfb0477e3c291488c16fc2d7" } },
+      { "path": "tokenizer.json", "hash": { "algo": "git-blob-sha1", "value": "cdb3043fc938fc918c06e66cf704c2ba58f88747" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "3a59388f0fd1bd22dec2ce7902c1be8e1fb84107" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "a8b3208c2884c4efb86e49300fdd3dc877220cdf" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc" } }
+    ]
+  },
+  {
+    "id": "bge-small-simp", "model": "Xenova/bge-small-zh-v1.5", "revision": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+    "dtype": "q8", "dim": 512, "pooling": "cls", "queryPrefix": "", "passagePrefix": "", "toSimplified": true,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "d590a6643f5dcdd0cfb0477e3c291488c16fc2d7" } },
+      { "path": "tokenizer.json", "hash": { "algo": "git-blob-sha1", "value": "cdb3043fc938fc918c06e66cf704c2ba58f88747" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "3a59388f0fd1bd22dec2ce7902c1be8e1fb84107" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "a8b3208c2884c4efb86e49300fdd3dc877220cdf" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc" } }
+    ]
+  },
+  {
+    "id": "granite-97m-trad", "model": "onnx-community/granite-embedding-97m-multilingual-r2-ONNX", "revision": "536a9f241cb3f02a9c5995a1e708c784bd274859",
+    "dtype": "q8", "dim": 384, "pooling": "cls", "queryPrefix": "", "passagePrefix": "", "toSimplified": false,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "86f913c0cb483de787c98af3c97fdcbe546997e1" } },
+      { "path": "tokenizer.json", "hash": { "algo": "sha256", "value": "51947676cae1f991fa51c6b9a24e14ee5460e5f0b9f692f13bb3159829d1592a" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "6a228fd8b96ac3833a7878c92653c9dc4f85ac5d" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "d1a49f7ece7a2cf8ba21f77d97b2413e142ab73b" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "704c1ebca5fbb7cd83ced41827658ac4c9990c64f7f2874d22b78044e5022e22" } }
+    ]
+  },
+  {
+    "id": "granite-97m-simp", "model": "onnx-community/granite-embedding-97m-multilingual-r2-ONNX", "revision": "536a9f241cb3f02a9c5995a1e708c784bd274859",
+    "dtype": "q8", "dim": 384, "pooling": "cls", "queryPrefix": "", "passagePrefix": "", "toSimplified": true,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "86f913c0cb483de787c98af3c97fdcbe546997e1" } },
+      { "path": "tokenizer.json", "hash": { "algo": "sha256", "value": "51947676cae1f991fa51c6b9a24e14ee5460e5f0b9f692f13bb3159829d1592a" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "6a228fd8b96ac3833a7878c92653c9dc4f85ac5d" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "d1a49f7ece7a2cf8ba21f77d97b2413e142ab73b" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "704c1ebca5fbb7cd83ced41827658ac4c9990c64f7f2874d22b78044e5022e22" } }
+    ]
+  },
+  {
+    "id": "jina-v2-zh-trad", "model": "Xenova/jina-embeddings-v2-base-zh", "revision": "7cb68f86f20ff10431b272eb2142f242d911ab5f",
+    "dtype": "q8", "dim": 768, "pooling": "mean", "queryPrefix": "", "passagePrefix": "", "toSimplified": false,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "845bcbb6da5f30ebf8d68f4863e40af0e1851924" } },
+      { "path": "tokenizer.json", "hash": { "algo": "git-blob-sha1", "value": "61287c716716abd7a3096ff2f74a1de6e20d589b" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "742b5d2b49f1a9222693ca4295f3226716f2f2bc" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "d5698132694f4f1bcff08fa7d937b1701812598e" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "0a221ee9e6a6647ccc59cee7bdd26a7b8cf0c0cd3481a65f358d9585a23f02f4" } }
+    ]
+  },
+  {
+    "id": "jina-v2-zh-simp", "model": "Xenova/jina-embeddings-v2-base-zh", "revision": "7cb68f86f20ff10431b272eb2142f242d911ab5f",
+    "dtype": "q8", "dim": 768, "pooling": "mean", "queryPrefix": "", "passagePrefix": "", "toSimplified": true,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "845bcbb6da5f30ebf8d68f4863e40af0e1851924" } },
+      { "path": "tokenizer.json", "hash": { "algo": "git-blob-sha1", "value": "61287c716716abd7a3096ff2f74a1de6e20d589b" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "742b5d2b49f1a9222693ca4295f3226716f2f2bc" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "d5698132694f4f1bcff08fa7d937b1701812598e" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "0a221ee9e6a6647ccc59cee7bdd26a7b8cf0c0cd3481a65f358d9585a23f02f4" } }
+    ]
+  },
+  {
+    "id": "gte-multilingual-trad", "model": "onnx-community/gte-multilingual-base", "revision": "2edbf5e672aab465f9ed4c154a8b61791c082c69",
+    "dtype": "q8", "dim": 768, "pooling": "cls", "queryPrefix": "", "passagePrefix": "", "toSimplified": false, "oversize": true,
+    "files": [
+      { "path": "config.json", "hash": { "algo": "git-blob-sha1", "value": "5bfaa8fb20d838ae21c0342923747dc342c97a2d" } },
+      { "path": "tokenizer.json", "hash": { "algo": "sha256", "value": "3a56def25aa40facc030ea8b0b87f3688e4b3c39eb8b45d5702b3a1300fe2a20" } },
+      { "path": "tokenizer_config.json", "hash": { "algo": "git-blob-sha1", "value": "9b34bdaff958c3af7ffd359f71ee05fe7651e3fa" } },
+      { "path": "special_tokens_map.json", "hash": { "algo": "git-blob-sha1", "value": "b1879d702821e753ffe4245048eee415d54a9385" } },
+      { "path": "onnx/model_quantized.onnx", "hash": { "algo": "sha256", "value": "ab2bd164ebd8ca9003dc49a981b611e849b5d326f504c8873ba76e07fa6c0082" } }
+    ]
+  }
+]

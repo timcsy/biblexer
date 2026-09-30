@@ -13,7 +13,7 @@ const arm = {
   id: 'bge-small-trad',
   model: 'Xenova/bge-small-zh-v1.5',
   revision: 'r1',
-  dtype: 'q8',
+  dtype: 'q8' as const,
   dim: 512,
   pooling: 'cls' as const,
   queryPrefix: '',
@@ -28,7 +28,7 @@ describe('composeManifest', () => {
     expect(m.model).toEqual({
       id: 'Xenova/bge-small-zh-v1.5',
       revision: 'r1',
-      dtype: 'q8',
+      dtype: 'q8' as const,
       dim: 512,
       pooling: 'cls',
       queryPrefix: '',

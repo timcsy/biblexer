@@ -141,22 +141,22 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T046 [P] [US3] 建立 `bench/queries.json`：7 筆驗收查詢（與 `knowledge/vision.md` 階段 1、data-model 的表格一致），另加 5～8 筆 `heldOut: true` 的保留查詢；經文以信望愛 `engs` 代碼加 `章:節` 表示
-- [ ] T047 [P] [US3] 建立 `bench/arms.json` 並固定 HF revision。要包含的臂：
+- [X] T046 [P] [US3] 建立 `bench/queries.json`：7 筆驗收查詢（與 `knowledge/vision.md` 階段 1、data-model 的表格一致），另加 5～8 筆 `heldOut: true` 的保留查詢；經文以信望愛 `engs` 代碼加 `章:節` 表示
+- [X] T047 [P] [US3] 建立 `bench/arms.json` 並固定 HF revision。要包含的臂：
   - `Xenova/bge-small-zh-v1.5`：繁體、繁體＋查詢指令、轉簡體
   - `onnx-community/granite-embedding-97m-multilingual-r2`：繁體、轉簡體
   - `Xenova/jina-embeddings-v2-base-zh`：繁體、轉簡體
   - `onnx-community/gte-multilingual-base`：只作品質上限參考，標記 `oversize: true`
-- [ ] T048 [US3] 建立 `scripts/fetch-models.ts`：依 `bench/arms.json` 下載每個模型在固定 revision 的 `config.json`、`tokenizer*.json`、`onnx/model_quantized.onnx` 到 `.cache/models/`，並核對 sha256；確認 T044 通過
-- [ ] T049 [US3] 在 `src/embed/embedder.ts` 實作 embedder，並確認 T042 通過：
+- [X] T048 [US3] 建立 `scripts/fetch-models.ts`：依 `bench/arms.json` 下載每個模型在固定 revision 的 `config.json`、`tokenizer*.json`、`onnx/model_quantized.onnx` 到 `.cache/models/`，並核對 sha256；確認 T044 通過
+- [X] T049 [US3] 在 `src/embed/embedder.ts` 實作 embedder，並確認 T042 通過：
   - 這是唯一 import `@huggingface/transformers` 的檔案，只用 `AutoTokenizer` 與 `AutoModel`，不用 `pipeline`
   - 支援 `pooling`、`queryPrefix`、`toSimplified`（`opencc-js/t2cn`，`{from:'tw', to:'cn'}`，逐字轉換）
   - Node 與瀏覽器共用
   - `toSimplified=true` 時，轉換器在 embedder 初始化時載入（不是延遲載入）
-- [ ] T050 [US3] 在 `src/embed/env.ts` 實作離線設定：`allowRemoteModels = false`、`allowLocalModels = true`、`localModelPath`、`backends.onnx.wasm.wasmPaths = '/ort/'`；Node 端以 `.cache/models/` 為模型路徑
-- [ ] T051 [US3] 建立 `scripts/build-vectors.ts`：以指定臂的模型在 Node 計算所有檢索單元的 int8 向量，輸出到 `.cache/bench/<armId>/vectors.bin`；批次大小 32（依賴 T031、T038、T049）
-- [ ] T052 [US3] 在 `bench/run.ts` 實作評測主程式：對每個臂建立向量後，以 `src/core/search.ts` 跑全部查詢，輸出 `bench/report.json` 與 `bench/report.md`（格式見 contracts/benchmark.md），並依選擇規則標示選中的臂；`report.md` 另附每臂在 Node 上的 `search()` 延遲中位數（僅供參考，不寫入 report.json）；確認 T041 通過（依賴 T033、T035、T051）
-- [ ] T053 [US3] 建立 `scripts/write-manifest.ts`：依 `bench/report.json` 選中的臂，把該臂的向量複製成 `public/data/vectors.<hash>.bin`、模型檔複製到 `public/models/`，並寫出 `public/data/manifest.json`（含 `model`、`segmentation`、`sources`）；若選中轉簡體的臂，一併準備 `opencc-js/t2cn` 轉換器隨模型預先下載（research R6 例外）；確認 T043、T045 通過
+- [X] T050 [US3] 在 `src/embed/env.ts` 實作離線設定：`allowRemoteModels = false`、`allowLocalModels = true`、`localModelPath`、`backends.onnx.wasm.wasmPaths = '/ort/'`；Node 端以 `.cache/models/` 為模型路徑
+- [X] T051 [US3] 建立 `scripts/build-vectors.ts`：以指定臂的模型在 Node 計算所有檢索單元的 int8 向量，輸出到 `.cache/bench/<armId>/vectors.bin`；批次大小 32（依賴 T031、T038、T049）
+- [X] T052 [US3] 在 `bench/run.ts` 實作評測主程式：對每個臂建立向量後，以 `src/core/search.ts` 跑全部查詢，輸出 `bench/report.json` 與 `bench/report.md`（格式見 contracts/benchmark.md），並依選擇規則標示選中的臂；`report.md` 另附每臂在 Node 上的 `search()` 延遲中位數（僅供參考，不寫入 report.json）；確認 T041 通過（依賴 T033、T035、T051）
+- [X] T053 [US3] 建立 `scripts/write-manifest.ts`：依 `bench/report.json` 選中的臂，把該臂的向量複製成 `public/data/vectors.<hash>.bin`、模型檔複製到 `public/models/`，並寫出 `public/data/manifest.json`（含 `model`、`segmentation`、`sources`）；若選中轉簡體的臂，一併準備 `opencc-js/t2cn` 轉換器隨模型預先下載（research R6 例外）；確認 T043、T045 通過
 - [ ] T054 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T040 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**
 
 **Checkpoint**：已選定模型且驗收 7/7。之後才開始做介面。

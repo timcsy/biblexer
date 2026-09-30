@@ -44,3 +44,14 @@ test.prop([docs, query])('序列化後讀回，查詢結果相同', (ds, q) => {
   const back = deserializeKeywordIndex(serializeKeywordIndex(idx));
   expect(bm25Search(back, q, 50)).toEqual(bm25Search(idx, q, 50));
 });
+
+test('查詢含兩字以上的詞段時只比對 bigram：只共享單字的文件不出現（避免「的」「很」等常用字成為雜訊）', () => {
+  const idx = buildKeywordIndex(['房屋的價值', '心裡焦慮不安', '很好']);
+  const ids = bm25Search(idx, '房貸焦慮', 10).map((r) => r.id);
+  expect(ids).toEqual([1]);
+});
+
+test('單字查詢仍以 unigram 比對', () => {
+  const idx = buildKeywordIndex(['神愛世人', '世人']);
+  expect(bm25Search(idx, '愛', 10).map((r) => r.id)).toEqual([0]);
+});

@@ -1,0 +1,91 @@
+// npm run bench：以固定查詢比較候選臂，輸出 bench/report.json 與 report.md（contracts/benchmark.md）
+import { statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { buildCorpus } from '../src/core/search.ts';
+import { serializeVectorStore } from '../src/core/vectors.ts';
+import { MODELS_CACHE, fetchModel } from '../scripts/fetch-models.ts';
+import { buildVectors } from '../scripts/build-vectors.ts';
+import { PUBLIC_DIR } from '../scripts/lib/paths.ts';
+import { evaluate, loadArms, loadDataset, loadQueries, makeEmbedder, type Arm } from './lib.ts';
+import { REQUIRED_HITS, SIZE_LIMIT_BYTES, buildReport, meanBestRank, selectArm, type ArmSummary } from './select.ts';
+
+const T2CN_BYTES = 452 * 1024; // opencc-js t2cn gzip 後約 452 KB（research R6）
+
+async function main() {
+  const only = process.argv.includes('--arm') ? process.argv[process.argv.indexOf('--arm') + 1] : undefined;
+  const arms = loadArms().filter((a) => !only || a.id === only);
+  const queries = loadQueries();
+  const ds = loadDataset(PUBLIC_DIR);
+  const baseBytes = Object.entries(ds.manifest.files).filter(([k]) => k !== 'vectors').reduce((a, [, f]) => a + f.bytes, 0);
+
+  const results: Array<{ armId: string; queryId: string; bestRank: number | null }> = [];
+  const summary: ArmSummary[] = [];
+  const latency: Record<string, number> = {};
+
+  for (const arm of arms) {
+    console.log(`== ${arm.id}`);
+    const root = await fetchModel(arm);
+    const modelBytes = arm.files.reduce((a, f) => a + statSync(join(root, f.path)).size, 0);
+    const embedder = await makeEmbedder(arm, MODELS_CACHE);
+    const vectors = await buildVectors(arm, ds.manifest.dataVersion, ds.unitTexts, embedder);
+    const corpus = buildCorpus({ ...ds.corpusParts, vectors });
+    const { results: qr, latenciesMs } = await evaluate(corpus, ds.verses, embedder, queries);
+    for (const r of qr) results.push({ armId: arm.id, queryId: r.queryId, bestRank: r.bestRank });
+    const acc = qr.filter((r) => !r.heldOut);
+    const held = qr.filter((r) => r.heldOut);
+    const hit = (r: { bestRank: number | null }) => r.bestRank !== null && r.bestRank <= 5;
+    summary.push({
+      armId: arm.id,
+      hits: acc.filter(hit).length,
+      meanBestRank: Math.round(meanBestRank(acc.map((r) => r.bestRank)) * 1000) / 1000,
+      heldOutHits: held.filter(hit).length,
+      sizeBytes: baseBytes + modelBytes + serializeVectorStore(vectors).byteLength + (arm.toSimplified ? T2CN_BYTES : 0),
+    });
+    latency[arm.id] = [...latenciesMs].sort((a, b) => a - b)[Math.floor(latenciesMs.length / 2)]!;
+    console.log(`   命中 ${summary.at(-1)!.hits}/${acc.length}；保留查詢 ${summary.at(-1)!.heldOutHits}/${held.length}`);
+  }
+
+  const { selected, reason } = selectArm(summary, { sizeLimitBytes: SIZE_LIMIT_BYTES, required: REQUIRED_HITS });
+  const armMeta = arms.map(({ files: _f, ...rest }) => rest);
+  writeFileSync(join(import.meta.dirname, 'report.json'), buildReport({ dataVersion: ds.manifest.dataVersion, arms: armMeta, results, summary, selected, reason }));
+  writeFileSync(join(import.meta.dirname, 'report.md'), renderMarkdown(arms, queries.map((q) => q.id), queries.filter((q) => q.heldOut).map((q) => q.id), results, summary, selected, reason, latency));
+  console.log(`\n選中：${selected ?? '（無）'}——${reason}`);
+}
+
+function renderMarkdown(
+  arms: Arm[],
+  queryIds: string[],
+  heldOut: string[],
+  results: Array<{ armId: string; queryId: string; bestRank: number | null }>,
+  summary: ArmSummary[],
+  selected: string | null,
+  reason: string,
+  latency: Record<string, number>,
+): string {
+  const mb = (b: number) => (b / 1024 / 1024).toFixed(1);
+  const cell = (armId: string, q: string) => {
+    const r = results.find((x) => x.armId === armId && x.queryId === q)?.bestRank ?? null;
+    return r !== null && r <= 5 ? String(r) : `✗${r === null ? '' : `(${r})`}`;
+  };
+  const sorted = [...arms].sort((a, b) => a.id.localeCompare(b.id));
+  const head = ['臂', ...queryIds.map((q) => (heldOut.includes(q) ? `*${q}` : q)), '命中', '平均名次', '保留命中', '下載 MB', '≤200MB', 'Node 延遲中位數 ms', '選中'];
+  const rows = sorted.map((a) => {
+    const s = summary.find((x) => x.armId === a.id)!;
+    return [a.id, ...queryIds.map((q) => cell(a.id, q)), `${s.hits}/7`, s.meanBestRank.toFixed(2), `${s.heldOutHits}/${heldOut.length}`, mb(s.sizeBytes), s.sizeBytes <= SIZE_LIMIT_BYTES ? '✓' : '✗', (latency[a.id] ?? 0).toFixed(0), a.id === selected ? '★' : ''];
+  });
+  return [
+    '# 評測報告',
+    '',
+    '表格中的數字是期望經文的最佳名次（前 5 名以內才算命中；✗ 後括號為實際名次）。* 開頭為保留查詢，只供參考，不影響選擇。',
+    'Node 延遲中位數僅供參考（SC-004 以手機實測為準），不寫入 report.json。',
+    '',
+    `| ${head.join(' | ')} |`,
+    `| ${head.map(() => '---').join(' | ')} |`,
+    ...rows.map((r) => `| ${r.join(' | ')} |`),
+    '',
+    `**選中**：${selected ?? '（無）'}——${reason}`,
+    '',
+  ].join('\n');
+}
+
+await main();
