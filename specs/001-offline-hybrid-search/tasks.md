@@ -40,48 +40,48 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T008 [P] 在 `tests/unit/canon.test.ts` 撰寫正典測試：恰好 66 卷；創～瑪為 `OT`、太～啟為 `NT`；分類依 FR-015：律法書「創～申」、舊約歷史書「書～斯」、詩歌智慧書「伯～歌」、先知書「賽～瑪，含耶利米哀歌」、福音書「太～約」、新約歷史書「徒」、書信「羅～猶」、啟示「啟」；每卷恰屬一約一類別
-- [ ] T009 [P] 在 `tests/unit/refs.test.ts` 與 `tests/property/refs.prop.test.ts` 撰寫經節參照測試：VerseRef 依正典順序比較；VerseRange 滿足 `start ≤ end`；`overlaps` 對稱、自反，且與「共有至少一節」等價
-- [ ] T010 [P] 在 `tests/unit/text.test.ts` 撰寫經文正規化測試，涵蓋 research R1 實例：
+- [X] T008 [P] 在 `tests/unit/canon.test.ts` 撰寫正典測試：恰好 66 卷；創～瑪為 `OT`、太～啟為 `NT`；分類依 FR-015：律法書「創～申」、舊約歷史書「書～斯」、詩歌智慧書「伯～歌」、先知書「賽～瑪，含耶利米哀歌」、福音書「太～約」、新約歷史書「徒」、書信「羅～猶」、啟示「啟」；每卷恰屬一約一類別
+- [X] T009 [P] 在 `tests/unit/refs.test.ts` 與 `tests/property/refs.prop.test.ts` 撰寫經節參照測試：VerseRef 依正典順序比較；VerseRange 滿足 `start ≤ end`；`overlaps` 對稱、自反，且與「共有至少一節」等價
+- [X] T010 [P] 在 `tests/unit/text.test.ts` 撰寫經文正規化測試，涵蓋 research R1 實例：
   - `searchText` 移除 `（…）`、`【…】`、`〈…〉` 譯註，並能容錯殘缺括號（如「（倘或.」「﹞）」）
   - 移除 `─` 與「　神」前的全形空白
   - 人名間隔點 `‧` `•` `．` 統一為 `‧`
   - `display` 保留原樣
   - `notes` 取出譯註文字（如「原文是婦人」）
   - 驗證規則：「`searchText` 不得含 `（` `【` `〈` 及 `"a"` 佔位」
-- [ ] T011 [P] 在 `tests/unit/fhl.test.ts` 撰寫信望愛解析測試：
+- [X] T011 [P] 在 `tests/unit/fhl.test.ts` 撰寫信望愛解析測試：
   - 移除 Strong's 標記 `<[^>]*>` 與 `\{[^}]*\}`
   - `txt == "a"` 的列轉為 `mergedInto` 前一節（驗證規則：「`mergedInto` 的目標必須是同章前一節」）
   - 11 節異文經節（太 18:11、23:14；可 7:16、15:28；路 17:36、23:17；約 5:4；徒 8:37、15:34、24:7、28:29）標為 `variant`
-- [ ] T012 [P] 在 `tests/unit/usfm.test.ts` 撰寫 USFM 分段解析測試：
+- [X] T012 [P] 在 `tests/unit/usfm.test.ts` 撰寫 USFM 分段解析測試：
   - 解析 `\c`、`\v`、`\p`、`\b`、`\m`
   - 忽略 `\s*`、`\r`、`\d` 標題（FR-011a）
   - `\v 29-30` 產生範圍
   - 每個分段標記對應到其後第一個經節
-- [ ] T013 [P] 在 `tests/property/passages.prop.test.ts` 撰寫段落與檢索單元的性質測試：
+- [X] T013 [P] 在 `tests/property/passages.prop.test.ts` 撰寫段落與檢索單元的性質測試：
   - 段落是全部經節的劃分（每節恰屬一段）
   - 段落不跨章，章首一律是段落起點
   - 段落長度 ≤ `MAX_PASSAGE_VERSES = 12`
   - 檢索單元為段落內 3 節視窗、步長 2；段落 ≤ 3 節時即整段
   - 單元聯集涵蓋段落所有經節
   - 每個段落帶 `segmentation` id
-- [ ] T014 [P] 在 `tests/property/tokenize.prop.test.ts` 撰寫斷詞測試：輸出為字元 unigram 加 bigram；不含標點與空白；具決定性
-- [ ] T015 [P] 在 `tests/property/bm25.prop.test.ts` 撰寫 BM25 性質測試（contracts/search-api.md）：
+- [X] T014 [P] 在 `tests/property/tokenize.prop.test.ts` 撰寫斷詞測試：輸出為字元 unigram 加 bigram；不含標點與空白；具決定性
+- [X] T015 [P] 在 `tests/property/bm25.prop.test.ts` 撰寫 BM25 性質測試（contracts/search-api.md）：
   - 與單元沒有共同 token 時，該單元不出現在結果中
   - 同長度下，含完整查詢字串的單元分數 ≥ 只含部分 token 的單元
   - 結果依分數遞減排列，同分時以 id 決勝
   - 索引序列化後再讀回，查詢結果相同
-- [ ] T016 [P] 在 `tests/property/vectors.prop.test.ts` 撰寫向量性質測試：
+- [X] T016 [P] 在 `tests/property/vectors.prop.test.ts` 撰寫向量性質測試：
   - int8 量化誤差 ≤ `scale/2` 每維
   - `dotInt8` 與 float32 內積的差距在量化誤差上界內
   - `semanticSearch` 的 topK 遞減排列、id 唯一
   - `vectors.bin` 序列化後再讀回結果相同
-- [ ] T017 [P] 在 `tests/property/fusion.prop.test.ts` 撰寫融合性質測試：
+- [X] T017 [P] 在 `tests/property/fusion.prop.test.ts` 撰寫融合性質測試：
   - `rrf`（k=60）輸出的 id 唯一
   - 某 id 在任一輸入清單中名次提前時，它的融合名次不會變差
   - `aggregateToPassages` 輸出的 passage id 唯一，名次由該段落最高分的單元決定
-- [ ] T018 [P] 在 `tests/unit/hit.test.ts` 撰寫命中判定測試（FR-024）：結果段落與任一期望範圍重疊即命中；查詢在前 5 名內有任一結果命中即算命中；回傳最佳命中名次，沒有命中時為 null
-- [ ] T019 [P] 在 `tests/unit/search.test.ts` 以小型假資料撰寫 `search()` 測試：
+- [X] T018 [P] 在 `tests/unit/hit.test.ts` 撰寫命中判定測試（FR-024）：結果段落與任一期望範圍重疊即命中；查詢在前 5 名內有任一結果命中即算命中；回傳最佳命中名次，沒有命中時為 null
+- [X] T019 [P] 在 `tests/unit/search.test.ts` 以小型假資料撰寫 `search()` 測試：
   - 結果物件不含任何分數欄位（原則 6）
   - `contextRange` 為段落前後各 `CONTEXT_VERSES = 2` 節，且不跨章
   - 同一段落不重複
@@ -93,9 +93,9 @@ description: "離線混合檢索（全本和合本）的任務清單"
   - 空白或只有標點的查詢不搜尋
   - 關鍵字在語料中完全不存在時，仍回傳語意結果
   - 相鄰段落各自為一筆結果、不合併，同一節經文不會是兩筆結果的主體
-- [ ] T020 [P] 在 `tests/unit/artifacts.test.ts` 撰寫資料產物讀寫測試：`passages.bin`、`units.bin` 的 Int32 小端序格式，以及 `verses.json` 陣列格式與 `flags` 位元（1=merged、2=variant），寫入後讀回結果相同（contracts/data-artifacts.md）
-- [ ] T021 [P] 在 `tests/unit/fetch-verify.test.ts` 撰寫下載核對測試（以假 fetch 注入）：雜湊不符時拒絕並刪除檔案；請求帶自訂 User-Agent；快取中已有且雜湊正確時不重新下載
-- [ ] T022 [P] 在 `tests/integration/data-build.test.ts` 撰寫建置產物完整性測試（`npm run test:data`，在 `build:data` 之前執行必須失敗）：恰 66 卷、1,189 章、31,103 節；71 個合併節皆有 `mergedInto`；11 節異文皆標為 variant 且歸入前一節所屬段落；每節恰屬一段；產物中不含任何段落標題文字；manifest 各檔 `bytes` 與實際檔案相符
+- [X] T020 [P] 在 `tests/unit/artifacts.test.ts` 撰寫資料產物讀寫測試：`passages.bin`、`units.bin` 的 Int32 小端序格式，以及 `verses.json` 陣列格式與 `flags` 位元（1=merged、2=variant），寫入後讀回結果相同（contracts/data-artifacts.md）
+- [X] T021 [P] 在 `tests/unit/fetch-verify.test.ts` 撰寫下載核對測試（以假 fetch 注入）：雜湊不符時拒絕並刪除檔案；請求帶自訂 User-Agent；快取中已有且雜湊正確時不重新下載
+- [X] T022 [P] 在 `tests/integration/data-build.test.ts` 撰寫建置產物完整性測試（`npm run test:data`，在 `build:data` 之前執行必須失敗）：恰 66 卷、1,189 章、31,103 節；71 個合併節皆有 `mergedInto`；11 節異文皆標為 variant 且歸入前一節所屬段落；每節恰屬一段；產物中不含任何段落標題文字；manifest 各檔 `bytes` 與實際檔案相符
 
 ### 實作（讓上面的測試通過）
 
