@@ -129,15 +129,15 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T040 [P] [US3] 在 `tests/acceptance/benchmark.test.ts` 撰寫驗收測試：讀取 `public/data/manifest.json` 選定的臂，以完整混合檢索跑 `bench/queries.json` 中 `heldOut: false` 的 7 筆查詢，斷言 7 筆全部命中。尚未有資料與模型時，這個測試必須失敗（Red）
-- [ ] T041 [P] [US3] 在 `tests/unit/bench-select.test.ts` 撰寫選擇規則與報告測試（research R3）：
+- [X] T040 [P] [US3] 在 `tests/acceptance/benchmark.test.ts` 撰寫驗收測試：讀取 `public/data/manifest.json` 選定的臂，以完整混合檢索跑 `bench/queries.json` 中 `heldOut: false` 的 7 筆查詢，斷言 7 筆全部命中。尚未有資料與模型時，這個測試必須失敗（Red）
+- [X] T041 [P] [US3] 在 `tests/unit/bench-select.test.ts` 撰寫選擇規則與報告測試（research R3）：
   - 選擇順序：大小 ≤ 200 MB → 命中數最高 → 平均最佳名次較佳 → 較小者
   - 報告不含時間戳記，同一輸入序列化後逐位元相同
   - 沒有任何臂達到 7/7 時，`selected` 為 null 並回報原因
-- [ ] T042 [P] [US3] 在 `tests/unit/embedder.test.ts` 撰寫 embedder 設定測試（以假模型注入）：`queryPrefix` 只加在查詢端；`toSimplified` 只影響送進模型的文字；pooling 依設定使用 CLS 或 mean；輸出經過 L2 正規化
-- [ ] T043 [P] [US3] 在 `tests/guards/models-dir.test.ts` 撰寫守護測試：`public/models/` 只含 manifest 指定的那一個 embedding 模型檔案組（原則 4）
-- [ ] T044 [P] [US3] 在 `tests/unit/fetch-models.test.ts` 撰寫模型下載測試（以假 fetch 注入）：URL 使用 `bench/arms.json` 的固定 revision；每個檔案核對 sha256，不符時拒絕
-- [ ] T045 [P] [US3] 在 `tests/unit/manifest.test.ts` 撰寫 manifest 產生測試：依 report 的 `selected` 臂寫入 `model`（id、revision、dtype、dim、pooling、queryPrefix、toSimplified）與 `segmentation`；各檔 `bytes` 與雜湊檔名正確；`selected` 為 null 時拋出錯誤
+- [X] T042 [P] [US3] 在 `tests/unit/embedder.test.ts` 撰寫 embedder 設定測試（以假模型注入）：`queryPrefix` 只加在查詢端；`toSimplified` 只影響送進模型的文字；pooling 依設定使用 CLS 或 mean；輸出經過 L2 正規化
+- [X] T043 [P] [US3] 在 `tests/guards/models-dir.test.ts` 撰寫守護測試：`public/models/` 只含 manifest 指定的那一個 embedding 模型檔案組（原則 4）
+- [X] T044 [P] [US3] 在 `tests/unit/fetch-models.test.ts` 撰寫模型下載測試（以假 fetch 注入）：URL 使用 `bench/arms.json` 的固定 revision；每個檔案核對 sha256，不符時拒絕
+- [X] T045 [P] [US3] 在 `tests/unit/manifest.test.ts` 撰寫 manifest 產生測試：依 report 的 `selected` 臂寫入 `model`（id、revision、dtype、dim、pooling、queryPrefix、toSimplified）與 `segmentation`；各檔 `bytes` 與雜湊檔名正確；`selected` 為 null 時拋出錯誤
 
 ### 實作
 
