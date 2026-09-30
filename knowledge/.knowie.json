@@ -1,0 +1,15 @@
+{
+  "version": "0.7.6",
+  "structureVersion": "2",
+  "language": "zh-TW",
+  "createdAt": "2026-09-30T01:07:06.558Z",
+  "tools": [
+    "agents-md",
+    "speckit"
+  ],
+  "skillDirs": [
+    ".agents/skills",
+    ".claude/skills"
+  ],
+  "updatedAt": "2026-09-30T01:07:06.565Z"
+}

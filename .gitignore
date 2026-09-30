@@ -1,0 +1,5 @@
+# Local agent settings (may contain personal config / credentials)
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
