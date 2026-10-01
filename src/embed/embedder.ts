@@ -77,7 +77,9 @@ export interface TransformersBackendOptions {
   localModelPath: string;
   dtype: 'q8' | 'fp32' | 'fp16' | 'q4';
   /** 瀏覽器端 ONNX Runtime WASM 的同源路徑 */
-  wasmPaths?: string;
+  wasmPaths?: string | { mjs: string; wasm: string };
+  /** 模型檔的快取（瀏覽器端由 BibLexer 自己的 Cache Storage 提供，避免重複儲存） */
+  cache?: { match(request: string): Promise<Response | undefined>; put(request: string, response: Response): Promise<void> };
   device?: 'wasm' | 'webgpu' | 'cpu';
   maxLength?: number;
 }
@@ -94,6 +96,13 @@ export async function loadTransformersBackend(opts: TransformersBackendOptions):
   env.localModelPath = opts.localModelPath;
   const wasm = env.backends.onnx.wasm;
   if (opts.wasmPaths && wasm) wasm.wasmPaths = opts.wasmPaths;
+  // 快取由 BibLexer 統一管理（research R7），transformers.js 不再另存一份
+  env.useBrowserCache = false;
+  env.useWasmCache = false;
+  if (opts.cache) {
+    env.useCustomCache = true;
+    env.customCache = opts.cache;
+  }
 
   const tokenizer = await AutoTokenizer.from_pretrained(opts.modelId);
   const model = await AutoModel.from_pretrained(opts.modelId, {

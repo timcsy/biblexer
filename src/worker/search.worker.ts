@@ -1,14 +1,17 @@
 /// <reference lib="webworker" />
 import { createEmbedder, loadTransformersBackend } from '../embed/embedder.ts';
-import { BROWSER_MODEL_PATH, BROWSER_WASM_PATH } from '../embed/env.ts';
+import { BROWSER_MODEL_PATH, ortFiles, ortVariant } from '../embed/env.ts';
 import { loadToSimplified } from '../embed/simplify.ts';
 import { createEngine } from './engine.ts';
 import { handleMessage, type WorkerIn, type WorkerOut } from './protocol.ts';
 
 const post = (m: WorkerOut) => postMessage(m);
 
+// 先查 BibLexer 的 Cache Storage（離線時資料都在這裡），沒有才走網路
+const cachedOrFetch = async (url: string): Promise<Response> => (await caches.match(url)) ?? fetch(url);
+
 async function fetchBytes(url: string, onProgress?: (loaded: number, total: number) => void): Promise<Uint8Array> {
-  const res = await fetch(url);
+  const res = await cachedOrFetch(url);
   if (!res.ok) throw new Error(`讀取失敗 ${res.status}：${url}`);
   const total = Number(res.headers.get('content-length') ?? 0);
   if (!res.body || !onProgress) return new Uint8Array(await res.arrayBuffer());
@@ -38,7 +41,8 @@ const engine = createEngine({
     const backend = await loadTransformersBackend({
       modelId: model.id,
       localModelPath: BROWSER_MODEL_PATH,
-      wasmPaths: BROWSER_WASM_PATH,
+      wasmPaths: ortFiles(ortVariant(navigator.userAgent, 'gpu' in navigator)),
+      cache: { match: async (r) => caches.match(r), put: async () => {} },
       dtype: model.dtype,
       device: 'wasm',
     });

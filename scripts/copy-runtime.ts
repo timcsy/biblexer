@@ -12,8 +12,8 @@ export function ortSource(): { dir: string; version: string; expected: string } 
   return { dir: join(dir, 'dist'), version, expected };
 }
 
-/** 只複製 WASM 執行檔與其載入器（ort-wasm-*.wasm / *.mjs） */
-export const isRuntimeFile = (f: string): boolean => /^ort-wasm-simd-threaded.*\.(wasm|mjs)$/.test(f);
+/** 只複製會用到的兩組：asyncify（預設）與一般版（Safari 26 以前），見 src/embed/env.ts 的 ortVariant */
+export const isRuntimeFile = (f: string): boolean => /^ort-wasm-simd-threaded(\.asyncify)?\.(wasm|mjs)$/.test(f);
 
 export function copyRuntime(): string[] {
   const { dir, version, expected } = ortSource();

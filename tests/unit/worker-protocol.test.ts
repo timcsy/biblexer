@@ -5,6 +5,7 @@ import { ERROR_CODES, handleMessage, type Engine, type WorkerOut } from '../../s
 function fakeEngine(over: Partial<Engine> = {}): Engine {
   return {
     init: vi.fn(async () => ({ keyword: true, semantic: true })),
+    loadSemantic: vi.fn(async () => ({ keyword: true, semantic: true })),
     search: vi.fn(async () => ({ results: [], total: 0, counts: { testament: {}, category: {} }, semanticReady: true, truncated: false, reference: null, expansions: [], granularity: 'passage' as const })),
     chapter: vi.fn(async () => ({ label: '', verses: [], passageStarts: [] })),
     ...over,
@@ -31,4 +32,17 @@ describe('Worker 協定', () => {
     expect(out[0]).toMatchObject({ type: 'error', id: 3, code: 'INTERNAL' });
     expect(ERROR_CODES).toEqual(['NOT_DOWNLOADED', 'QUOTA', 'CORRUPT', 'INTERNAL']);
   });
+
+  test('init 可延後語意（semantic: false）；之後以 loadSemantic 載入並回報 ready', async () => {
+    const out: WorkerOut[] = [];
+    const e = fakeEngine({ init: vi.fn(async () => ({ keyword: true, semantic: false })) });
+    await handleMessage(e, { type: 'init', manifestUrl: '/data/manifest.json', semantic: false }, (m) => out.push(m));
+    expect(e.init).toHaveBeenCalledWith('/data/manifest.json', expect.any(Function), false);
+    await handleMessage(e, { type: 'loadSemantic' }, (m) => out.push(m));
+    expect(out).toEqual([
+      { type: 'ready', keyword: true, semantic: false },
+      { type: 'ready', keyword: true, semantic: true },
+    ]);
+  });
 });
+

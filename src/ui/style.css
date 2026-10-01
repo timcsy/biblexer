@@ -52,3 +52,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .chapter-head h2 { font-size: 1.1rem; margin: 0; color: var(--accent); }
 .chapter .verse.para { margin-top: 0.9rem; }
 .chapter .verse.hit { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 0.3rem; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.4rem 0.6rem; border-radius: 0.4rem; background: var(--card); border: 1px solid var(--line); margin-bottom: 0.8rem; }
+.banner progress { flex: 1 1 8rem; }
+.banner.ok { color: var(--accent); }
+.banner.ok small { color: var(--muted); }
+.banner.warn { border-color: var(--accent); color: var(--accent); }

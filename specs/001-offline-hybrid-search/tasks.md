@@ -339,14 +339,14 @@ description: "離線混合檢索（全本和合本）的任務清單"
 ### 實作
 
 - [X] T101 [US6] 建立 `scripts/copy-runtime.ts`：把 `onnxruntime-web` 的 `.wasm` 與 `.mjs` 複製到 `public/ort/`，版本須與 `@huggingface/transformers` 的相依一致；接進 `npm run build:data`；確認 T099 通過
-- [ ] T102 [US6] 在 `vite.config.ts` 設定 vite-plugin-pwa：
+- [X] T102 [US6] 在 `vite.config.ts` 設定 vite-plugin-pwa：
   - precache app shell 與 `public/data/` 中除了 `vectors.*` 以外的檔案
   - `runtimeCaching` 以 `CacheFirst` 處理 `/models/**`、`/ort/**`、`/data/vectors.*`
   - 調整 `maximumFileSizeToCacheInBytes`
   - 補上 manifest（名稱 BibLexer、繁體中文）
-- [ ] T103 [US6] 在 `src/pwa/download.ts` 實作模型與向量的串流下載：回報進度、存入有版本號的 Cache Storage、成功後呼叫 `navigator.storage.persist()`；確認 T093 通過
-- [ ] T104 [US6] 在 `src/ui/ProgressBanner.tsx` 實作載入狀態 UI，狀態依 data-model 的載入狀態轉換（未安裝 → 關鍵字可用 → 完全就緒；未下載又離線時顯示說明）；提示使用者安裝到主畫面以避免被瀏覽器清除；確認 T094、T097、T098 通過
-- [ ] T105 [US6] 執行 `npm run build` 與 `npm run e2e`，確認 T095、T096、T100 通過。若發現對外請求（例如 jsdelivr 或 Hugging Face），修正 `src/embed/env.ts` 或快取設定，不可放寬測試
+- [X] T103 [US6] 在 `src/pwa/download.ts` 實作模型與向量的串流下載：回報進度、存入有版本號的 Cache Storage、成功後呼叫 `navigator.storage.persist()`；確認 T093 通過
+- [X] T104 [US6] 在 `src/ui/ProgressBanner.tsx` 實作載入狀態 UI，狀態依 data-model 的載入狀態轉換（未安裝 → 關鍵字可用 → 完全就緒；未下載又離線時顯示說明）；提示使用者安裝到主畫面以避免被瀏覽器清除；確認 T094、T097、T098 通過
+- [X] T105 [US6] 執行 `npm run build` 與 `npm run e2e`，確認 T095、T096、T100 通過。若發現對外請求（例如 jsdelivr 或 Hugging Face），修正 `src/embed/env.ts` 或快取設定，不可放寬測試
 
 ---
 

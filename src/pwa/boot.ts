@@ -1,0 +1,100 @@
+// 開機流程（data-model「狀態轉換：應用程式載入」、FR-017～020）
+import { ortFiles, ortVariant } from '../embed/env.ts';
+import { DownloadError, cacheNameFor, downloadAll, isComplete } from './download.ts';
+
+export type BootState =
+  | { kind: 'starting' }
+  | { kind: 'downloading'; phase: 'text' | 'semantic'; loaded: number; total: number }
+  | { kind: 'ready' }
+  | { kind: 'need-download' }
+  | { kind: 'error'; code: string; message: string };
+
+interface Manifest {
+  dataVersion: string;
+  model?: { id: string; revision: string; files: string[] };
+  files: Record<string, { path: string }>;
+}
+
+const MANIFEST_URL = '/data/manifest.json';
+const TEXT_KEYS = ['books', 'verses', 'passages', 'units', 'keyword', 'lexicon'];
+
+export function assetUrls(m: Manifest, variant: '.asyncify' | ''): { text: string[]; heavy: string[] } {
+  const text = TEXT_KEYS.filter((k) => m.files[k]).map((k) => `/data/${m.files[k]!.path}`);
+  const ort = ortFiles(variant);
+  const heavy = [
+    ...(m.files.vectors ? [`/data/${m.files.vectors.path}`] : []),
+    ...(m.model ? m.model.files.map((f) => `/models/${m.model!.id}/${f}`) : []),
+    ...(m.model ? [ort.mjs, ort.wasm] : []),
+  ];
+  return { text, heavy };
+}
+
+export const versionOf = (m: Manifest): string => `${m.dataVersion}-${m.model?.revision.slice(0, 8) ?? 'none'}`;
+
+async function ensureServiceWorker(): Promise<void> {
+  if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
+  await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  if (navigator.serviceWorker.controller) return;
+  // 首次安裝：等 clientsClaim 接管頁面，之後建立的 Worker 才會經由 Service Worker 取得快取
+  await new Promise<void>((resolve) => {
+    navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+    setTimeout(resolve, 5000);
+  });
+}
+
+async function loadManifest(): Promise<{ manifest: Manifest; response: Response | null } | null> {
+  try {
+    const res = await fetch(MANIFEST_URL, { cache: 'no-store' });
+    // Service Worker 離線時會由快取提供 manifest 並加上標頭：視同離線
+    const offline = res.headers.get('x-biblexer-offline') === '1';
+    if (res.ok) return { manifest: (await res.clone().json()) as Manifest, response: offline ? null : res };
+  } catch {
+    /* 離線：改讀快取 */
+  }
+  const cached = await caches.match(MANIFEST_URL);
+  return cached ? { manifest: (await cached.json()) as Manifest, response: null } : null;
+}
+
+export interface BootCallbacks {
+  onState(s: BootState): void;
+  /** 建立 Worker 並載入文字資料；semantic 為 true 時一併載入語意 */
+  initWorker(semantic: boolean): void;
+  loadSemantic(): void;
+}
+
+export async function boot(cb: BootCallbacks): Promise<void> {
+  cb.onState({ kind: 'starting' });
+  await ensureServiceWorker();
+  const loaded = await loadManifest();
+  if (!loaded) {
+    cb.onState({ kind: 'need-download' });
+    return;
+  }
+  const { manifest, response } = loaded;
+  const version = versionOf(manifest);
+  const { text, heavy } = assetUrls(manifest, ortVariant(navigator.userAgent, 'gpu' in navigator));
+
+  if (await isComplete([...text, ...heavy], version, caches)) {
+    cb.initWorker(true);
+    cb.onState({ kind: 'ready' });
+    void navigator.storage?.persist?.();
+    return;
+  }
+  if (!response) {
+    // 離線且資料不完整（未下載過、下載中斷或被瀏覽器清除）
+    cb.onState({ kind: 'need-download' });
+    return;
+  }
+  try {
+    await downloadAll(text, { version, caches, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'text', loaded: l, total: t }) });
+    await (await caches.open(cacheNameFor(version))).put(MANIFEST_URL, response);
+    cb.initWorker(false);
+    await downloadAll(heavy, { version, caches, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'semantic', loaded: l, total: t }) });
+    cb.loadSemantic();
+    cb.onState({ kind: 'ready' });
+    void navigator.storage?.persist?.();
+  } catch (e) {
+    cb.onState(e instanceof DownloadError ? { kind: 'error', code: e.code, message: e.message } : { kind: 'error', code: 'INTERNAL', message: String(e) });
+  }
+}

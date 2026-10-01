@@ -23,7 +23,7 @@ export interface ResultListProps {
 
 export function ResultList(p: ResultListProps) {
   return (
-    <section class="results" data-testid="results" data-query={p.query} data-granularity={p.response.granularity} data-filter={p.filter ?? ''} aria-live="polite">
+    <section class="results" data-testid="results" data-query={p.query} data-granularity={p.response.granularity} data-filter={p.filter ?? ''} data-semantic={String(p.response.semanticReady)} aria-live="polite">
       <div class="results-head">
         <h2 data-testid="results-title">{STRINGS.resultsTitle}</h2>
         <GranularityToggle value={p.granularity} onChange={p.onGranularity} />

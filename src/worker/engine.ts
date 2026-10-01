@@ -36,6 +36,11 @@ export function createEngine(deps: EngineDeps): Engine {
   let verses: StoredVerse[] = [];
   let corpus: Corpus | null = null;
   let embedder: Embedder | null = null;
+  let manifest: Manifest | null = null;
+  let base = '';
+  let parts: Omit<Parameters<typeof buildCorpus>[0], 'vectors'> | null = null;
+  const get = (key: string, phase: 'text' | 'vectors' = 'text') =>
+    deps.fetchBytes(base + manifest!.files[key]!.path, (l, t) => deps.onProgress?.(phase, l, t));
 
   const requireCorpus = () => {
     if (!corpus) throw new EngineError('NOT_DOWNLOADED', '資料尚未載入');
@@ -43,16 +48,13 @@ export function createEngine(deps: EngineDeps): Engine {
   };
 
   return {
-    async init(manifestUrl, onStage) {
-      const base = manifestUrl.slice(0, manifestUrl.lastIndexOf('/') + 1);
-      const manifest = JSON.parse(new TextDecoder().decode(await deps.fetchBytes(manifestUrl))) as Manifest;
-      const get = (key: string, phase: 'text' | 'vectors' = 'text') =>
-        deps.fetchBytes(base + manifest.files[key]!.path, (l, t) => deps.onProgress?.(phase, l, t));
-
+    async init(manifestUrl, onStage, semantic = true) {
+      base = manifestUrl.slice(0, manifestUrl.lastIndexOf('/') + 1);
+      manifest = JSON.parse(new TextDecoder().decode(await deps.fetchBytes(manifestUrl))) as Manifest;
       const dec = new TextDecoder();
       const [vBytes, pBytes, uBytes, kBytes, lBytes] = await Promise.all([get('verses'), get('passages'), get('units'), get('keyword'), manifest.files.lexicon ? get('lexicon') : null]);
       verses = decodeVerses(dec.decode(vBytes));
-      const parts = {
+      parts = {
         verses: verses.map((v) => ({ ...v.ref, searchText: toSearchText(v.display) })),
         passages: decodePassages(pBytes),
         units: decodeUnits(uBytes),
@@ -62,8 +64,12 @@ export function createEngine(deps: EngineDeps): Engine {
       corpus = buildCorpus({ ...parts, vectors: null });
       const keywordOnly: ReadyState = { keyword: true, semantic: false };
       onStage?.(keywordOnly);
+      return semantic ? this.loadSemantic() : keywordOnly;
+    },
 
-      if (!manifest.model || !manifest.files.vectors) return keywordOnly;
+    async loadSemantic() {
+      if (!manifest || !parts) throw new EngineError('NOT_DOWNLOADED', '資料尚未載入');
+      if (!manifest.model || !manifest.files.vectors) return { keyword: true, semantic: false };
       const [store, emb] = await Promise.all([get('vectors', 'vectors').then((b) => deserializeVectorStore(b)), deps.loadEmbedder(manifest.model)]);
       corpus = buildCorpus({ ...parts, vectors: store });
       embedder = emb;

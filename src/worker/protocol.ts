@@ -11,7 +11,8 @@ export interface ReadyState {
 }
 
 export type WorkerIn =
-  | { type: 'init'; manifestUrl: string }
+  | { type: 'init'; manifestUrl: string; semantic?: boolean }
+  | { type: 'loadSemantic' }
   | { type: 'search'; id: number; request: SearchRequest }
   | { type: 'chapter'; id: number; book: number; chapter: number };
 
@@ -23,7 +24,9 @@ export type WorkerOut =
   | { type: 'error'; id?: number; code: ErrorCode; message: string };
 
 export interface Engine {
-  init(manifestUrl: string, onStage?: (s: ReadyState) => void): Promise<ReadyState>;
+  init(manifestUrl: string, onStage?: (s: ReadyState) => void, semantic?: boolean): Promise<ReadyState>;
+  /** 延後載入語意檢索（向量與模型）；init 時 semantic 為 false 才需要 */
+  loadSemantic(): Promise<ReadyState>;
   search(request: SearchRequest): Promise<PresentedResponse>;
   chapter(book: number, chapter: number): Promise<ChapterView>;
 }
@@ -43,15 +46,18 @@ const codeOf = (e: unknown): ErrorCode => (e instanceof EngineError ? e.code : '
 export async function handleMessage(engine: Engine, msg: WorkerIn, post: (m: WorkerOut) => void): Promise<void> {
   try {
     if (msg.type === 'init') {
-      const final = await engine.init(msg.manifestUrl, (s) => post({ type: 'ready', ...s }));
+      const semantic = msg.semantic ?? true;
+      const final = await engine.init(msg.manifestUrl, semantic ? (s) => post({ type: 'ready', ...s }) : () => {}, semantic);
       post({ type: 'ready', ...final });
+    } else if (msg.type === 'loadSemantic') {
+      post({ type: 'ready', ...(await engine.loadSemantic()) });
     } else if (msg.type === 'search') {
       post({ type: 'result', id: msg.id, response: await engine.search(msg.request) });
     } else {
       post({ type: 'chapterResult', id: msg.id, view: await engine.chapter(msg.book, msg.chapter) });
     }
   } catch (e) {
-    const id = msg.type === 'init' ? undefined : msg.id;
+    const id = msg.type === 'init' || msg.type === 'loadSemantic' ? undefined : msg.id;
     post({ type: 'error', ...(id !== undefined ? { id } : {}), code: codeOf(e), message: e instanceof Error ? e.message : String(e) });
   }
 }

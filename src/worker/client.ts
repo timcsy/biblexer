@@ -20,8 +20,12 @@ export class SearchClient {
     worker.onmessage = (e) => this.receive(e.data);
   }
 
-  init(manifestUrl: string): void {
-    this.worker.postMessage({ type: 'init', manifestUrl });
+  init(manifestUrl: string, semantic = true): void {
+    this.worker.postMessage({ type: 'init', manifestUrl, semantic });
+  }
+
+  loadSemantic(): void {
+    this.worker.postMessage({ type: 'loadSemantic' });
   }
 
   search(request: SearchRequest): Promise<PresentedResponse> {

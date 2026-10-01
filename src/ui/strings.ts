@@ -34,4 +34,11 @@ export const STRINGS = {
   filterAll: '全部',
   filterEmpty: '此分類沒有相關段落',
   filterClear: '清除篩選',
+  downloadingText: '正在下載經文…',
+  downloadingSemantic: '正在下載語意模型…',
+  offlineReady: '已可離線使用',
+  installHint: '可將本頁加入主畫面，避免離線資料被瀏覽器清除。',
+  needDownload: '需要先連網完成一次下載，之後即可離線使用。',
+  downloadError: '下載沒有完成，請確認網路後重新整理頁面。',
+  quotaError: '裝置儲存空間不足，無法存放離線資料。',
 } as const;
