@@ -1,0 +1,49 @@
+# BibLexer 語意串珠聖經
+
+一本**離線**的中文聖經語意檢索工具（和合本神版）。輸入日常的描述或關鍵字，找出可能相關的經文段落，並附上前後文。
+
+## 定位：工具只指路，不代言
+
+- 系統回傳的永遠是**經文原文與它的上下文**；解釋權屬於讀者與聖靈。
+- 不含任何文字生成模型（LLM），不產生解釋、摘要或建議；結果只標示「可能相關」，不顯示分數。
+- 凡含人為判斷的資料（段落分段、辭典近義詞、原文分組）都標明來源。
+- 找不到時，請換個說法——工具不替讀者做詮釋上的推論。
+
+原則的完整內容與由來見 [`knowledge/principles.md`](knowledge/principles.md)。
+
+## 功能（階段 1）
+
+- 語意＋關鍵字混合檢索，以段落呈現並附前後文；可切換「節／段／章」檢視
+- 現代用語的詞彙擴充（教育部《重編國語辭典修訂本》近義詞＋原文同字），擴充內容與來源都列在畫面上，可關閉
+- 經文出處查詢（如「羅 8:28」「羅馬書8章28節」）、簡體輸入、命中字詞標示
+- 展開全章、附出處複製、舊約／新約兩層分類篩選
+- 首次載入後完全離線（PWA），查詢不離開裝置；首次下載約 94 MB
+
+## 開發
+
+需要 Node 24。
+
+```bash
+npm install
+npm run build:data        # 下載並核對來源資料，產生 public/data、public/models、public/ort
+npm run dev               # 開發伺服器（不含 Service Worker）
+npm run build && npm run preview   # 正式建置與預覽（含離線功能）
+```
+
+測試（本專案採 TDD，見 [`.specify/memory/constitution.md`](.specify/memory/constitution.md)）：
+
+```bash
+npm test                  # 單元、性質與守護測試
+npm run test:data         # 建置產物完整性、首次下載量（需先 build:data 與 build）
+npm run test:acceptance   # 固定查詢驗收
+npm run bench             # 模型評測，輸出 bench/report.md
+npm run e2e               # 端到端測試（含離線與不外洩）
+npm run lint && npm run typecheck
+```
+
+驗證步驟見 [`specs/001-offline-hybrid-search/quickstart.md`](specs/001-offline-hybrid-search/quickstart.md)；資料來源與授權見 [`docs/資料來源.md`](docs/資料來源.md)。
+
+## 專案文件
+
+- 規格、計畫、任務：`specs/001-offline-hybrid-search/`
+- 專案知識（原則、願景、經驗、決策歷史）：`knowledge/`

@@ -12,10 +12,12 @@
 
 ```bash
 npm install
-npm run build:data        # 下載並核對來源 → public/data/、public/models/、public/ort/
+npm run build:data        # 下載並核對來源（信望愛、eBible 分段、萌典）→ public/data/（含 lexicon）、public/ort/
+npm run bench             # 評測並產生 bench/report.json
+npx tsx scripts/write-manifest.ts   # 依評測選出的臂，放入模型與向量（public/models/、vectors）
 ```
 
-預期：`public/data/manifest.json` 存在；主控台列出 66 卷、1,189 章、31,103 節、段落數與檢索單元數；所有來源雜湊核對通過。
+預期：`public/data/manifest.json` 存在；主控台列出 66 卷、1,189 章、31,103 節、段落數與多尺度檢索單元數（單節／視窗／整段）、詞彙表詞數；所有來源雜湊核對通過。
 
 ## 2. 模型評測（第一步，US3）
 
@@ -31,8 +33,8 @@ npm run bench
 
 ```bash
 npm test                  # 單元 + 性質測試
-npm run test:data         # 建置產物的完整性（66 卷、1,189 章、31,103 節等）
-npm run test:acceptance   # 選定臂的 7 個固定查詢須 7/7（SC-001）
+npm run test:data         # 建置產物的完整性與首次下載量（需先 npm run build）
+npm run test:acceptance   # 檢查點查詢（原句或一次換說法）全數命中前 5 名（SC-001，history/004）
 npm run lint              # 含「不得 import 生成用 pipeline」規則（原則 4）
 npm run e2e               # build + preview 後以 Chromium 執行
 ```
