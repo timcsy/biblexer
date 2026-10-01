@@ -1,5 +1,5 @@
 // npm run bench：以固定查詢比較候選臂，輸出 bench/report.json 與 report.md（contracts/benchmark.md）
-import { statSync, writeFileSync } from 'node:fs';
+import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildCorpus } from '../src/core/search.ts';
 import { serializeVectorStore } from '../src/core/vectors.ts';
@@ -12,6 +12,8 @@ import { REQUIRED_HITS, SIZE_LIMIT_BYTES, buildReport, meanBestRank, selectArm, 
 const T2CN_BYTES = 452 * 1024; // opencc-js t2cn gzip 後約 452 KB（research R6）
 
 async function main() {
+  const envFile = join(import.meta.dirname, '../.env');
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
   const only = process.argv.includes('--arm') ? process.argv[process.argv.indexOf('--arm') + 1] : undefined;
   const arms = loadArms().filter((a) => !only || a.id === only);
   const queries = loadQueries();
@@ -24,7 +26,7 @@ async function main() {
 
   for (const arm of arms) {
     console.log(`== ${arm.id}`);
-    const root = await fetchModel(arm);
+    const root = arm.backend ? '' : await fetchModel(arm);
     const modelBytes = arm.files.reduce((a, f) => a + statSync(join(root, f.path)).size, 0);
     const embedder = await makeEmbedder(arm, MODELS_CACHE);
     const vectors = await buildVectors(arm, ds.manifest.dataVersion, ds.unitTexts, embedder);
@@ -45,7 +47,9 @@ async function main() {
     console.log(`   命中 ${summary.at(-1)!.hits}/${acc.length}；保留查詢 ${summary.at(-1)!.heldOutHits}/${held.length}`);
   }
 
-  const { selected, reason } = selectArm(summary, { sizeLimitBytes: SIZE_LIMIT_BYTES, required: REQUIRED_HITS });
+  // 診斷臂（超過大小上限的大模型、遠端模型）只供參考，不參與選擇
+  const deliverable = new Set(arms.filter((a) => !a.diagnostic).map((a) => a.id));
+  const { selected, reason } = selectArm(summary.filter((x) => deliverable.has(x.armId)), { sizeLimitBytes: SIZE_LIMIT_BYTES, required: REQUIRED_HITS });
   const armMeta = arms.map(({ files: _f, ...rest }) => rest);
   // 單臂模式（--arm）只做探索，輸出到 .cache/，不覆蓋正式報告
   const outDir = only ? join(import.meta.dirname, '../.cache') : import.meta.dirname;

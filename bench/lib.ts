@@ -11,6 +11,7 @@ import { deserializeVectorStore, type VectorStore } from '../src/core/vectors.ts
 import { createEmbedder, loadTransformersBackend, type Embedder, type Pooling } from '../src/embed/embedder.ts';
 import { loadToSimplified } from '../src/embed/simplify.ts';
 import type { ExpectedHash } from '../scripts/lib/fetch.ts';
+import { createRemoteEmbedder, remoteOptionsFromEnv } from './remote-embedder.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -27,6 +28,8 @@ export interface Arm {
   oversize?: boolean;
   /** 只用於診斷、不交付（例如超過大小上限的大模型） */
   diagnostic?: boolean;
+  /** 遠端後端（僅診斷）：目前只支援 OpenAI 相容端點 */
+  backend?: 'openai';
   files: Array<{ path: string; hash: ExpectedHash }>;
 }
 
@@ -80,7 +83,8 @@ export function expectedRanges(q: BenchmarkQuery, verses: readonly StoredVerse[]
   });
 }
 
-export async function makeEmbedder(arm: Pick<Arm, 'model' | 'dtype' | 'pooling' | 'queryPrefix' | 'passagePrefix' | 'toSimplified'>, modelsRoot: string): Promise<Embedder> {
+export async function makeEmbedder(arm: Pick<Arm, 'model' | 'dtype' | 'pooling' | 'queryPrefix' | 'passagePrefix' | 'toSimplified' | 'backend'>, modelsRoot: string): Promise<Embedder> {
+  if (arm.backend === 'openai') return createRemoteEmbedder(remoteOptionsFromEnv(arm.model));
   const backend = await loadTransformersBackend({ modelId: arm.model, localModelPath: modelsRoot, dtype: arm.dtype, device: 'cpu' });
   const conv = arm.toSimplified ? await loadToSimplified() : undefined;
   return createEmbedder(arm, backend, conv);
