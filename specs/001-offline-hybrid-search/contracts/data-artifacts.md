@@ -50,11 +50,15 @@
 
 小端序 `Int32Array`：
 - passages：每段 `[startVerseIdx, endVerseIdx]`（`verseIdx` 為 verses 陣列索引）。
-- units：每單元 `[startVerseIdx, endVerseIdx, passageId]`。
+- units：每單元 `[startVerseIdx, endVerseIdx, passageId, scale]`；`scale`：0＝單節、1＝3 節視窗、2＝整段（R10）。
+
+### `lexicon.json`
+
+詞彙擴充表（R9）：`{ "焦慮": [["憂慮", "moedict"], ["掛慮", "strongs:G3309"], …], … }`。只收錄擴充詞在和合本中出現的條目。來源：萌典 `dict-revised.json.xz`（教育部，CC BY-ND 3.0 TW，只取近義關係）與信望愛 `unv` 的 Strong's 標記（只用於分組）。
 
 ### `keyword.bin`
 
-BM25 倒排索引：
+BM25 倒排索引（建立在**單節**單元上）：
 - 標頭：`numUnits, numTerms, avgLen, k1, b`
 - `termDict`：排序的 token 字串（UTF-8）與偏移
 - `postings`：每 token 的 `(unitId, tf)` 串列（`Uint32`/`Uint16`）

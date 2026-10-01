@@ -38,12 +38,16 @@ search(req: SearchRequest, deps: SearchDeps): SearchResponse
 | `search`：出處查詢時，該段落為第 1 名（FR-004） | 單元 |
 | `search`：語意尚未就緒時只用關鍵字，且 `response.semanticReady=false`（FR-020） | 單元 |
 | `search`：結果不含分數欄位（原則 6） | 型別＋單元 |
+| `expandQuery`：擴充詞都在和合本中出現；每個擴充詞都帶來源；只有一層辭典＋一層原文，不遞迴 | 單元＋性質 |
+| `search`：granularity 為 verse／passage／chapter 時，結果範圍分別為單節／段落／整章，且皆附上下文 | 單元 |
 
 ## 2. SearchRequest / SearchResponse
 
 ```ts
 interface SearchRequest {
   query: string;                       // 原始輸入
+  granularity?: 'verse' | 'passage' | 'chapter'; // 呈現粒度，預設 passage（FR-026）
+  expand?: boolean;                    // 詞彙擴充，預設 true（FR-027）
   filter?: { testaments?: Testament[]; categories?: [Testament, Category][] };
   offset?: number;                     // 預設 0
   limit?: number;                      // 預設 10（FR-003）
@@ -59,6 +63,10 @@ interface SearchResponse {
   semanticReady: boolean;              // FR-020
   truncated: boolean;                  // 查詢超過長度上限
   reference: VerseRange | null;        // 若輸入被解析為出處
+  expansions: Array<{                  // 實際套用的詞彙擴充（FR-027），供介面列出與署名
+    word: string;                      // 查詢中的詞，如「焦慮」
+    terms: Array<{ term: string; via: string }>; // via：'moedict' 或 'strongs:G3309' 等
+  }>;
 }
 ```
 

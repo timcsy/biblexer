@@ -69,11 +69,21 @@
 
 | 欄位 | 型別 | 說明 |
 |---|---|---|
-| `id` | int | 對應向量檔與關鍵字索引的列號 |
-| `range` | VerseRange | 3 節視窗（段落內滑動、步長 2；段落 ≤ 3 節時即整段） |
+| `id` | int | 對應向量檔的列號 |
+| `range` | VerseRange | 依尺度而定 |
 | `passageId` | Passage.id | 所屬段落 |
+| `scale` | `verse` \| `window` \| `passage` | 多尺度（2026-10-01 加入）：單節（合併節佔位除外）、3 節視窗（段落內滑動、步長 2）、整段（> 3 節的段落才另建，避免與視窗重複） |
 
-檢索在單元上進行，結果聚合回段落（同一段落取最高分）。這讓長段落中的單節命中不會被整段平均稀釋，同時結果仍以完整段落呈現（原則 5）。
+語意檢索同時在三種尺度上進行並融合：單節能精準對到一句話的經文（如「應當一無掛慮」），視窗與整段能對到敘事主題。關鍵字檢索在單節上進行。結果再聚合回呈現粒度（見 SearchRequest.granularity）。
+
+### LexiconEntry（詞彙擴充）— 建置時產生
+
+| 欄位 | 型別 | 說明 |
+|---|---|---|
+| `word` | string | 查詢中可能出現的詞（萌典詞條，或和合本中出現的詞） |
+| `expansions` | `{term, via}[]` | 擴充詞；`term` 必須在和合本中實際出現；`via` 為來源：`moedict`（教育部《重編國語辭典修訂本》近義詞）或 `strongs:G3309` 之類（同一原文字的和合本譯法） |
+
+驗證：擴充只有一層辭典近義詞＋一層原文同字，不遞迴；不含任何主題分類（衍生原則 9）。
 
 ### Query（查詢）
 
@@ -83,6 +93,8 @@
 | `normalized` | string | 去除前後空白、簡轉繁（含簡體時）、全半形統一 |
 | `reference` | VerseRange? | 若可解析為經文出處（FR-004） |
 | `filter` | `{testaments?: Set, categories?: Set<(testament,category)>}` | |
+| `granularity` | `verse` \| `passage` \| `chapter` | 呈現粒度，預設 `passage` |
+| `expand` | boolean | 是否套用詞彙擴充，預設 true |
 
 驗證：`normalized` 為空（或只有標點）時不搜尋。長度上限 `MAX_QUERY_CHARS = 512`，超過截斷並告知（Edge Cases）。
 
@@ -94,7 +106,7 @@
 | `passage` | Passage | 顯示範圍 |
 | `contextRange` | VerseRange | 前後文範圍：段落前後各延伸 `CONTEXT_VERSES = 2` 節（不跨章） |
 | `matchedTerms` | string[] | 查詢中實際出現在段落裡的字詞（供標示，FR-006） |
-| `sources` | `('semantic' \| 'keyword' \| 'reference')[]` | 命中來源（內部除錯用，UI 不顯示分數） |
+| `sources` | `('semantic' \| 'keyword' \| 'expansion' \| 'reference')[]` | 命中來源（內部除錯用，UI 不顯示分數） |
 
 驗證（原則 5、6）：不含任何分數欄位給 UI；`passage.range` 至少一節且帶出處；同一 `passage.id` 不重複。
 
@@ -114,8 +126,8 @@
 |---|---|---|
 | `anxiety-mortgage` | 面對房貸壓力很焦慮 | 腓 4:6 |
 | `god-far` | 覺得神離我很遠，禱告像打在天花板上 | 詩 88 全章；哀 全卷；伯 全卷 |
-| `please-everyone` | 必須討好所有人才能感到安全 | 箴 29:25 |
-| `manipulated` | 被親近的人操控、扭曲事實 | 詩 55 全章 |
+| `please-everyone` | 必須討好所有人才能感到安全 | 箴 29:25；加 1:10；帖前 2:4 |
+| `close-friend-betrayal` | 被最親近的朋友背叛、出賣 | 詩 55:12–14；詩 41:9 |
 | `cana-wedding` | 迦拿的婚宴 | 約 2:1–11 |
 | `melchizedek` | 麥基洗德 | 創 14 全章；來 7 全章 |
 | `david-goliath` | 大衛擊殺歌利亞 | 撒上 17 全章 |
