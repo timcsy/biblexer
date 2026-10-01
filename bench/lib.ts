@@ -43,6 +43,8 @@ export interface BenchmarkQuery {
   heldOut: boolean;
   /** 使用者看了第一輪結果後可能改用的說法（只有一次） */
   rephrase?: string;
+  /** false＝觀察指標，不擋檢查點（history/004） */
+  gate?: boolean;
 }
 
 export const loadArms = (): Arm[] => JSON.parse(readFileSync(join(ROOT, 'bench/arms.json'), 'utf8')) as Arm[];
@@ -98,6 +100,7 @@ export async function makeEmbedder(arm: Pick<Arm, 'model' | 'dtype' | 'pooling' 
 export interface QueryResult {
   queryId: string;
   heldOut: boolean;
+  gate?: boolean;
   /** 原句與換說法中較佳的名次 */
   bestRank: number | null;
   /** 原句（第一次問）的名次 */
@@ -116,7 +119,7 @@ export async function evaluate(corpus: Corpus, verses: readonly StoredVerse[], e
       latenciesMs.push(performance.now() - t0);
       ranks.push(bestHitRank(res.results.map((r) => r.passage), expectedRanges(q, verses)));
     }
-    results.push({ queryId: q.id, heldOut: q.heldOut, bestRank: bestOfAttempts(ranks), firstRank: ranks[0]! });
+    results.push({ queryId: q.id, heldOut: q.heldOut, ...(q.gate === false ? { gate: false } : {}), bestRank: bestOfAttempts(ranks), firstRank: ranks[0]! });
   }
   return { results, latenciesMs };
 }

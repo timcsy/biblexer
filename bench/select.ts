@@ -1,7 +1,10 @@
 // 評測的選擇規則與報告（research R3；contracts/benchmark.md）
 export const MISS_RANK = 1000;
 export const SIZE_LIMIT_BYTES = 200 * 1024 * 1024;
-export const REQUIRED_HITS = 7;
+/** 檢查點查詢：驗收查詢中未標為觀察指標者（history/004） */
+export function gateQueries<Q extends { heldOut: boolean; gate?: boolean }>(qs: readonly Q[]): Q[] {
+  return qs.filter((q) => !q.heldOut && q.gate !== false);
+}
 
 export interface ArmSummary {
   armId: string;

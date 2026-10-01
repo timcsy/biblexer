@@ -1,8 +1,8 @@
 [
-  {"id": "anxiety-mortgage", "text": "面對房貸壓力很焦慮", "kind": "meaning", "expected": [{"start": "Phil 4:6", "end": "Phil 4:6"}], "heldOut": false, "rephrase": "一直很擔心錢的事，心裡憂慮不安"},
+  {"id": "anxiety-mortgage", "text": "面對房貸壓力很焦慮", "kind": "meaning", "expected": [{"start": "Phil 4:6", "end": "Phil 4:6"}], "heldOut": false, "rephrase": "一直很擔心錢的事，心裡憂慮不安", "gate": false},
   {"id": "god-far", "text": "覺得神離我很遠，禱告像打在天花板上", "kind": "lament", "expected": [{"start": "Ps 88:1", "end": "Ps 88:18"}, {"start": "Lam 1:1", "end": "Lam 5:22"}, {"start": "Job 1:1", "end": "Job 42:17"}], "heldOut": false, "rephrase": "禱告好像沒有回應，神好像不聽我"},
   {"id": "please-everyone", "text": "必須討好所有人才能感到安全", "kind": "meaning", "expected": [{"start": "Prov 29:25", "end": "Prov 29:25"}, {"start": "Gal 1:10", "end": "Gal 1:10"}, {"start": "1 Thess 2:4", "end": "1 Thess 2:4"}], "heldOut": false, "rephrase": "很怕別人怎麼看我，總想讓人喜歡我"},
-  {"id": "close-friend-betrayal", "text": "被最親近的朋友背叛、出賣", "kind": "betrayal", "expected": [{"start": "Ps 55:12", "end": "Ps 55:14"}, {"start": "Ps 41:9", "end": "Ps 41:9"}], "heldOut": false, "rephrase": "我最信任的人反過來害我"},
+  {"id": "close-friend-betrayal", "text": "被最親近的朋友背叛、出賣", "kind": "betrayal", "expected": [{"start": "Ps 55:12", "end": "Ps 55:14"}, {"start": "Ps 41:9", "end": "Ps 41:9"}], "heldOut": false, "rephrase": "我最信任的人反過來害我", "gate": false},
   {"id": "cana-wedding", "text": "迦拿的婚宴", "kind": "keyword", "expected": [{"start": "John 2:1", "end": "John 2:11"}], "heldOut": false, "rephrase": "耶穌在婚禮上把水變成酒"},
   {"id": "melchizedek", "text": "麥基洗德", "kind": "keyword", "expected": [{"start": "Gen 14:1", "end": "Gen 14:24"}, {"start": "Heb 7:1", "end": "Heb 7:28"}], "heldOut": false, "rephrase": "麥基洗德是誰"},
   {"id": "david-goliath", "text": "大衛擊殺歌利亞", "kind": "keyword", "expected": [{"start": "1 Sam 17:1", "end": "1 Sam 17:58"}], "heldOut": false, "rephrase": "大衛打敗巨人歌利亞"},

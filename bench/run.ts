@@ -7,7 +7,7 @@ import { MODELS_CACHE, fetchModel } from '../scripts/fetch-models.ts';
 import { buildVectors, textKey } from '../scripts/build-vectors.ts';
 import { PUBLIC_DIR } from '../scripts/lib/paths.ts';
 import { evaluate, loadArms, loadDataset, loadQueries, makeEmbedder, type Arm } from './lib.ts';
-import { REQUIRED_HITS, SIZE_LIMIT_BYTES, buildReport, meanBestRank, selectArm, type ArmSummary } from './select.ts';
+import { SIZE_LIMIT_BYTES, buildReport, gateQueries, meanBestRank, selectArm, type ArmSummary } from './select.ts';
 
 const T2CN_BYTES = 452 * 1024; // opencc-js t2cn gzip 後約 452 KB（research R6）
 
@@ -33,7 +33,7 @@ async function main() {
     const corpus = buildCorpus({ ...ds.corpusParts, vectors });
     const { results: qr, latenciesMs } = await evaluate(corpus, ds.verses, embedder, queries);
     for (const r of qr) results.push({ armId: arm.id, queryId: r.queryId, bestRank: r.bestRank, firstRank: r.firstRank });
-    const acc = qr.filter((r) => !r.heldOut);
+    const acc = gateQueries(qr);
     const held = qr.filter((r) => r.heldOut);
     const hit = (r: { bestRank: number | null }) => r.bestRank !== null && r.bestRank <= 5;
     summary.push({
@@ -49,13 +49,14 @@ async function main() {
 
   // 診斷臂（超過大小上限的大模型、遠端模型）只供參考，不參與選擇
   const deliverable = new Set(arms.filter((a) => !a.diagnostic).map((a) => a.id));
-  const { selected, reason } = selectArm(summary.filter((x) => deliverable.has(x.armId)), { sizeLimitBytes: SIZE_LIMIT_BYTES, required: REQUIRED_HITS });
+  const required = gateQueries(queries).length;
+  const { selected, reason } = selectArm(summary.filter((x) => deliverable.has(x.armId)), { sizeLimitBytes: SIZE_LIMIT_BYTES, required });
   const armMeta = arms.map(({ files: _f, ...rest }) => rest);
   // 單臂模式（--arm）只做探索，輸出到 .cache/，不覆蓋正式報告
   const outDir = only ? join(import.meta.dirname, '../.cache') : import.meta.dirname;
   const prefix = only ? `bench-${only}.` : '';
   writeFileSync(join(outDir, `${prefix}report.json`), buildReport({ dataVersion: ds.manifest.dataVersion, arms: armMeta, results, summary, selected, reason }));
-  writeFileSync(join(outDir, `${prefix}report.md`), renderMarkdown(arms, queries.map((q) => q.id), queries.filter((q) => q.heldOut).map((q) => q.id), results, summary, selected, reason, latency));
+  writeFileSync(join(outDir, `${prefix}report.md`), renderMarkdown(arms, queries.map((q) => q.id), queries.filter((q) => q.heldOut).map((q) => q.id), results, summary, selected, reason, latency, queries.filter((q) => !q.heldOut && q.gate === false).map((q) => q.id)));
   console.log(`\n選中：${selected ?? '（無）'}——${reason}`);
 }
 
@@ -68,6 +69,7 @@ function renderMarkdown(
   selected: string | null,
   reason: string,
   latency: Record<string, number>,
+  observe: string[] = [],
 ): string {
   const mb = (b: number) => (b / 1024 / 1024).toFixed(1);
   const cell = (armId: string, q: string) => {
@@ -77,15 +79,16 @@ function renderMarkdown(
     return r !== null && r <= 5 ? `${r}${viaRephrase}` : `✗${r === null ? '' : `(${r})`}`;
   };
   const sorted = [...arms].sort((a, b) => a.id.localeCompare(b.id));
-  const head = ['臂', ...queryIds.map((q) => (heldOut.includes(q) ? `*${q}` : q)), '命中', '平均名次', '保留命中', '下載 MB', '≤200MB', 'Node 延遲中位數 ms', '選中'];
+  const gateIds = queryIds.filter((q) => !heldOut.includes(q) && !observe.includes(q));
+  const head = ['臂', ...queryIds.map((q) => (heldOut.includes(q) ? `*${q}` : observe.includes(q) ? `°${q}` : q)), '命中', '平均名次', '保留命中', '下載 MB', '≤200MB', 'Node 延遲中位數 ms', '選中'];
   const rows = sorted.map((a) => {
     const s = summary.find((x) => x.armId === a.id)!;
-    return [a.id, ...queryIds.map((q) => cell(a.id, q)), `${s.hits}/7`, s.meanBestRank.toFixed(2), `${s.heldOutHits}/${heldOut.length}`, mb(s.sizeBytes), s.sizeBytes <= SIZE_LIMIT_BYTES ? '✓' : '✗', (latency[a.id] ?? 0).toFixed(0), a.id === selected ? '★' : ''];
+    return [a.id, ...queryIds.map((q) => cell(a.id, q)), `${s.hits}/${gateIds.length}`, s.meanBestRank.toFixed(2), `${s.heldOutHits}/${heldOut.length}`, mb(s.sizeBytes), s.sizeBytes <= SIZE_LIMIT_BYTES ? '✓' : '✗', (latency[a.id] ?? 0).toFixed(0), a.id === selected ? '★' : ''];
   });
   return [
     '# 評測報告',
     '',
-    '表格中的數字是期望經文的最佳名次（前 5 名以內才算命中；✗ 後括號為實際名次）。驗收查詢可用原句或一次換說法，「換」表示換說法後才命中。* 開頭為保留查詢，只供參考，不影響選擇。',
+    '表格中的數字是期望經文的最佳名次（前 5 名以內才算命中；✗ 後括號為實際名次）。驗收查詢可用原句或一次換說法，「換」表示換說法後才命中。* 開頭為保留查詢、° 開頭為觀察指標（history/004），只供參考，不影響選擇。',
     'Node 延遲中位數僅供參考（SC-004 以手機實測為準），不寫入 report.json。',
     '',
     `| ${head.join(' | ')} |`,
