@@ -1,5 +1,5 @@
 {
-  "dataVersion": "19d5c178b1b1",
+  "dataVersion": "8718e8aca0ba",
   "arms": [
     {
       "id": "bge-small-simp",
@@ -55,774 +55,537 @@
       "queryPrefix": "",
       "passagePrefix": "",
       "toSimplified": false
-    },
-    {
-      "id": "gte-multilingual-trad",
-      "model": "onnx-community/gte-multilingual-base",
-      "revision": "2edbf5e672aab465f9ed4c154a8b61791c082c69",
-      "dtype": "q8",
-      "dim": 768,
-      "pooling": "cls",
-      "queryPrefix": "",
-      "passagePrefix": "",
-      "toSimplified": false,
-      "oversize": true
-    },
-    {
-      "id": "jina-v2-zh-simp",
-      "model": "Xenova/jina-embeddings-v2-base-zh",
-      "revision": "7cb68f86f20ff10431b272eb2142f242d911ab5f",
-      "dtype": "q8",
-      "dim": 768,
-      "pooling": "mean",
-      "queryPrefix": "",
-      "passagePrefix": "",
-      "toSimplified": true
-    },
-    {
-      "id": "jina-v2-zh-trad",
-      "model": "Xenova/jina-embeddings-v2-base-zh",
-      "revision": "7cb68f86f20ff10431b272eb2142f242d911ab5f",
-      "dtype": "q8",
-      "dim": 768,
-      "pooling": "mean",
-      "queryPrefix": "",
-      "passagePrefix": "",
-      "toSimplified": false
     }
   ],
   "results": [
     {
       "armId": "bge-small-simp",
       "queryId": "anxiety-mortgage",
-      "bestRank": null,
+      "bestRank": 36,
+      "firstRank": 36,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-simp",
       "queryId": "cana-wedding",
       "bestRank": 1,
+      "firstRank": 1,
       "hitAtTop5": true
     },
     {
       "armId": "bge-small-simp",
-      "queryId": "david-goliath",
-      "bestRank": 6,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "friend-betrayal",
-      "bestRank": 9,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "god-far",
-      "bestRank": 33,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "good-samaritan",
-      "bestRank": 16,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "grief",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "meaningless",
-      "bestRank": 59,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "please-everyone",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "prodigal-son",
-      "bestRank": 12,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "unforgivable",
-      "bestRank": 14,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-simp",
-      "queryId": "worry-tomorrow",
-      "bestRank": 19,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "anxiety-mortgage",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "cana-wedding",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "david-goliath",
-      "bestRank": 5,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "friend-betrayal",
-      "bestRank": 4,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "god-far",
-      "bestRank": 21,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "good-samaritan",
-      "bestRank": 8,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "grief",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "meaningless",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "please-everyone",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "prodigal-son",
-      "bestRank": 25,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "unforgivable",
-      "bestRank": 16,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad",
-      "queryId": "worry-tomorrow",
-      "bestRank": 15,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "anxiety-mortgage",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "cana-wedding",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "david-goliath",
-      "bestRank": 4,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "friend-betrayal",
-      "bestRank": 6,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "god-far",
+      "queryId": "close-friend-betrayal",
       "bestRank": 20,
+      "firstRank": 20,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "david-goliath",
+      "bestRank": 3,
+      "firstRank": 4,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "fear-of-death",
+      "bestRank": 2,
+      "firstRank": 2,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "god-far",
+      "bestRank": 6,
+      "firstRank": 6,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "good-samaritan",
+      "bestRank": 5,
+      "firstRank": 5,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "grief",
+      "bestRank": null,
+      "firstRank": null,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "meaningless",
+      "bestRank": null,
+      "firstRank": null,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "melchizedek",
+      "bestRank": 3,
+      "firstRank": 3,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "please-everyone",
+      "bestRank": 9,
+      "firstRank": null,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "prodigal-son",
+      "bestRank": 30,
+      "firstRank": 30,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "unforgivable",
+      "bestRank": 45,
+      "firstRank": 45,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-simp",
+      "queryId": "worry-tomorrow",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "anxiety-mortgage",
+      "bestRank": 39,
+      "firstRank": 39,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "cana-wedding",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "close-friend-betrayal",
+      "bestRank": 24,
+      "firstRank": 24,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "david-goliath",
+      "bestRank": 3,
+      "firstRank": 7,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "fear-of-death",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "god-far",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "good-samaritan",
+      "bestRank": 4,
+      "firstRank": 4,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "grief",
+      "bestRank": 31,
+      "firstRank": 31,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "meaningless",
+      "bestRank": null,
+      "firstRank": null,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "melchizedek",
+      "bestRank": 3,
+      "firstRank": 3,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "please-everyone",
+      "bestRank": 4,
+      "firstRank": null,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "prodigal-son",
+      "bestRank": 56,
+      "firstRank": 56,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "unforgivable",
+      "bestRank": 42,
+      "firstRank": 42,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad",
+      "queryId": "worry-tomorrow",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad-instr",
+      "queryId": "anxiety-mortgage",
+      "bestRank": 37,
+      "firstRank": 37,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-trad-instr",
+      "queryId": "cana-wedding",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad-instr",
+      "queryId": "close-friend-betrayal",
+      "bestRank": 24,
+      "firstRank": 24,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "bge-small-trad-instr",
+      "queryId": "david-goliath",
+      "bestRank": 3,
+      "firstRank": 12,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad-instr",
+      "queryId": "fear-of-death",
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad-instr",
+      "queryId": "god-far",
+      "bestRank": 2,
+      "firstRank": 2,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "bge-small-trad-instr",
       "queryId": "good-samaritan",
-      "bestRank": 4,
+      "bestRank": 5,
+      "firstRank": 5,
       "hitAtTop5": true
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "grief",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "bge-small-trad-instr",
-      "queryId": "manipulated",
-      "bestRank": 55,
+      "bestRank": 13,
+      "firstRank": 13,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "meaningless",
       "bestRank": null,
+      "firstRank": null,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "melchizedek",
-      "bestRank": 1,
+      "bestRank": 3,
+      "firstRank": 3,
       "hitAtTop5": true
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "please-everyone",
-      "bestRank": null,
-      "hitAtTop5": false
+      "bestRank": 3,
+      "firstRank": null,
+      "hitAtTop5": true
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "prodigal-son",
-      "bestRank": 31,
+      "bestRank": 49,
+      "firstRank": 49,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "unforgivable",
-      "bestRank": 24,
+      "bestRank": 44,
+      "firstRank": 44,
       "hitAtTop5": false
     },
     {
       "armId": "bge-small-trad-instr",
       "queryId": "worry-tomorrow",
-      "bestRank": 15,
-      "hitAtTop5": false
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "anxiety-mortgage",
-      "bestRank": null,
+      "bestRank": 39,
+      "firstRank": 39,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "cana-wedding",
       "bestRank": 1,
+      "firstRank": 1,
       "hitAtTop5": true
     },
     {
       "armId": "granite-97m-simp",
-      "queryId": "david-goliath",
-      "bestRank": 7,
+      "queryId": "close-friend-betrayal",
+      "bestRank": 14,
+      "firstRank": 14,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
-      "queryId": "friend-betrayal",
-      "bestRank": 28,
+      "queryId": "david-goliath",
+      "bestRank": 1,
+      "firstRank": 4,
+      "hitAtTop5": true
+    },
+    {
+      "armId": "granite-97m-simp",
+      "queryId": "fear-of-death",
+      "bestRank": 7,
+      "firstRank": 7,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "god-far",
       "bestRank": 13,
+      "firstRank": 29,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "good-samaritan",
-      "bestRank": 5,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-simp",
-      "queryId": "grief",
-      "bestRank": null,
+      "bestRank": 13,
+      "firstRank": 13,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
-      "queryId": "manipulated",
-      "bestRank": null,
+      "queryId": "grief",
+      "bestRank": 47,
+      "firstRank": 47,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "meaningless",
-      "bestRank": 8,
+      "bestRank": null,
+      "firstRank": null,
       "hitAtTop5": false
     },
     {
       "armId": "granite-97m-simp",
       "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-simp",
-      "queryId": "please-everyone",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-simp",
-      "queryId": "prodigal-son",
-      "bestRank": 30,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-simp",
-      "queryId": "unforgivable",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-simp",
-      "queryId": "worry-tomorrow",
-      "bestRank": 19,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "anxiety-mortgage",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "cana-wedding",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "david-goliath",
-      "bestRank": 19,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "friend-betrayal",
-      "bestRank": 31,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "god-far",
-      "bestRank": 4,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "good-samaritan",
       "bestRank": 2,
+      "firstRank": 2,
       "hitAtTop5": true
     },
     {
-      "armId": "granite-97m-trad",
-      "queryId": "grief",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "meaningless",
-      "bestRank": 83,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "granite-97m-trad",
-      "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "granite-97m-trad",
+      "armId": "granite-97m-simp",
       "queryId": "please-everyone",
-      "bestRank": null,
+      "bestRank": 13,
+      "firstRank": 61,
       "hitAtTop5": false
     },
     {
-      "armId": "granite-97m-trad",
+      "armId": "granite-97m-simp",
       "queryId": "prodigal-son",
-      "bestRank": null,
+      "bestRank": 59,
+      "firstRank": 59,
       "hitAtTop5": false
     },
     {
-      "armId": "granite-97m-trad",
+      "armId": "granite-97m-simp",
       "queryId": "unforgivable",
-      "bestRank": 2,
+      "bestRank": 12,
+      "firstRank": 12,
+      "hitAtTop5": false
+    },
+    {
+      "armId": "granite-97m-simp",
+      "queryId": "worry-tomorrow",
+      "bestRank": 1,
+      "firstRank": 1,
       "hitAtTop5": true
     },
     {
       "armId": "granite-97m-trad",
-      "queryId": "worry-tomorrow",
-      "bestRank": 3,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "gte-multilingual-trad",
       "queryId": "anxiety-mortgage",
-      "bestRank": null,
+      "bestRank": 35,
+      "firstRank": 35,
       "hitAtTop5": false
     },
     {
-      "armId": "gte-multilingual-trad",
+      "armId": "granite-97m-trad",
       "queryId": "cana-wedding",
       "bestRank": 1,
+      "firstRank": 1,
       "hitAtTop5": true
     },
     {
-      "armId": "gte-multilingual-trad",
-      "queryId": "david-goliath",
+      "armId": "granite-97m-trad",
+      "queryId": "close-friend-betrayal",
       "bestRank": 4,
+      "firstRank": 4,
       "hitAtTop5": true
     },
     {
-      "armId": "gte-multilingual-trad",
-      "queryId": "friend-betrayal",
-      "bestRank": 24,
-      "hitAtTop5": false
+      "armId": "granite-97m-trad",
+      "queryId": "david-goliath",
+      "bestRank": 1,
+      "firstRank": 7,
+      "hitAtTop5": true
     },
     {
-      "armId": "gte-multilingual-trad",
-      "queryId": "god-far",
+      "armId": "granite-97m-trad",
+      "queryId": "fear-of-death",
       "bestRank": 8,
+      "firstRank": 8,
       "hitAtTop5": false
     },
     {
-      "armId": "gte-multilingual-trad",
-      "queryId": "good-samaritan",
-      "bestRank": 3,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "grief",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "meaningless",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "please-everyone",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "prodigal-son",
-      "bestRank": 39,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "unforgivable",
-      "bestRank": 7,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "queryId": "worry-tomorrow",
-      "bestRank": 5,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "anxiety-mortgage",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "cana-wedding",
-      "bestRank": 3,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "david-goliath",
-      "bestRank": 19,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "friend-betrayal",
-      "bestRank": 27,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
+      "armId": "granite-97m-trad",
       "queryId": "god-far",
-      "bestRank": 5,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "good-samaritan",
-      "bestRank": 19,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "grief",
-      "bestRank": 71,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "meaningless",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "melchizedek",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "please-everyone",
-      "bestRank": 66,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "prodigal-son",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "unforgivable",
-      "bestRank": 26,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "queryId": "worry-tomorrow",
-      "bestRank": 15,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "anxiety-mortgage",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "cana-wedding",
-      "bestRank": 1,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "david-goliath",
       "bestRank": 14,
+      "firstRank": 14,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "friend-betrayal",
-      "bestRank": 29,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "god-far",
-      "bestRank": 2,
-      "hitAtTop5": true
-    },
-    {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "good-samaritan",
-      "bestRank": 26,
+      "bestRank": 17,
+      "firstRank": 17,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "grief",
       "bestRank": null,
+      "firstRank": null,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
-      "queryId": "manipulated",
-      "bestRank": null,
-      "hitAtTop5": false
-    },
-    {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "meaningless",
       "bestRank": null,
+      "firstRank": null,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "melchizedek",
-      "bestRank": 1,
+      "bestRank": 2,
+      "firstRank": 3,
       "hitAtTop5": true
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "please-everyone",
-      "bestRank": null,
+      "bestRank": 12,
+      "firstRank": null,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "prodigal-son",
-      "bestRank": null,
+      "bestRank": 50,
+      "firstRank": 50,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "unforgivable",
-      "bestRank": 27,
+      "bestRank": 38,
+      "firstRank": 38,
       "hitAtTop5": false
     },
     {
-      "armId": "jina-v2-zh-trad",
+      "armId": "granite-97m-trad",
       "queryId": "worry-tomorrow",
-      "bestRank": 18,
-      "hitAtTop5": false
+      "bestRank": 1,
+      "firstRank": 1,
+      "hitAtTop5": true
     }
   ],
   "summary": [
     {
       "armId": "bge-small-simp",
-      "hits": 2,
-      "meanBestRank": 434.429,
-      "heldOutHits": 0,
-      "sizeBytes": 48038702
+      "hits": 3,
+      "meanBestRank": 4.4,
+      "heldOutHits": 3,
+      "sizeBytes": 65823196
     },
     {
       "armId": "bge-small-trad",
-      "hits": 3,
-      "meanBestRank": 432.571,
-      "heldOutHits": 1,
-      "sizeBytes": 47575854
+      "hits": 5,
+      "meanBestRank": 2.4,
+      "heldOutHits": 3,
+      "sizeBytes": 65360348
     },
     {
       "armId": "bge-small-trad-instr",
-      "hits": 3,
-      "meanBestRank": 297.286,
-      "heldOutHits": 1,
-      "sizeBytes": 47575854
+      "hits": 5,
+      "meanBestRank": 2.4,
+      "heldOutHits": 3,
+      "sizeBytes": 65360348
     },
     {
       "armId": "granite-97m-simp",
-      "hits": 2,
-      "meanBestRank": 431.714,
-      "heldOutHits": 2,
-      "sizeBytes": 144899331
+      "hits": 3,
+      "meanBestRank": 6,
+      "heldOutHits": 1,
+      "sizeBytes": 158211505
     },
     {
       "armId": "granite-97m-trad",
       "hits": 3,
-      "meanBestRank": 432.143,
-      "heldOutHits": 3,
-      "sizeBytes": 144436483
-    },
-    {
-      "armId": "gte-multilingual-trad",
-      "hits": 3,
-      "meanBestRank": 430.571,
-      "heldOutHits": 2,
-      "sizeBytes": 384255795
-    },
-    {
-      "armId": "jina-v2-zh-simp",
-      "hits": 3,
-      "meanBestRank": 299.143,
-      "heldOutHits": 0,
-      "sizeBytes": 190912270
-    },
-    {
-      "armId": "jina-v2-zh-trad",
-      "hits": 3,
-      "meanBestRank": 431.143,
-      "heldOutHits": 0,
-      "sizeBytes": 190449422
+      "meanBestRank": 6,
+      "heldOutHits": 1,
+      "sizeBytes": 157748657
     }
   ],
-  "selected": null,
-  "reason": "符合大小上限的臂最多只命中 3 個，未達 7 個"
+  "selected": "bge-small-trad",
+  "reason": "命中 5/5，平均最佳名次 2.40"
 }

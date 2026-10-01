@@ -177,7 +177,7 @@ description: "離線混合檢索（全本和合本）的任務清單"
 - [X] T062 [US3] 更新 `scripts/build-data.ts`、`scripts/build-keyword.ts`、`bench/lib.ts`、`scripts/build-vectors.ts` 以使用多尺度單元與詞彙表；重跑 `npm run build:data` 並確認 `npm run test:data` 通過
 - [X] T063 [US3] 依 history/003 更新 `bench/queries.json`（「討好所有人」加列加 1:10、帖前 2:4；「被親近的人操控」改為「被最親近的朋友背叛、出賣」）—— 已與 `knowledge/vision.md` 同步
 
-- [ ] T064 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T040 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**
+- [X] T064 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T040 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**
 
 **Checkpoint**：已選定模型且驗收 7/7。之後才開始做介面。
 
@@ -355,8 +355,8 @@ description: "離線混合檢索（全本和合本）的任務清單"
 - [X] T106 [P] 撰寫 `README.md`（繁體中文）：專案用途、「工具只指路，不代言」的定位、建置與測試指令（連到 quickstart.md）
 - [X] T107 [P] 撰寫 `docs/資料來源.md`：由 `scripts/sources.json` 整理出經文、分段邊界、模型、ONNX Runtime 各自的來源、版本、用途與授權現況，並標出使用了哪些非經文本身的資料（分段邊界），供使用者與信望愛溝通時使用
 - [ ] T108 依 quickstart.md 第 4 節在 iPhone（Safari，加入主畫面）與 Android（Chrome）**各一台**做手動驗證（SC-004、SC-005、SC-009），把結果記錄在 `specs/001-offline-hybrid-search/manual-verification.md`
-- [ ] T109 完整執行 quickstart.md 第 1～3 節（`build:data`、`bench`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`），全部通過
-- [ ] T110 知識回流：
+- [X] T109 完整執行 quickstart.md 第 1～3 節（`build:data`、`bench`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`），全部通過
+- [X] T110 知識回流：
   - 更新 `knowledge/vision.md` 的「現狀」與階段 1 勾選框（標完成日期）；把「腓 4:6 附近」改為與 spec 一致的重疊定義
   - 實作中的教訓依四段式寫進 `knowledge/experience.md`
   - `knowledge/draft/2026-09-30-前端檢索技術選型.md` 已定案的部分依 knowie 的「分派」原則移出
