@@ -1,4 +1,7 @@
+import { useState } from 'preact/hooks';
 import { highlight } from '../core/matched.ts';
+import { formatCopy } from './copy.ts';
+import { STRINGS } from './strings.ts';
 import type { PresentedResult, PresentedVerse } from '../worker/present.ts';
 
 const refKey = (r: { book: number; chapter: number; verse: number }) => `${r.book}:${r.chapter}:${r.verse}`;
@@ -7,7 +10,7 @@ export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readon
   if (v.merged) return null;
   return (
     <p class={v.inResult ? 'verse' : 'verse context'}>
-      <sup class="vnum">{v.ref.verse}</sup>
+      <sup class="vnum">{v.mergedTo ? `${v.ref.verse}–${v.mergedTo}` : v.ref.verse}</sup>
       {v.parts.map((p, i) =>
         p.kind === 'note' ? (
           <span key={i} class="note">{p.value}</span>
@@ -20,7 +23,13 @@ export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readon
 }
 
 // 原則 5：以段落與前後文呈現；原則 6：不顯示任何分數
-export function PassageCard({ r }: { r: PresentedResult }) {
+export function PassageCard({ r, onExpand }: { r: PresentedResult; onExpand?: (r: PresentedResult) => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard?.writeText(formatCopy(r));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
   return (
     <article
       class="result"
@@ -39,6 +48,16 @@ export function PassageCard({ r }: { r: PresentedResult }) {
           <VerseLine key={refKey(v.ref)} v={v} terms={r.matchedTerms} />
         ))}
       </div>
+      <footer class="actions">
+        {onExpand && (
+          <button type="button" class="link" data-testid="expand-chapter" onClick={() => onExpand(r)}>
+            {STRINGS.expandChapter}
+          </button>
+        )}
+        <button type="button" class="link" data-testid="copy" onClick={() => void copy()}>
+          {copied ? STRINGS.copied : STRINGS.copy}
+        </button>
+      </footer>
     </article>
   );
 }

@@ -25,4 +25,13 @@ export const STRINGS = {
   statusKeywordReady: '關鍵字搜尋可用；語意搜尋準備中…',
   statusSemanticReady: '語意搜尋已就緒',
   context: '前後文',
+  expandChapter: '展開全章',
+  closeChapter: '收合',
+  copy: '複製',
+  copied: '已複製',
+  versionName: '和合本',
+  filterLabel: '篩選',
+  filterAll: '全部',
+  filterEmpty: '此分類沒有相關段落',
+  filterClear: '清除篩選',
 } as const;

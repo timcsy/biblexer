@@ -276,9 +276,9 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T086 [US4] 在 `src/worker/search.worker.ts` 處理 `chapter` 與 `chapterResult` 訊息；確認 T084 通過
-- [ ] T087 [P] [US4] 在 `src/ui/copy.ts` 實作附出處的複製功能；確認 T083 通過
-- [ ] T088 [US4] 在 `src/ui/ChapterView.tsx` 實作全章檢視（標示命中段落、捲動到該段、收合），並接到 `PassageCard` 的「展開全章」；確認 T085 通過
+- [X] T086 [US4] 在 `src/worker/search.worker.ts` 處理 `chapter` 與 `chapterResult` 訊息；確認 T084 通過
+- [X] T087 [P] [US4] 在 `src/ui/copy.ts` 實作附出處的複製功能；確認 T083 通過
+- [X] T088 [US4] 在 `src/ui/ChapterView.tsx` 實作全章檢視（標示命中段落、捲動到該段、收合），並接到 `PassageCard` 的「展開全章」；確認 T085 通過
 
 ---
 
@@ -299,8 +299,8 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T091 [US5] 在 `src/core/search.ts` 補上 `filter` 與 `counts` 的邊界情況；確認 T089 通過
-- [ ] T092 [US5] 在 `src/ui/FilterBar.tsx` 實作兩層篩選列（約 → 類別，附數量），以及空結果訊息與清除按鈕；確認 T090 通過
+- [X] T091 [US5] 在 `src/core/search.ts` 補上 `filter` 與 `counts` 的邊界情況；確認 T089 通過
+- [X] T092 [US5] 在 `src/ui/FilterBar.tsx` 實作兩層篩選列（約 → 類別，附數量），以及空結果訊息與清除按鈕；確認 T090 通過
 
 ---
 

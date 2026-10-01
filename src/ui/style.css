@@ -41,3 +41,14 @@ main { max-width: 46rem; margin: 0 auto; padding: 1rem; }
 .attribution { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--line); padding-top: 0.8rem; }
 .rephrase { font-size: 0.9rem; }
 mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 0.15em; padding: 0 0.05em; }
+.actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.4rem; }
+.filter { display: flex; flex-wrap: wrap; gap: 0.35rem 0.75rem; margin: 0.5rem 0; font-size: 0.85rem; }
+.filter-group { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.filter button { font-size: 0.85rem; padding: 0.25rem 0.55rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--fg); cursor: pointer; }
+.filter button[aria-pressed='true'] { background: var(--accent); color: var(--card); border-color: var(--accent); }
+.filter small { color: inherit; opacity: 0.7; }
+.chapter { background: var(--card); border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.8rem 1rem; margin-top: 1rem; }
+.chapter-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--card); padding: 0.3rem 0; }
+.chapter-head h2 { font-size: 1.1rem; margin: 0; color: var(--accent); }
+.chapter .verse.para { margin-top: 0.9rem; }
+.chapter .verse.hit { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 0.3rem; }

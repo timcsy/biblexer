@@ -2,12 +2,14 @@ import { render } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Granularity } from './core/search.ts';
 import { Attribution } from './ui/Attribution.tsx';
+import { ChapterView } from './ui/ChapterView.tsx';
+import { toSearchFilter, type FilterKey } from './ui/FilterBar.tsx';
 import { ResultList } from './ui/ResultList.tsx';
 import { SearchBox } from './ui/SearchBox.tsx';
 import { STRINGS } from './ui/strings.ts';
 import './ui/style.css';
 import { SearchClient } from './worker/client.ts';
-import type { PresentedResponse } from './worker/present.ts';
+import type { ChapterView as ChapterData, PresentedResponse, PresentedResult } from './worker/present.ts';
 import type { ReadyState } from './worker/protocol.ts';
 
 const PAGE = 10;
@@ -19,6 +21,8 @@ function App() {
   const [expand, setExpand] = useState(true);
   const [response, setResponse] = useState<PresentedResponse | null>(null);
   const [results, setResults] = useState<PresentedResponse['results']>([]);
+  const [filter, setFilter] = useState<FilterKey | null>(null);
+  const [chapter, setChapter] = useState<{ data: ChapterData; hit: { from: number; to: number } } | null>(null);
   const seq = useRef(0);
 
   const client = useMemo(() => {
@@ -32,12 +36,15 @@ function App() {
 
   useEffect(() => client.init('/data/manifest.json'), [client]);
 
-  const run = async (q: string, g: Granularity, ex: boolean) => {
+  const run = async (q: string, g: Granularity, ex: boolean, f: FilterKey | null = filter) => {
     if (!q) return;
     const mySeq = ++seq.current;
-    const r = await client.search({ query: q, granularity: g, expand: ex, limit: PAGE });
+    const sf = toSearchFilter(f);
+    const r = await client.search({ query: q, granularity: g, expand: ex, limit: PAGE, ...(sf ? { filter: sf } : {}) });
     if (mySeq !== seq.current) return;
     setQuery(q);
+    setFilter(f);
+    setChapter(null);
     setResponse(r);
     setResults(r.results);
   };
@@ -48,7 +55,8 @@ function App() {
   }, [ready.semantic]);
 
   const loadMore = async () => {
-    const r = await client.search({ query, granularity, expand, offset: results.length, limit: PAGE });
+    const sf = toSearchFilter(filter);
+    const r = await client.search({ query, granularity, expand, offset: results.length, limit: PAGE, ...(sf ? { filter: sf } : {}) });
     setResults([...results, ...r.results]);
   };
 
@@ -61,8 +69,9 @@ function App() {
         <h1>{STRINGS.appTitle}</h1>
         <p class="status" data-testid={statusId}>{status}</p>
       </header>
-      <SearchBox onSearch={(q) => void run(q, granularity, expand)} disabled={!ready.keyword} />
-      {response && (
+      <SearchBox onSearch={(q) => void run(q, granularity, expand, null)} disabled={!ready.keyword} />
+      {chapter && <ChapterView data={chapter.data} hit={chapter.hit} onClose={() => setChapter(null)} />}
+      {response && !chapter && (
         <ResultList
           query={query}
           response={response}
@@ -78,6 +87,11 @@ function App() {
             void run(query, granularity, !expand);
           }}
           onLoadMore={() => void loadMore()}
+          filter={filter}
+          onFilter={(k) => void run(query, granularity, expand, k)}
+          onExpand={(r: PresentedResult) =>
+            void client.chapter(r.startRef.book, r.startRef.chapter).then((data) => setChapter({ data, hit: { from: r.startRef.verse, to: r.startRef.chapter === r.endRef.chapter ? r.endRef.verse : 999 } }))
+          }
         />
       )}
       <Attribution />

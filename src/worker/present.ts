@@ -12,6 +12,8 @@ export interface PresentedVerse {
   inResult: boolean;
   /** 合併節佔位（內容併入前一節） */
   merged: boolean;
+  /** 承載合併內容的節：合併到第幾節（如 29 節承載 29–30 → 30） */
+  mergedTo?: number;
 }
 
 export interface PresentedResult extends SearchResult {
@@ -38,7 +40,15 @@ export function presentVerses(verses: readonly StoredVerse[], from: number, to: 
   const out: PresentedVerse[] = [];
   for (let i = from; i <= to; i++) {
     const v = verses[i]!;
-    out.push({ ref: v.ref, parts: splitDisplay(v.display), inResult: inResult(i), merged: v.merged });
+    let last = i;
+    while (verses[last + 1]?.merged) last++;
+    out.push({
+      ref: v.ref,
+      parts: splitDisplay(v.display),
+      inResult: inResult(i),
+      merged: v.merged,
+      ...(last > i && !v.merged ? { mergedTo: verses[last]!.ref.verse } : {}),
+    });
   }
   return out;
 }
