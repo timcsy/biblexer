@@ -41,7 +41,9 @@ export function composeManifest<M extends ManifestLike>(prev: M, report: { selec
 function main() {
   const manifestPath = join(DATA_DIR, 'manifest.json');
   const prev = JSON.parse(readFileSync(manifestPath, 'utf8')) as ManifestLike & { dataVersion: string };
-  const report = JSON.parse(readFileSync(join(ROOT, 'bench/report.json'), 'utf8')) as { selected: string | null; dataVersion: string };
+  // 預設讀正式報告；開發期間可指定單臂報告（如 .cache/bench-bge-small-trad.report.json）
+  const reportPath = process.argv[2] ?? join(ROOT, 'bench/report.json');
+  const report = JSON.parse(readFileSync(reportPath, 'utf8')) as { selected: string | null; dataVersion: string };
   if (report.dataVersion !== prev.dataVersion) throw new Error('bench/report.json 的資料版本與目前資料不同，請重跑 npm run bench');
   const arms = loadArms();
   const arm = arms.find((a) => a.id === report.selected);

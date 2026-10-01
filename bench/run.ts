@@ -15,7 +15,8 @@ async function main() {
   const envFile = join(import.meta.dirname, '../.env');
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const only = process.argv.includes('--arm') ? process.argv[process.argv.indexOf('--arm') + 1] : undefined;
-  const arms = loadArms().filter((a) => !only || a.id === only);
+  // 完整評測預設不跑診斷臂（大模型、遠端 API）；要跑時以 --arm 指定
+  const arms = loadArms().filter((a) => (only ? a.id === only : !a.diagnostic));
   const queries = loadQueries();
   const ds = loadDataset(PUBLIC_DIR);
   const baseBytes = Object.entries(ds.manifest.files).filter(([k]) => k !== 'vectors').reduce((a, [, f]) => a + f.bytes, 0);
