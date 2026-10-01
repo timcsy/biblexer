@@ -1,4 +1,5 @@
 // 資料產物讀寫（contracts/data-artifacts.md）
+import { SCALES, SCALE_CODES, type UnitScale } from './passages.ts';
 import type { VerseRef } from './refs.ts';
 
 export const VERSE_FLAG_MERGED = 1;
@@ -56,10 +57,15 @@ export function decodePassages(bytes: Uint8Array): Array<{ start: number; end: n
   return Array.from({ length: a.length / 2 }, (_, i) => ({ start: a[2 * i]!, end: a[2 * i + 1]! }));
 }
 
-export const encodeUnits = (us: ReadonlyArray<{ start: number; end: number; passageId: number }>): Uint8Array =>
-  encodeInt32(us.flatMap((u) => [u.start, u.end, u.passageId]));
+export const encodeUnits = (us: ReadonlyArray<{ start: number; end: number; passageId: number; scale: UnitScale }>): Uint8Array =>
+  encodeInt32(us.flatMap((u) => [u.start, u.end, u.passageId, SCALE_CODES[u.scale]]));
 
-export function decodeUnits(bytes: Uint8Array): Array<{ start: number; end: number; passageId: number }> {
+export function decodeUnits(bytes: Uint8Array): Array<{ start: number; end: number; passageId: number; scale: UnitScale }> {
   const a = decodeInt32(bytes);
-  return Array.from({ length: a.length / 3 }, (_, i) => ({ start: a[3 * i]!, end: a[3 * i + 1]!, passageId: a[3 * i + 2]! }));
+  return Array.from({ length: a.length / 4 }, (_, i) => ({
+    start: a[4 * i]!,
+    end: a[4 * i + 1]!,
+    passageId: a[4 * i + 2]!,
+    scale: SCALES[a[4 * i + 3]!]!,
+  }));
 }

@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SEGMENTATION_ID } from '../src/core/passages.ts';
 import { buildKeywordFile } from './build-keyword.ts';
+import { buildLexiconFile } from './build-lexicon.ts';
 import { buildPassageFiles } from './build-passages.ts';
 import { buildText } from './build-text.ts';
 import { SOURCES, fetchSources } from './fetch-sources.ts';
@@ -16,8 +17,9 @@ async function main() {
   const text = buildText(src.fhl);
   const pass = buildPassageFiles(src.ebible, text.verses);
   const keyword = buildKeywordFile(text.verses, pass.units);
+  const lexicon = await buildLexiconFile(src.moedict, text.dbPath, text.verses);
 
-  const files = { ...text.files, ...pass.files, keyword };
+  const files = { ...text.files, ...pass.files, keyword, lexicon };
   const dataVersion = createHash('sha256')
     .update(Object.values(files).map((f) => f.path).join('|'))
     .digest('hex')

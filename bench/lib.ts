@@ -6,6 +6,7 @@ import { deserializeKeywordIndex } from '../src/core/bm25.ts';
 import { bestHitRank } from '../src/core/hit.ts';
 import { parseRefString, type IndexRange } from '../src/core/refs.ts';
 import { buildCorpus, search, type Corpus } from '../src/core/search.ts';
+import type { Lexicon } from '../src/core/expand.ts';
 import { toSearchText } from '../src/core/text.ts';
 import { deserializeVectorStore, type VectorStore } from '../src/core/vectors.ts';
 import { createEmbedder, loadTransformersBackend, type Embedder, type Pooling } from '../src/embed/embedder.ts';
@@ -54,7 +55,7 @@ export interface Dataset {
   manifest: Manifest;
   verses: StoredVerse[];
   passages: IndexRange[];
-  units: Array<IndexRange & { passageId: number }>;
+  units: ReturnType<typeof decodeUnits>;
   unitTexts: string[];
   corpusParts: Omit<Parameters<typeof buildCorpus>[0], 'vectors'>;
 }
@@ -69,7 +70,8 @@ export function loadDataset(publicDir: string): Dataset {
   const corpusVerses = verses.map((v) => ({ ...v.ref, searchText: toSearchText(v.display) }));
   const unitTexts = units.map((u) => corpusVerses.slice(u.start, u.end + 1).map((v) => v.searchText).join(''));
   const keyword = deserializeKeywordIndex(new Uint8Array(read('keyword')));
-  return { manifest, verses, passages, units, unitTexts, corpusParts: { verses: corpusVerses, passages, units, keyword } };
+  const lexicon = manifest.files.lexicon ? (JSON.parse(read('lexicon').toString('utf8')) as Lexicon) : null;
+  return { manifest, verses, passages, units, unitTexts, corpusParts: { verses: corpusVerses, passages, units, keyword, lexicon } };
 }
 
 export function expectedRanges(q: BenchmarkQuery, verses: readonly StoredVerse[]): IndexRange[] {

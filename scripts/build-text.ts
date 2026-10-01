@@ -12,6 +12,8 @@ import { join } from 'node:path';
 
 export interface TextBuild {
   verses: StoredVerse[];
+  /** 解壓後的信望愛資料庫路徑（詞彙表建置也要用） */
+  dbPath: string;
   files: { books: WrittenFile; verses: WrittenFile };
 }
 
@@ -40,5 +42,5 @@ export function buildText(zipPath: string): TextBuild {
   const versesFile = writeHashed('verses', 'json', encodeVerses(verses));
   const chapters = new Set(verses.map((v) => `${v.ref.book}:${v.ref.chapter}`)).size;
   console.log(`經文：${new Set(verses.map((v) => v.ref.book)).size} 卷、${chapters} 章、${verses.length} 節`);
-  return { verses, files: { books, verses: versesFile } };
+  return { verses, dbPath, files: { books, verses: versesFile } };
 }

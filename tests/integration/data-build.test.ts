@@ -55,6 +55,20 @@ describe('建置產物', () => {
     });
   });
 
+  test('多尺度單元：單節單元＝非佔位經節數，且排在最前面', () => {
+    const verses = decodeVerses(read('verses').toString('utf8'));
+    const units = decodeUnits(read('units'));
+    const nVerse = verses.filter((v) => !v.merged).length;
+    expect(units.slice(0, nVerse).every((u) => u.scale === 'verse')).toBe(true);
+    expect(units.filter((u) => u.scale === 'verse')).toHaveLength(nVerse);
+  });
+
+  test('詞彙表：「焦慮」可擴充到「憂慮」（辭典）與「掛慮」（原文 G3309）', () => {
+    const lex = JSON.parse(read('lexicon').toString('utf8')) as Record<string, Array<[string, string]>>;
+    expect(lex['焦慮']).toContainEqual(['憂慮', 'moedict']);
+    expect(lex['焦慮']).toContainEqual(['掛慮', 'strongs:G3309']);
+  });
+
   test('檢索單元都落在所屬段落內', () => {
     const passages = decodePassages(read('passages'));
     for (const u of decodeUnits(read('units'))) {

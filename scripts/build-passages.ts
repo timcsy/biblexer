@@ -31,8 +31,9 @@ export function buildPassageFiles(zipPath: string, verses: readonly StoredVerse[
   if (missing) console.warn(`警告：${missing} 個分段起點在信望愛經文中找不到對應經節`);
 
   const passages = buildPassages(verses.map((v) => `${v.ref.book}:${v.ref.chapter}`), starts);
-  const units = buildUnits(passages);
-  console.log(`段落：${passages.length}（分段起點 ${starts.size}）；檢索單元：${units.length}`);
+  const units = buildUnits(passages, { skipVerse: (i) => verses[i]!.merged });
+  const byScale = (sc: string) => units.filter((u) => u.scale === sc).length;
+  console.log(`段落：${passages.length}（分段起點 ${starts.size}）；檢索單元：${units.length}（單節 ${byScale('verse')}、視窗 ${byScale('window')}、整段 ${byScale('passage')}）`);
   return {
     passages,
     units,

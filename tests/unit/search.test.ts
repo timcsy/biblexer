@@ -123,4 +123,18 @@ describe('search()', () => {
     expect(off.expansions).toEqual([]);
     expect(off.results).toEqual([]);
   });
+
+  test('關鍵字同時比對單節與視窗：查詢詞分散在相鄰兩節時，該段落排在只含其中一詞的單節之前', () => {
+    const c = buildCorpus({
+      verses: [
+        { book: 43, chapter: 2, verse: 1, searchText: '第三日在加利利的迦拿' },
+        { book: 43, chapter: 2, verse: 2, searchText: '有娶親的筵席耶穌的母親在那裡' },
+        { book: 43, chapter: 21, verse: 2, searchText: '迦拿人' },
+      ],
+      passages: [{ start: 0, end: 1 }, { start: 2, end: 2 }],
+      vectors: null,
+    });
+    expect(search({ query: '迦拿筵席' }, c, null).results[0]!.passage.id).toBe(0);
+  });
 });
+

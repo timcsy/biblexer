@@ -171,10 +171,10 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 #### 實作
 
-- [ ] T059 [US3] 在 `src/core/passages.ts` 實作多尺度 `buildUnits`（單節在前、視窗、整段），在 `src/core/artifacts.ts` 加入 `scale` 欄；確認 T054、T055 通過
-- [ ] T060 [US3] 建立 `scripts/build-lexicon.ts`：下載萌典 `dict-revised.json.xz`（核對雜湊，加入 `scripts/sources.json` 並註明 CC BY-ND 3.0 TW、只取近義關係）、從信望愛 `unv` 的 Strong's 標記建立同字譯法分組，輸出 `public/data/lexicon.<hash>.json`；確認 T056 通過
-- [ ] T061 [US3] 在 `src/core/expand.ts` 實作 `expandQuery`，並在 `src/core/search.ts` 加入擴充清單（獨立 RRF 清單）、`granularity` 聚合與 `expansions` 回應欄位；關鍵字索引改建在單節單元上；確認 T057、T058 通過
-- [ ] T062 [US3] 更新 `scripts/build-data.ts`、`scripts/build-keyword.ts`、`bench/lib.ts`、`scripts/build-vectors.ts` 以使用多尺度單元與詞彙表；重跑 `npm run build:data` 並確認 `npm run test:data` 通過
+- [X] T059 [US3] 在 `src/core/passages.ts` 實作多尺度 `buildUnits`（單節在前、視窗、整段），在 `src/core/artifacts.ts` 加入 `scale` 欄；確認 T054、T055 通過
+- [X] T060 [US3] 建立 `scripts/build-lexicon.ts`：下載萌典 `dict-revised.json.xz`（核對雜湊，加入 `scripts/sources.json` 並註明 CC BY-ND 3.0 TW、只取近義關係）、從信望愛 `unv` 的 Strong's 標記建立同字譯法分組，輸出 `public/data/lexicon.<hash>.json`；確認 T056 通過
+- [X] T061 [US3] 在 `src/core/expand.ts` 實作 `expandQuery`，並在 `src/core/search.ts` 加入擴充清單（獨立 RRF 清單）、`granularity` 聚合與 `expansions` 回應欄位；關鍵字索引改建在單節單元上；確認 T057、T058 通過
+- [X] T062 [US3] 更新 `scripts/build-data.ts`、`scripts/build-keyword.ts`、`bench/lib.ts`、`scripts/build-vectors.ts` 以使用多尺度單元與詞彙表；重跑 `npm run build:data` 並確認 `npm run test:data` 通過
 - [X] T063 [US3] 依 history/003 更新 `bench/queries.json`（「討好所有人」加列加 1:10、帖前 2:4；「被親近的人操控」改為「被最親近的朋友背叛、出賣」）—— 已與 `knowledge/vision.md` 同步
 
 - [ ] T064 [US3] 執行 `npm run bench`，連跑兩次並確認 `git diff --exit-code bench/report.json`；接著執行 `npm run test:acceptance`，確認 T040 轉綠；最後 commit `bench/report.json` 與 `bench/report.md`。**若沒有任何臂達到 7/7：停止後續所有任務，帶著報告與使用者討論（research R3 第 3 條）**

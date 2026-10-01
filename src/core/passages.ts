@@ -16,11 +16,16 @@ export interface Passage {
   segmentation: string;
 }
 
+export type UnitScale = 'verse' | 'window' | 'passage';
+export const SCALE_CODES: Readonly<Record<UnitScale, number>> = { verse: 0, window: 1, passage: 2 };
+export const SCALES: readonly UnitScale[] = ['verse', 'window', 'passage'];
+
 export interface Unit {
   id: number;
   start: number;
   end: number;
   passageId: number;
+  scale: UnitScale;
 }
 
 /**
@@ -52,22 +57,35 @@ export function buildPassages(chapterKeys: ReadonlyArray<number | string>, start
   return out;
 }
 
-export function buildUnits(passages: readonly Passage[]): Unit[] {
+/**
+ * 多尺度檢索單元（research R10）：單節（排在最前面，id 0..V-1，關鍵字索引的文件 id 即單元 id）、
+ * 3 節視窗（段落內滑動、步長 2）、整段（只為 > 3 節的段落建立，避免與視窗重複）。
+ * @param opts.skipVerse 不建立單節單元的經節（合併節佔位）
+ */
+export function buildUnits(passages: readonly Passage[], opts: { skipVerse?: (verseIdx: number) => boolean } = {}): Unit[] {
   const out: Unit[] = [];
+  const push = (start: number, end: number, passageId: number, scale: UnitScale) =>
+    out.push({ id: out.length, start, end, passageId, scale });
+
+  for (const p of passages) {
+    for (let i = p.start; i <= p.end; i++) if (!opts.skipVerse?.(i)) push(i, i, p.id, 'verse');
+  }
   for (const p of passages) {
     const len = p.end - p.start + 1;
     if (len <= UNIT_SIZE) {
-      out.push({ id: out.length, start: p.start, end: p.end, passageId: p.id });
+      push(p.start, p.end, p.id, 'window');
       continue;
     }
     let s = p.start;
+    let lastEnd = -1;
     for (; s + UNIT_SIZE - 1 <= p.end; s += UNIT_STRIDE) {
-      out.push({ id: out.length, start: s, end: s + UNIT_SIZE - 1, passageId: p.id });
+      push(s, s + UNIT_SIZE - 1, p.id, 'window');
+      lastEnd = s + UNIT_SIZE - 1;
     }
-    const last = out.at(-1)!;
-    if (last.end < p.end) {
-      out.push({ id: out.length, start: p.end - UNIT_SIZE + 1, end: p.end, passageId: p.id });
-    }
+    if (lastEnd < p.end) push(p.end - UNIT_SIZE + 1, p.end, p.id, 'window');
+  }
+  for (const p of passages) {
+    if (p.end - p.start + 1 > UNIT_SIZE) push(p.start, p.end, p.id, 'passage');
   }
   return out;
 }

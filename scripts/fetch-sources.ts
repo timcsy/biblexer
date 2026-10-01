@@ -13,7 +13,7 @@ export interface Source {
   license: string;
 }
 
-export const SOURCES = JSON.parse(readFileSync(join(ROOT, 'scripts/sources.json'), 'utf8')) as Record<'fhl' | 'ebible', Source>;
+export const SOURCES = JSON.parse(readFileSync(join(ROOT, 'scripts/sources.json'), 'utf8')) as Record<'fhl' | 'ebible' | 'moedict', Source>;
 
 export async function fetchSources(): Promise<Record<keyof typeof SOURCES, string>> {
   const out = {} as Record<keyof typeof SOURCES, string>;

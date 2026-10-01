@@ -10,8 +10,9 @@ export function unitTexts(verses: readonly StoredVerse[], units: readonly Unit[]
   return units.map((u) => search.slice(u.start, u.end + 1).join(''));
 }
 
+/** 關鍵字索引建立在單節單元上（單節單元排在最前面，文件 id 即單元 id） */
 export function buildKeywordFile(verses: readonly StoredVerse[], units: readonly Unit[]): WrittenFile {
-  const idx = buildKeywordIndex(unitTexts(verses, units));
+  const idx = buildKeywordIndex(unitTexts(verses, units.filter((u) => u.scale === 'verse')));
   console.log(`關鍵字索引：${idx.terms.length} 個 token`);
   return writeHashed('keyword', 'bin', serializeKeywordIndex(idx));
 }
