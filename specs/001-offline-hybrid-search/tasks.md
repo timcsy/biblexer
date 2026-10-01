@@ -236,17 +236,17 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T076 [P] [US2] 在 `tests/unit/parse-reference.test.ts` 撰寫出處解析測試：
+- [X] T076 [P] [US2] 在 `tests/unit/parse-reference.test.ts` 撰寫出處解析測試：
   - 可解析「羅 8:28」、「羅馬書8章28節」、「羅8:28-30」、「約一 1:9」
   - 66 卷的全名與簡稱都能解析
   - 章或節不存在時回傳 null
   - 出處查詢時，該段落為第 1 筆（FR-004）
-- [ ] T077 [P] [US2] 在 `tests/unit/normalize.test.ts` 撰寫查詢正規化測試：
+- [X] T077 [P] [US2] 在 `tests/unit/normalize.test.ts` 撰寫查詢正規化測試：
   - 能偵測簡體字，並以 `opencc-js` 的 `cn2t`（`{from:'cn', to:'tw'}`，逐字轉換）將「麦基洗德」轉為「麥基洗德」
   - 不含簡體字時不載入轉換器
   - 統一全形與半形（FR-005）
-- [ ] T078 [P] [US2] 在 `tests/unit/matched-terms.test.ts` 撰寫命中字詞測試：`matchedTerms` 只列出查詢中實際出現在段落的字詞；標示範圍不會切斷字元（FR-006）
-- [ ] T079 [P] [US2] 在 `e2e/search-keyword.spec.ts` 撰寫 E2E：
+- [X] T078 [P] [US2] 在 `tests/unit/matched-terms.test.ts` 撰寫命中字詞測試：`matchedTerms` 只列出查詢中實際出現在段落的字詞；標示範圍不會切斷字元（FR-006）
+- [X] T079 [P] [US2] 在 `e2e/search-keyword.spec.ts` 撰寫 E2E：
   - 3 個關鍵字固定查詢都命中前 5 筆
   - 「羅 8:28」為第 1 筆
   - 簡體與繁體輸入的結果相同
