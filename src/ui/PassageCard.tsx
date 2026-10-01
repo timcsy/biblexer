@@ -1,13 +1,20 @@
+import { highlight } from '../core/matched.ts';
 import type { PresentedResult, PresentedVerse } from '../worker/present.ts';
 
 const refKey = (r: { book: number; chapter: number; verse: number }) => `${r.book}:${r.chapter}:${r.verse}`;
 
-export function VerseLine({ v }: { v: PresentedVerse }) {
+export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readonly string[] }) {
   if (v.merged) return null;
   return (
     <p class={v.inResult ? 'verse' : 'verse context'}>
       <sup class="vnum">{v.ref.verse}</sup>
-      {v.parts.map((p, i) => (p.kind === 'note' ? <span key={i} class="note">{p.value}</span> : <span key={i}>{p.value}</span>))}
+      {v.parts.map((p, i) =>
+        p.kind === 'note' ? (
+          <span key={i} class="note">{p.value}</span>
+        ) : (
+          <span key={i}>{highlight(p.value, v.inResult ? terms : []).map((h, j) => (h.mark ? <mark key={j}>{h.text}</mark> : h.text))}</span>
+        ),
+      )}
     </p>
   );
 }
@@ -29,7 +36,7 @@ export function PassageCard({ r }: { r: PresentedResult }) {
       </header>
       <div class="text">
         {r.verses.map((v) => (
-          <VerseLine key={refKey(v.ref)} v={v} />
+          <VerseLine key={refKey(v.ref)} v={v} terms={r.matchedTerms} />
         ))}
       </div>
     </article>

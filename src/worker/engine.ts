@@ -5,6 +5,7 @@ import { deserializeKeywordIndex } from '../core/bm25.ts';
 import { bookById } from '../core/canon.ts';
 import type { Lexicon } from '../core/expand.ts';
 import { buildCorpus, search, type Corpus, type SearchRequest } from '../core/search.ts';
+import { normalizeQuery } from '../core/normalize.ts';
 import { toSearchText } from '../core/text.ts';
 import { deserializeVectorStore } from '../core/vectors.ts';
 import type { Embedder, Pooling } from '../embed/embedder.ts';
@@ -71,8 +72,10 @@ export function createEngine(deps: EngineDeps): Engine {
 
     async search(req: SearchRequest) {
       const c = requireCorpus();
-      const vec = embedder && /[\p{L}\p{N}]/u.test(req.query) ? (await embedder.embed([req.query], 'query'))[0]! : null;
-      return presentResponse(search(req, c, vec), verses, req.granularity ?? 'passage');
+      // 繁簡與全半形統一（FR-005）；只在含簡體字時才載入轉換器
+      const query = await normalizeQuery(req.query);
+      const vec = embedder && /[\p{L}\p{N}]/u.test(query) ? (await embedder.embed([query], 'query'))[0]! : null;
+      return presentResponse(search({ ...req, query }, c, vec), verses, req.granularity ?? 'passage');
     },
 
     async chapter(book, chapter): Promise<ChapterView> {

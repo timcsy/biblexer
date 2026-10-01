@@ -8,7 +8,8 @@ import { aggregateToPassages, rrf } from './fusion.ts';
 import { expandQuery, type Expansion, type Lexicon } from './expand.ts';
 import { buildUnits, SEGMENTATION_ID, type UnitScale } from './passages.ts';
 import type { Ranked } from './ranked.ts';
-import type { IndexRange } from './refs.ts';
+import { findMatchedTerms } from './matched.ts';
+import { parseReference, resolveReference, type IndexRange } from './refs.ts';
 import { buildVectorStore, semanticSearch, type VectorStore } from './vectors.ts';
 
 export const CONTEXT_VERSES = 2;
@@ -168,6 +169,13 @@ function itemInfo(corpus: Corpus, g: Granularity, id: number): ResultPassage {
   return { id, start: r.start, end: r.end, book: book.id, testament: book.testament, category: book.category };
 }
 
+/** 與出處範圍重疊的呈現單位（依粒度） */
+function referenceItems(corpus: Corpus, g: Granularity, r: IndexRange): number[] {
+  if (g === 'verse') return Array.from({ length: r.end - r.start + 1 }, (_, i) => r.start + i);
+  if (g === 'chapter') return [corpus.chapterOf[r.start]!];
+  return corpus.passages.flatMap((p, id) => (p.start <= r.end && r.start <= p.end ? [id] : []));
+}
+
 /** 檢索單元 → 呈現單位（-1 表示此粒度不採用該單元） */
 function unitTarget(corpus: Corpus, g: Granularity, unitId: number): number {
   const u = corpus.units[unitId]!;
@@ -213,7 +221,26 @@ export function search(req: SearchRequest, corpus: Corpus, queryVector: Float32A
   }
 
   const fused = rrf(lists.map((l) => l.ranked)).filter((r) => target[r.id]! >= 0);
-  const all = aggregateToPassages(fused, target).map((r) => itemInfo(corpus, granularity, r.id));
+  // 融合分數相同時，有字面證據（關鍵字／擴充詞）的排前面：字面出現是比語意相似更直接的證據
+  const lexical = (id: number) => (sourcesByItem.get(id)?.has('keyword') || sourcesByItem.get(id)?.has('expansion') ? 1 : 0);
+  let ids = aggregateToPassages(fused, target)
+    .sort((a, b) => b.score - a.score || lexical(b.id) - lexical(a.id) || a.id - b.id)
+    .map((r) => r.id);
+
+  // 經文出處（FR-004）：該處經文列為第一筆
+  const parsedRef = parseReference(query);
+  const reference = parsedRef ? resolveReference(parsedRef, corpus.verses) : null;
+  if (reference) {
+    const refIds = referenceItems(corpus, granularity, reference);
+    for (const id of refIds) {
+      let set = sourcesByItem.get(id);
+      if (!set) sourcesByItem.set(id, (set = new Set()));
+      set.add('reference');
+    }
+    ids = [...refIds, ...ids.filter((id) => !refIds.includes(id))];
+  }
+  const all = ids.map((id) => itemInfo(corpus, granularity, id));
+  const expansionTerms = expansions.flatMap((e) => e.terms.map((t) => t.term));
 
   const counts: SearchResponse['counts'] = { testament: {}, category: {} };
   for (const p of all) {
@@ -236,9 +263,9 @@ export function search(req: SearchRequest, corpus: Corpus, queryVector: Float32A
             start: Math.max(p.start - CONTEXT_VERSES, corpus.chapterStart[p.start]!),
             end: Math.min(p.end + CONTEXT_VERSES, corpus.chapterEnd[p.end]!),
           },
-    matchedTerms: [],
+    matchedTerms: findMatchedTerms(query, unitText(corpus.verses, p), expansionTerms),
     sources: order.filter((src) => sourcesByItem.get(p.id)?.has(src)),
   }));
 
-  return { results, total: filtered.length, counts, semanticReady, truncated, reference: null, expansions };
+  return { results, total: filtered.length, counts, semanticReady, truncated, reference, expansions };
 }

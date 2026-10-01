@@ -136,5 +136,18 @@ describe('search()', () => {
     });
     expect(search({ query: '迦拿筵席' }, c, null).results[0]!.passage.id).toBe(0);
   });
+
+  test('融合分數相同時，有字面證據（關鍵字）的段落排在只有語意命中的段落之前', () => {
+    // 120 段，各一節；前 119 段向量相同（語意清單前 100 名都是它們），第 119 段含「迦拿」但向量正交（不在語意前 100 名）
+    const n = 120;
+    const big = buildCorpus({
+      verses: Array.from({ length: n }, (_, i) => ({ book: 1, chapter: i + 1, verse: 1, searchText: i === n - 1 ? '加利利的迦拿' : '起初神創造天地' })),
+      passages: Array.from({ length: n }, (_, i) => ({ start: i, end: i })),
+      vectors: (units) => units.map((u) => Float32Array.from([u.passageId === n - 1 ? 0 : 1, u.passageId === n - 1 ? 1 : 0])),
+    });
+    const r = search({ query: '迦拿' }, big, Float32Array.from([1, 0]));
+    expect(r.results[0]!.passage.id).toBe(n - 1);
+    expect(r.results[0]!.sources).toEqual(['keyword']);
+  });
 });
 

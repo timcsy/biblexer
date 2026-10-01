@@ -254,9 +254,9 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T080 [US2] 在 `src/core/refs.ts` 實作 `parseReference`（全名、簡稱、`章:節`、`章章節節`、範圍），並在 `src/core/search.ts` 中讓出處段落排第 1；確認 T076 通過
-- [ ] T081 [P] [US2] 在 `src/core/normalize.ts` 與 `src/core/simplified.ts` 實作查詢正規化，簡轉繁的轉換器用動態 import 延遲載入；確認 T077 通過
-- [ ] T082 [US2] 在 `src/core/search.ts` 計算 `matchedTerms`，並在 `src/ui/PassageCard.tsx` 標示命中字詞；確認 T078、T079 通過
+- [X] T080 [US2] 在 `src/core/refs.ts` 實作 `parseReference`（全名、簡稱、`章:節`、`章章節節`、範圍），並在 `src/core/search.ts` 中讓出處段落排第 1；確認 T076 通過
+- [X] T081 [P] [US2] 在 `src/core/normalize.ts` 與 `src/core/simplified.ts` 實作查詢正規化，簡轉繁的轉換器用動態 import 延遲載入；確認 T077 通過
+- [X] T082 [US2] 在 `src/core/search.ts` 計算 `matchedTerms`，並在 `src/ui/PassageCard.tsx` 標示命中字詞；確認 T078、T079 通過
 
 **Checkpoint**：混合檢索完整；spec 的 7 個固定查詢都能在瀏覽器中驗證。
 

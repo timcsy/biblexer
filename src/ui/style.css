@@ -40,3 +40,4 @@ main { max-width: 46rem; margin: 0 auto; padding: 1rem; }
 .more { display: block; margin: 1rem auto; }
 .attribution { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--line); padding-top: 0.8rem; }
 .rephrase { font-size: 0.9rem; }
+mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 0.15em; padding: 0 0.05em; }
