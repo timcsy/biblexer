@@ -37,3 +37,10 @@ export const overlaps = (r: ResultRef, [b, c, v1, v2]: [number, number, number, 
   const key = (x: [number, number, number]) => x[0] * 1e6 + x[1] * 1e3 + x[2];
   return key(r.start) <= b * 1e6 + c * 1e3 + v2 && b * 1e6 + c * 1e3 + v1 <= key(r.end);
 };
+
+/** 清除 BibLexer 自己的資料快取（模擬瀏覽器清除儲存空間） */
+export async function clearDataCaches(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    for (const k of await caches.keys()) if (k.startsWith('biblexer-')) await caches.delete(k);
+  });
+}

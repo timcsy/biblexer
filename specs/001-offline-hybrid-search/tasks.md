@@ -312,29 +312,29 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T093 [P] [US6] 在 `tests/unit/download.test.ts` 撰寫下載測試：
+- [X] T093 [P] [US6] 在 `tests/unit/download.test.ts` 撰寫下載測試：
   - 依 `Content-Length` 與串流計算進度
   - 以有版本號的 Cache Storage 名稱存放
   - 雜湊檔名更新時整批替換
   - `QuotaExceededError` 轉為 `QUOTA` 錯誤
-- [ ] T094 [P] [US6] 在 `e2e/first-load.spec.ts` 撰寫 E2E：
+- [X] T094 [P] [US6] 在 `e2e/first-load.spec.ts` 撰寫 E2E：
   - 首次開啟時顯示下載進度，完成後顯示「已可離線使用」（FR-019）
   - 模型就緒前可用關鍵字搜尋，並顯示「語意搜尋準備中」
   - 模型就緒後，畫面上的查詢會自動更新為混合結果（FR-020）
-- [ ] T095 [P] [US6] 在 `e2e/offline.spec.ts` 撰寫 E2E（SC-002）：
+- [X] T095 [P] [US6] 在 `e2e/offline.spec.ts` 撰寫 E2E（SC-002）：
   - 在測試中自行啟動 preview server，等 `navigator.serviceWorker.ready` 與「已可離線使用」
   - **關閉伺服器**並執行 `context.setOffline(true)`，重新載入
   - 驗證搜尋、展開全章、篩選都可用
   - 這個測試不得使用 `route()`
-- [ ] T096 [P] [US6] 在 `e2e/privacy.spec.ts` 撰寫 E2E（SC-003）：
+- [X] T096 [P] [US6] 在 `e2e/privacy.spec.ts` 撰寫 E2E（SC-003）：
   - 在導航前掛上 `context.on('request')`（不可呼叫 `request.frame()`）與 `page.on('websocket')`
   - 以「以馬內利測試」搜尋
   - 斷言所有請求都同源
   - 斷言沒有任何請求的 URL、POST 內容或標頭含查詢字串，包括它的 URL 編碼、簡體與繁體形式
-- [ ] T097 [P] [US6] 在 `e2e/not-downloaded.spec.ts` 撰寫 E2E：從未下載過又沒有網路時，顯示「需要先連網完成一次下載」的說明
-- [ ] T098 [P] [US6] 在 `e2e/storage-cleared.spec.ts` 撰寫 E2E：完成首次載入後以程式清除 Cache Storage；有網路時重新開啟會重新下載並顯示進度；無網路時顯示「需要重新下載」的說明
+- [X] T097 [P] [US6] 在 `e2e/not-downloaded.spec.ts` 撰寫 E2E：從未下載過又沒有網路時，顯示「需要先連網完成一次下載」的說明
+- [X] T098 [P] [US6] 在 `e2e/storage-cleared.spec.ts` 撰寫 E2E：完成首次載入後以程式清除 Cache Storage；有網路時重新開啟會重新下載並顯示進度；無網路時顯示「需要重新下載」的說明
 - [X] T099 [P] [US6] 在 `tests/unit/copy-runtime.test.ts` 撰寫測試：複製的 onnxruntime-web 版本等於 `@huggingface/transformers` 所相依的版本；只複製 `.wasm` 與 `.mjs`
-- [ ] T100 [P] [US6] 在 `tests/guards/download-size.test.ts` 撰寫守護測試（在 `npm run build` 之後執行）：首次下載總量＝manifest 所列檔案＋`public/models/`＋`public/ort/`＋`dist/` app shell（若 `toSimplified=true` 再加 t2cn 轉換器）≤ 200 MB（SC-005、plan Constraints）
+- [X] T100 [P] [US6] 在 `tests/integration/download-size.test.ts` 撰寫守護測試（需建置產物，由 `npm run test:data` 執行；原規劃放 `tests/guards/`，改放 integration 以免單元測試依賴建置）：首次下載總量＝manifest 所列檔案＋`public/models/`＋`public/ort/`＋`dist/` app shell（若 `toSimplified=true` 再加 t2cn 轉換器）≤ 200 MB（SC-005、plan Constraints）
 
 ### 實作
 
