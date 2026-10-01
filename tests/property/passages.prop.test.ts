@@ -48,7 +48,7 @@ test.prop([corpus])('檢索單元：3 節視窗、在段落內、聯集涵蓋段
   const ps = buildPassages(chapters, new Set(starts));
   const us = buildUnits(ps);
   for (const p of ps) {
-    const mine = us.filter((u) => u.passageId === p.id);
+    const mine = us.filter((u) => u.passageId === p.id && u.scale === 'window');
     expect(mine.length).toBeGreaterThan(0);
     const len = p.end - p.start + 1;
     for (const u of mine) {
@@ -59,4 +59,29 @@ test.prop([corpus])('檢索單元：3 節視窗、在段落內、聯集涵蓋段
     for (let i = p.start; i <= p.end; i++) expect(mine.some((u) => u.start <= i && i <= u.end)).toBe(true);
   }
   expect(us.map((u) => u.id)).toEqual(us.map((_, i) => i));
+});
+
+const skipSet = fc.uniqueArray(fc.nat(200));
+
+test.prop([corpus, skipSet])('多尺度：單節單元涵蓋每個非佔位經節且排在最前面（id 0..V-1）', ({ chapters, starts }, skips) => {
+  const ps = buildPassages(chapters, new Set(starts));
+  const skip = new Set(skips.filter((i) => i < chapters.length));
+  const us = buildUnits(ps, { skipVerse: (i) => skip.has(i) });
+  const verseUnits = us.filter((u) => u.scale === 'verse');
+  const expected = chapters.map((_, i) => i).filter((i) => !skip.has(i));
+  expect(verseUnits.map((u) => u.start)).toEqual(expected);
+  for (const u of verseUnits) expect(u.end).toBe(u.start);
+  expect(us.slice(0, verseUnits.length)).toEqual(verseUnits);
+  expect(verseUnits.map((u) => u.id)).toEqual(verseUnits.map((_, i) => i));
+});
+
+test.prop([corpus])('多尺度：整段單元只為 > 3 節的段落建立，範圍等於段落', ({ chapters, starts }) => {
+  const ps = buildPassages(chapters, new Set(starts));
+  const us = buildUnits(ps);
+  const whole = us.filter((u) => u.scale === 'passage');
+  expect(whole.map((u) => u.passageId)).toEqual(ps.filter((p) => p.end - p.start + 1 > 3).map((p) => p.id));
+  for (const u of whole) {
+    const p = ps[u.passageId]!;
+    expect([u.start, u.end]).toEqual([p.start, p.end]);
+  }
 });

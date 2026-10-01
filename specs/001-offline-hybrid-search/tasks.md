@@ -163,11 +163,11 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 #### 測試（先寫、先確認失敗）
 
-- [ ] T054 [P] [US3] 在 `tests/property/passages.prop.test.ts` 增補多尺度檢索單元的性質測試：單節單元涵蓋每一個非合併佔位的經節、且排在所有單元最前面（id 0..V-1，關鍵字索引的文件 id 即單元 id）；視窗單元規則不變；整段單元只為 > 3 節的段落建立；每個單元帶 `scale`
-- [ ] T055 [P] [US3] 在 `tests/unit/artifacts.test.ts` 增補 `units.bin` 第四欄 `scale`（0／1／2）的讀寫測試
-- [ ] T056 [P] [US3] 在 `tests/unit/lexicon-build.test.ts` 撰寫詞彙表建置測試（以小型假資料）：萌典近義詞只保留在和合本中出現的詞；Strong's 分組去除包含較短片段的長片段（如「用思慮」→ 保留「思慮」）；擴充只有一層辭典＋一層原文、不遞迴；每個擴充詞帶來源（`moedict` 或 `strongs:Gxxxx`／`strongs:Hxxxx`）
-- [ ] T057 [P] [US3] 在 `tests/unit/expand.test.ts` 撰寫查詢擴充測試：以最長匹配在查詢中找出詞表中的詞；「面對房貸壓力很焦慮」擴充出「憂慮」（moedict）與「掛慮」（strongs）；擴充詞已在查詢中出現時不重複；`expand: false` 時不擴充
-- [ ] T058 [P] [US3] 在 `tests/unit/search.test.ts` 增補：`granularity` 為 `verse`／`passage`／`chapter` 時結果範圍分別為單節／段落／整章且皆附上下文；`expansions` 欄位列出實際套用的擴充與來源；擴充命中的結果 `sources` 含 `expansion`
+- [X] T054 [P] [US3] 在 `tests/property/passages.prop.test.ts` 增補多尺度檢索單元的性質測試：單節單元涵蓋每一個非合併佔位的經節、且排在所有單元最前面（id 0..V-1，關鍵字索引的文件 id 即單元 id）；視窗單元規則不變；整段單元只為 > 3 節的段落建立；每個單元帶 `scale`
+- [X] T055 [P] [US3] 在 `tests/unit/artifacts.test.ts` 增補 `units.bin` 第四欄 `scale`（0／1／2）的讀寫測試
+- [X] T056 [P] [US3] 在 `tests/unit/lexicon-build.test.ts` 撰寫詞彙表建置測試（以小型假資料）：萌典近義詞只保留在和合本中出現的詞；Strong's 分組去除包含較短片段的長片段（如「用思慮」→ 保留「思慮」）；擴充只有一層辭典＋一層原文、不遞迴；每個擴充詞帶來源（`moedict` 或 `strongs:Gxxxx`／`strongs:Hxxxx`）
+- [X] T057 [P] [US3] 在 `tests/unit/expand.test.ts` 撰寫查詢擴充測試：以最長匹配在查詢中找出詞表中的詞；「面對房貸壓力很焦慮」擴充出「憂慮」（moedict）與「掛慮」（strongs）；擴充詞已在查詢中出現時不重複；`expand: false` 時不擴充
+- [X] T058 [P] [US3] 在 `tests/unit/search.test.ts` 增補：`granularity` 為 `verse`／`passage`／`chapter` 時結果範圍分別為單節／段落／整章且皆附上下文；`expansions` 欄位列出實際套用的擴充與來源；擴充命中的結果 `sources` 含 `expansion`
 
 #### 實作
 

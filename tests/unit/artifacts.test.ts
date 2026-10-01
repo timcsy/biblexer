@@ -23,8 +23,15 @@ describe('資料產物讀寫', () => {
     expect(decodePassages(buf)).toEqual(ps);
   });
 
-  test('units.bin：Int32 小端序 [start, end, passageId]', () => {
-    const us = [{ start: 0, end: 2, passageId: 0 }, { start: 2, end: 4, passageId: 0 }];
-    expect(decodeUnits(encodeUnits(us))).toEqual(us);
+  test('units.bin：Int32 小端序 [start, end, passageId, scale]（0＝單節、1＝視窗、2＝整段）', () => {
+    const us = [
+      { start: 0, end: 0, passageId: 0, scale: 'verse' as const },
+      { start: 0, end: 2, passageId: 0, scale: 'window' as const },
+      { start: 0, end: 4, passageId: 0, scale: 'passage' as const },
+    ];
+    const buf = encodeUnits(us);
+    expect(buf.byteLength).toBe(48);
+    expect(new DataView(buf.buffer, buf.byteOffset).getInt32(28, true)).toBe(1);
+    expect(decodeUnits(buf)).toEqual(us);
   });
 });

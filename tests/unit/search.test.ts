@@ -21,7 +21,9 @@ const passages = [
   { start: 7, end: 7 },
 ];
 const oneHot = (i: number) => Float32Array.from({ length: 5 }, (_, d) => (d === i ? 1 : 0));
-const corpus = buildCorpus({ verses, passages, vectors: [0, 1, 2, 3, 4].map(oneHot) });
+// 每個檢索單元的向量＝其所屬段落的 one-hot（多尺度單元數量依段落而定）
+const lexicon = { 喜宴: [['筵席', 'moedict']] } as Record<string, Array<[string, string]>>;
+const corpus = buildCorpus({ verses, passages, vectors: (units) => units.map((u) => oneHot(u.passageId)), lexicon });
 
 describe('search()', () => {
   test('結果不含任何分數欄位（原則 6）', () => {
@@ -99,5 +101,26 @@ describe('search()', () => {
       expect(r.results).toEqual([]);
       expect(r.total).toBe(0);
     }
+  });
+
+  test('granularity：verse／passage／chapter 的結果範圍分別為單節／段落／整章，皆附上下文（FR-026）', () => {
+    const v = search({ query: '要有光', granularity: 'verse' }, corpus, null).results[0]!;
+    expect([v.passage.start, v.passage.end]).toEqual([2, 2]);
+    expect(v.contextRange).toEqual({ start: 0, end: 2 });
+    const p = search({ query: '要有光', granularity: 'passage' }, corpus, null).results[0]!;
+    expect([p.passage.start, p.passage.end]).toEqual([2, 2]);
+    const c = search({ query: '要有光', granularity: 'chapter' }, corpus, null).results[0]!;
+    expect([c.passage.start, c.passage.end]).toEqual([0, 2]);
+    expect(c.contextRange).toEqual({ start: 0, end: 2 });
+  });
+
+  test('詞彙擴充：列出實際套用的擴充與來源；擴充命中的結果 sources 含 expansion；可關閉（FR-027）', () => {
+    const r = search({ query: '喜宴' }, corpus, null);
+    expect(r.expansions).toEqual([{ word: '喜宴', terms: [{ term: '筵席', via: 'moedict' }] }]);
+    expect(r.results[0]!.passage.id).toBe(3);
+    expect(r.results[0]!.sources).toContain('expansion');
+    const off = search({ query: '喜宴', expand: false }, corpus, null);
+    expect(off.expansions).toEqual([]);
+    expect(off.results).toEqual([]);
   });
 });
