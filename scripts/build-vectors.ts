@@ -9,18 +9,21 @@ import { CACHE_DIR } from './lib/paths.ts';
 
 export const BATCH = 32;
 
-/** 向量只取決於：模型、revision、經文端前綴、是否轉簡體、資料版本 */
-export function vectorKey(arm: Arm, dataVersion: string): string {
+/** 向量只取決於：模型、revision、經文端前綴、是否轉簡體，以及經文與檢索單元（不含詞彙表、關鍵字索引） */
+export const textKey = (manifest: { files: Record<string, { path: string }> }): string =>
+  `${manifest.files.verses!.path}|${manifest.files.units!.path}`;
+
+export function vectorKey(arm: Arm, textVersion: string): string {
   return createHash('sha256')
-    .update(JSON.stringify([arm.model, arm.revision, arm.dtype, arm.pooling, arm.passagePrefix, arm.toSimplified, dataVersion]))
+    .update(JSON.stringify([arm.model, arm.revision, arm.dtype, arm.pooling, arm.passagePrefix, arm.toSimplified, textVersion]))
     .digest('hex')
     .slice(0, 16);
 }
 
-export const vectorCachePath = (arm: Arm, dataVersion: string): string => join(CACHE_DIR, 'vectors', `${vectorKey(arm, dataVersion)}.bin`);
+export const vectorCachePath = (arm: Arm, textVersion: string): string => join(CACHE_DIR, 'vectors', `${vectorKey(arm, textVersion)}.bin`);
 
-export async function buildVectors(arm: Arm, dataVersion: string, texts: readonly string[], embedder: Embedder): Promise<VectorStore> {
-  const cache = vectorCachePath(arm, dataVersion);
+export async function buildVectors(arm: Arm, textVersion: string, texts: readonly string[], embedder: Embedder): Promise<VectorStore> {
+  const cache = vectorCachePath(arm, textVersion);
   if (existsSync(cache)) return deserializeVectorStore(new Uint8Array(readFileSync(cache)));
   const vecs: Float32Array[] = [];
   const t0 = performance.now();

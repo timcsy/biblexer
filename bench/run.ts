@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { buildCorpus } from '../src/core/search.ts';
 import { serializeVectorStore } from '../src/core/vectors.ts';
 import { MODELS_CACHE, fetchModel } from '../scripts/fetch-models.ts';
-import { buildVectors } from '../scripts/build-vectors.ts';
+import { buildVectors, textKey } from '../scripts/build-vectors.ts';
 import { PUBLIC_DIR } from '../scripts/lib/paths.ts';
 import { evaluate, loadArms, loadDataset, loadQueries, makeEmbedder, type Arm } from './lib.ts';
 import { REQUIRED_HITS, SIZE_LIMIT_BYTES, buildReport, meanBestRank, selectArm, type ArmSummary } from './select.ts';
@@ -29,7 +29,7 @@ async function main() {
     const root = arm.backend ? '' : await fetchModel(arm);
     const modelBytes = arm.files.reduce((a, f) => a + statSync(join(root, f.path)).size, 0);
     const embedder = await makeEmbedder(arm, MODELS_CACHE);
-    const vectors = await buildVectors(arm, ds.manifest.dataVersion, ds.unitTexts, embedder);
+    const vectors = await buildVectors(arm, textKey(ds.manifest), ds.unitTexts, embedder);
     const corpus = buildCorpus({ ...ds.corpusParts, vectors });
     const { results: qr, latenciesMs } = await evaluate(corpus, ds.verses, embedder, queries);
     for (const r of qr) results.push({ armId: arm.id, queryId: r.queryId, bestRank: r.bestRank });

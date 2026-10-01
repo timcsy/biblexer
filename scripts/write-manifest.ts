@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join } from 'node:path';
 import { loadArms, type Arm } from '../bench/lib.ts';
 import { MODELS_CACHE } from './fetch-models.ts';
-import { vectorCachePath } from './build-vectors.ts';
+import { textKey, vectorCachePath } from './build-vectors.ts';
 import { DATA_DIR, PUBLIC_DIR, ROOT, writeHashed, type WrittenFile } from './lib/paths.ts';
 
 type ArmLike = Pick<Arm, 'id' | 'model' | 'revision' | 'dtype' | 'dim' | 'pooling' | 'queryPrefix' | 'passagePrefix' | 'toSimplified'> & {
@@ -47,7 +47,7 @@ function main() {
   const arm = arms.find((a) => a.id === report.selected);
   if (!arm) throw new Error('評測沒有選出任何臂');
 
-  const cache = vectorCachePath(arm, prev.dataVersion);
+  const cache = vectorCachePath(arm, textKey(prev as unknown as { files: Record<string, { path: string }> }));
   if (!existsSync(cache)) throw new Error(`找不到向量快取 ${cache}，請重跑 npm run bench`);
   const vectors = writeHashed('vectors', 'bin', new Uint8Array(readFileSync(cache)));
 
