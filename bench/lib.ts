@@ -13,6 +13,7 @@ import { createEmbedder, loadTransformersBackend, type Embedder, type Pooling } 
 import { loadToSimplified } from '../src/embed/simplify.ts';
 import type { ExpectedHash } from '../scripts/lib/fetch.ts';
 import { createRemoteEmbedder, remoteOptionsFromEnv } from './remote-embedder.ts';
+import { bestOfAttempts } from './select.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -40,6 +41,8 @@ export interface BenchmarkQuery {
   kind: string;
   expected: Array<{ start: string; end: string }>;
   heldOut: boolean;
+  /** 使用者看了第一輪結果後可能改用的說法（只有一次） */
+  rephrase?: string;
 }
 
 export const loadArms = (): Arm[] => JSON.parse(readFileSync(join(ROOT, 'bench/arms.json'), 'utf8')) as Arm[];
@@ -95,18 +98,25 @@ export async function makeEmbedder(arm: Pick<Arm, 'model' | 'dtype' | 'pooling' 
 export interface QueryResult {
   queryId: string;
   heldOut: boolean;
+  /** 原句與換說法中較佳的名次 */
   bestRank: number | null;
+  /** 原句（第一次問）的名次 */
+  firstRank: number | null;
 }
 
 export async function evaluate(corpus: Corpus, verses: readonly StoredVerse[], embedder: Embedder, queries: readonly BenchmarkQuery[]): Promise<{ results: QueryResult[]; latenciesMs: number[] }> {
   const results: QueryResult[] = [];
   const latenciesMs: number[] = [];
   for (const q of queries) {
-    const t0 = performance.now();
-    const [vec] = await embedder.embed([q.text], 'query');
-    const res = search({ query: q.text, limit: 100 }, corpus, vec!);
-    latenciesMs.push(performance.now() - t0);
-    results.push({ queryId: q.id, heldOut: q.heldOut, bestRank: bestHitRank(res.results.map((r) => r.passage), expectedRanges(q, verses)) });
+    const ranks: Array<number | null> = [];
+    for (const text of [q.text, ...(q.rephrase ? [q.rephrase] : [])]) {
+      const t0 = performance.now();
+      const [vec] = await embedder.embed([text], 'query');
+      const res = search({ query: text, limit: 100 }, corpus, vec!);
+      latenciesMs.push(performance.now() - t0);
+      ranks.push(bestHitRank(res.results.map((r) => r.passage), expectedRanges(q, verses)));
+    }
+    results.push({ queryId: q.id, heldOut: q.heldOut, bestRank: bestOfAttempts(ranks), firstRank: ranks[0]! });
   }
   return { results, latenciesMs };
 }

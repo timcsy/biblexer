@@ -1,6 +1,6 @@
 // 守護：research R3 選擇規則；FR-022（評測可重現）
 import { describe, expect, test } from 'vitest';
-import { MISS_RANK, buildReport, meanBestRank, selectArm } from '../../bench/select.ts';
+import { MISS_RANK, bestOfAttempts, buildReport, meanBestRank, selectArm } from '../../bench/select.ts';
 
 const MB = 1024 * 1024;
 const s = (armId: string, hits: number, mean: number, sizeMB: number) => ({ armId, hits, meanBestRank: mean, sizeBytes: sizeMB * MB });
@@ -52,5 +52,15 @@ describe('報告', () => {
     const parsed = JSON.parse(json) as { results: Array<{ armId: string; queryId: string; hitAtTop5: boolean }> };
     expect(parsed.results.find((r) => r.armId === 'b' && r.queryId === 'q1')?.hitAtTop5).toBe(true);
     expect(parsed.results.find((r) => r.armId === 'a' && r.queryId === 'q1')?.hitAtTop5).toBe(false);
+  });
+});
+
+describe('原句＋一次換說法', () => {
+  test('取兩次嘗試中較佳的名次；都沒命中為 null', () => {
+    expect(bestOfAttempts([12, 3])).toBe(3);
+    expect(bestOfAttempts([null, 4])).toBe(4);
+    expect(bestOfAttempts([2, null])).toBe(2);
+    expect(bestOfAttempts([null, null])).toBeNull();
+    expect(bestOfAttempts([7])).toBe(7);
   });
 });

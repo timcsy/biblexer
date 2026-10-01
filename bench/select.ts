@@ -11,6 +11,12 @@ export interface ArmSummary {
   heldOutHits?: number;
 }
 
+/** 原句＋一次換說法：取較佳的名次（衍生原則 9：查不到時由使用者換一種方式問） */
+export function bestOfAttempts(ranks: ReadonlyArray<number | null>): number | null {
+  const hits = ranks.filter((r): r is number => r !== null);
+  return hits.length ? Math.min(...hits) : null;
+}
+
 export const meanBestRank = (ranks: ReadonlyArray<number | null>): number =>
   ranks.length ? ranks.reduce<number>((a, r) => a + (r ?? MISS_RANK), 0) / ranks.length : MISS_RANK;
 

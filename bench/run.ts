@@ -20,7 +20,7 @@ async function main() {
   const ds = loadDataset(PUBLIC_DIR);
   const baseBytes = Object.entries(ds.manifest.files).filter(([k]) => k !== 'vectors').reduce((a, [, f]) => a + f.bytes, 0);
 
-  const results: Array<{ armId: string; queryId: string; bestRank: number | null }> = [];
+  const results: Array<{ armId: string; queryId: string; bestRank: number | null; firstRank: number | null }> = [];
   const summary: ArmSummary[] = [];
   const latency: Record<string, number> = {};
 
@@ -32,7 +32,7 @@ async function main() {
     const vectors = await buildVectors(arm, textKey(ds.manifest), ds.unitTexts, embedder);
     const corpus = buildCorpus({ ...ds.corpusParts, vectors });
     const { results: qr, latenciesMs } = await evaluate(corpus, ds.verses, embedder, queries);
-    for (const r of qr) results.push({ armId: arm.id, queryId: r.queryId, bestRank: r.bestRank });
+    for (const r of qr) results.push({ armId: arm.id, queryId: r.queryId, bestRank: r.bestRank, firstRank: r.firstRank });
     const acc = qr.filter((r) => !r.heldOut);
     const held = qr.filter((r) => r.heldOut);
     const hit = (r: { bestRank: number | null }) => r.bestRank !== null && r.bestRank <= 5;
@@ -63,7 +63,7 @@ function renderMarkdown(
   arms: Arm[],
   queryIds: string[],
   heldOut: string[],
-  results: Array<{ armId: string; queryId: string; bestRank: number | null }>,
+  results: Array<{ armId: string; queryId: string; bestRank: number | null; firstRank: number | null }>,
   summary: ArmSummary[],
   selected: string | null,
   reason: string,
@@ -71,8 +71,10 @@ function renderMarkdown(
 ): string {
   const mb = (b: number) => (b / 1024 / 1024).toFixed(1);
   const cell = (armId: string, q: string) => {
-    const r = results.find((x) => x.armId === armId && x.queryId === q)?.bestRank ?? null;
-    return r !== null && r <= 5 ? String(r) : `✗${r === null ? '' : `(${r})`}`;
+    const x = results.find((y) => y.armId === armId && y.queryId === q);
+    const r = x?.bestRank ?? null;
+    const viaRephrase = r !== null && r !== x?.firstRank ? '換' : '';
+    return r !== null && r <= 5 ? `${r}${viaRephrase}` : `✗${r === null ? '' : `(${r})`}`;
   };
   const sorted = [...arms].sort((a, b) => a.id.localeCompare(b.id));
   const head = ['臂', ...queryIds.map((q) => (heldOut.includes(q) ? `*${q}` : q)), '命中', '平均名次', '保留命中', '下載 MB', '≤200MB', 'Node 延遲中位數 ms', '選中'];
@@ -83,7 +85,7 @@ function renderMarkdown(
   return [
     '# 評測報告',
     '',
-    '表格中的數字是期望經文的最佳名次（前 5 名以內才算命中；✗ 後括號為實際名次）。* 開頭為保留查詢，只供參考，不影響選擇。',
+    '表格中的數字是期望經文的最佳名次（前 5 名以內才算命中；✗ 後括號為實際名次）。驗收查詢可用原句或一次換說法，「換」表示換說法後才命中。* 開頭為保留查詢，只供參考，不影響選擇。',
     'Node 延遲中位數僅供參考（SC-004 以手機實測為準），不寫入 report.json。',
     '',
     `| ${head.join(' | ')} |`,
