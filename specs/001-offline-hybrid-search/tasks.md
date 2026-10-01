@@ -270,9 +270,9 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T083 [P] [US4] 在 `tests/unit/copy.test.ts` 撰寫複製格式測試：內容為段落經文加出處（如「約翰福音 2:1–11」）；不含系統產生的文字（FR-011）
-- [ ] T084 [P] [US4] 在 `tests/unit/chapter.test.ts` 撰寫全章資料測試：Worker 的 `chapter` 訊息回傳該章所有經節與段落；合併節顯示為範圍；不含標題（FR-011a）
-- [ ] T085 [P] [US4] 在 `e2e/expand-chapter.spec.ts` 撰寫 E2E：展開全章後顯示該章所有經文，命中段落有標示且位於視窗中；可收合回結果清單
+- [X] T083 [P] [US4] 在 `tests/unit/copy.test.ts` 撰寫複製格式測試：內容為段落經文加出處（如「約翰福音 2:1–11」）；不含系統產生的文字（FR-011）
+- [X] T084 [P] [US4] 在 `tests/unit/chapter.test.ts` 撰寫全章資料測試：Worker 的 `chapter` 訊息回傳該章所有經節與段落；合併節顯示為範圍；不含標題（FR-011a）
+- [X] T085 [P] [US4] 在 `e2e/expand-chapter.spec.ts` 撰寫 E2E：展開全章後顯示該章所有經文，命中段落有標示且位於視窗中；可收合回結果清單
 
 ### 實作
 
@@ -290,8 +290,8 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T089 [P] [US5] 在 `tests/unit/filter.test.ts` 撰寫篩選測試：以 `(testament, category)` 為鍵，所以舊約歷史書與新約歷史書可以分開選取；選整個約等於選該約所有類別；`counts` 為篩選前的數量（FR-016）
-- [ ] T090 [P] [US5] 在 `e2e/filter.spec.ts` 撰寫 E2E：
+- [X] T089 [P] [US5] 在 `tests/unit/filter.test.ts` 撰寫篩選測試：以 `(testament, category)` 為鍵，所以舊約歷史書與新約歷史書可以分開選取；選整個約等於選該約所有類別；`counts` 為篩選前的數量（FR-016）
+- [X] T090 [P] [US5] 在 `e2e/filter.spec.ts` 撰寫 E2E：
   - 選「書信」後，每筆結果都來自書信
   - 選「舊約」後，每筆結果都來自舊約，且可再細分類別
   - 數量標示正確
