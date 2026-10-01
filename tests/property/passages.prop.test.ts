@@ -47,8 +47,10 @@ test.prop([corpus])('分段起點都會成為段落起點', ({ chapters, starts 
 test.prop([corpus])('檢索單元：3 節視窗、在段落內、聯集涵蓋段落每一節', ({ chapters, starts }) => {
   const ps = buildPassages(chapters, new Set(starts));
   const us = buildUnits(ps);
+  const byPassage = new Map<number, typeof us>();
+  for (const u of us) if (u.scale === 'window') byPassage.set(u.passageId, [...(byPassage.get(u.passageId) ?? []), u]);
   for (const p of ps) {
-    const mine = us.filter((u) => u.passageId === p.id && u.scale === 'window');
+    const mine = byPassage.get(p.id) ?? [];
     expect(mine.length).toBeGreaterThan(0);
     const len = p.end - p.start + 1;
     for (const u of mine) {

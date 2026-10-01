@@ -7,6 +7,7 @@ import { buildKeywordFile } from './build-keyword.ts';
 import { buildLexiconFile } from './build-lexicon.ts';
 import { buildPassageFiles } from './build-passages.ts';
 import { buildText } from './build-text.ts';
+import { copyRuntime } from './copy-runtime.ts';
 import { SOURCES, fetchSources } from './fetch-sources.ts';
 import { DATA_DIR } from './lib/paths.ts';
 
@@ -39,6 +40,7 @@ async function main() {
     sources: Object.values(SOURCES).map((s) => ({ name: s.name, url: s.url, hash: s.hash, use: s.use, license: s.license })),
   };
   writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+  console.log(`ONNX Runtime：${copyRuntime().length} 個檔案已複製到 public/ort/`);
   console.log(`已寫入 ${MANIFEST_PATH}（dataVersion ${dataVersion}）`);
 }
 

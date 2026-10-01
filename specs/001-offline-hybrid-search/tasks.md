@@ -207,22 +207,22 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 實作
 
-- [ ] T069 [US1] 在 `src/worker/search.worker.ts` 實作 Worker：
+- [X] T069 [US1] 在 `src/worker/search.worker.ts` 實作 Worker：
   - 依 manifest 載入經文、段落、單元、關鍵字索引、向量與模型
   - 以 `progress` 回報進度
   - 處理 `search` 訊息，呼叫 `src/core/search.ts`
   - 只向同源請求 `/data/`、`/models/`、`/ort/`
-- [ ] T070 [P] [US1] 在 `src/worker/client.ts` 實作型別化的 Worker 用戶端（`postMessage` 加上請求 id 對應），並確認 T067 通過
-- [ ] T071 [P] [US1] 建立 `src/ui/strings.ts`，集中所有固定介面文字；確認 T066 通過
-- [ ] T072 [P] [US1] 在 `src/ui/SearchBox.tsx` 實作搜尋框：空白或只有標點的查詢不送出並顯示提示；查詢被截斷時顯示提示
-- [ ] T073 [P] [US1] 在 `src/ui/PassageCard.tsx` 實作段落卡片：
+- [X] T070 [P] [US1] 在 `src/worker/client.ts` 實作型別化的 Worker 用戶端（`postMessage` 加上請求 id 對應），並確認 T067 通過
+- [X] T071 [P] [US1] 建立 `src/ui/strings.ts`，集中所有固定介面文字；確認 T066 通過
+- [X] T072 [P] [US1] 在 `src/ui/SearchBox.tsx` 實作搜尋框：空白或只有標點的查詢不送出並顯示提示；查詢被截斷時顯示提示
+- [X] T073 [P] [US1] 在 `src/ui/PassageCard.tsx` 實作段落卡片：
   - 顯示 `display` 經文，保留「　神」
   - 譯註以次要樣式呈現
   - 前後文以淡色呈現
   - 標示卷章節範圍與約／類別
   - 不顯示分數
-- [ ] T074 [US1] 在 `src/ui/ResultList.tsx` 與 `src/main.tsx` 組裝頁面：顯示「可能相關的段落」清單，預設 10 筆，可「載入更多」；確認 T065、T068 通過
-- [ ] T075 [P] [US1] 在 `src/ui/GranularityToggle.tsx`、`src/ui/ExpansionNote.tsx`、`src/ui/Attribution.tsx` 實作粒度切換、擴充列示（含關閉擴充）、來源署名與換說法提示，接入 `src/ui/ResultList.tsx`；確認 T068 中對應的斷言通過
+- [X] T074 [US1] 在 `src/ui/ResultList.tsx` 與 `src/main.tsx` 組裝頁面：顯示「可能相關的段落」清單，預設 10 筆，可「載入更多」；確認 T065、T068 通過
+- [X] T075 [P] [US1] 在 `src/ui/GranularityToggle.tsx`、`src/ui/ExpansionNote.tsx`、`src/ui/Attribution.tsx` 實作粒度切換、擴充列示（含關閉擴充）、來源署名與換說法提示，接入 `src/ui/ResultList.tsx`；確認 T068 中對應的斷言通過
 
 **Checkpoint**：MVP。口語查詢可用，且符合原則 4、5、6。
 
@@ -333,12 +333,12 @@ description: "離線混合檢索（全本和合本）的任務清單"
   - 斷言沒有任何請求的 URL、POST 內容或標頭含查詢字串，包括它的 URL 編碼、簡體與繁體形式
 - [ ] T097 [P] [US6] 在 `e2e/not-downloaded.spec.ts` 撰寫 E2E：從未下載過又沒有網路時，顯示「需要先連網完成一次下載」的說明
 - [ ] T098 [P] [US6] 在 `e2e/storage-cleared.spec.ts` 撰寫 E2E：完成首次載入後以程式清除 Cache Storage；有網路時重新開啟會重新下載並顯示進度；無網路時顯示「需要重新下載」的說明
-- [ ] T099 [P] [US6] 在 `tests/unit/copy-runtime.test.ts` 撰寫測試：複製的 onnxruntime-web 版本等於 `@huggingface/transformers` 所相依的版本；只複製 `.wasm` 與 `.mjs`
+- [X] T099 [P] [US6] 在 `tests/unit/copy-runtime.test.ts` 撰寫測試：複製的 onnxruntime-web 版本等於 `@huggingface/transformers` 所相依的版本；只複製 `.wasm` 與 `.mjs`
 - [ ] T100 [P] [US6] 在 `tests/guards/download-size.test.ts` 撰寫守護測試（在 `npm run build` 之後執行）：首次下載總量＝manifest 所列檔案＋`public/models/`＋`public/ort/`＋`dist/` app shell（若 `toSimplified=true` 再加 t2cn 轉換器）≤ 200 MB（SC-005、plan Constraints）
 
 ### 實作
 
-- [ ] T101 [US6] 建立 `scripts/copy-runtime.ts`：把 `onnxruntime-web` 的 `.wasm` 與 `.mjs` 複製到 `public/ort/`，版本須與 `@huggingface/transformers` 的相依一致；接進 `npm run build:data`；確認 T099 通過
+- [X] T101 [US6] 建立 `scripts/copy-runtime.ts`：把 `onnxruntime-web` 的 `.wasm` 與 `.mjs` 複製到 `public/ort/`，版本須與 `@huggingface/transformers` 的相依一致；接進 `npm run build:data`；確認 T099 通過
 - [ ] T102 [US6] 在 `vite.config.ts` 設定 vite-plugin-pwa：
   - precache app shell 與 `public/data/` 中除了 `vectors.*` 以外的檔案
   - `runtimeCaching` 以 `CacheFirst` 處理 `/models/**`、`/ort/**`、`/data/vectors.*`

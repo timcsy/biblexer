@@ -1,0 +1,57 @@
+// Worker 訊息協定（contracts/search-api.md §3）
+import type { SearchRequest } from '../core/search.ts';
+import type { ChapterView, PresentedResponse } from './present.ts';
+
+export const ERROR_CODES = ['NOT_DOWNLOADED', 'QUOTA', 'CORRUPT', 'INTERNAL'] as const;
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
+export interface ReadyState {
+  keyword: boolean;
+  semantic: boolean;
+}
+
+export type WorkerIn =
+  | { type: 'init'; manifestUrl: string }
+  | { type: 'search'; id: number; request: SearchRequest }
+  | { type: 'chapter'; id: number; book: number; chapter: number };
+
+export type WorkerOut =
+  | ({ type: 'ready' } & ReadyState)
+  | { type: 'progress'; phase: 'text' | 'model' | 'vectors'; loaded: number; total: number }
+  | { type: 'result'; id: number; response: PresentedResponse }
+  | { type: 'chapterResult'; id: number; view: ChapterView }
+  | { type: 'error'; id?: number; code: ErrorCode; message: string };
+
+export interface Engine {
+  init(manifestUrl: string, onStage?: (s: ReadyState) => void): Promise<ReadyState>;
+  search(request: SearchRequest): Promise<PresentedResponse>;
+  chapter(book: number, chapter: number): Promise<ChapterView>;
+}
+
+export class EngineError extends Error {
+  constructor(
+    readonly code: ErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+const codeOf = (e: unknown): ErrorCode => (e instanceof EngineError ? e.code : 'INTERNAL');
+
+/** 把一則訊息交給引擎處理，並把結果以協定格式送出（與 postMessage 解耦，方便測試） */
+export async function handleMessage(engine: Engine, msg: WorkerIn, post: (m: WorkerOut) => void): Promise<void> {
+  try {
+    if (msg.type === 'init') {
+      const final = await engine.init(msg.manifestUrl, (s) => post({ type: 'ready', ...s }));
+      post({ type: 'ready', ...final });
+    } else if (msg.type === 'search') {
+      post({ type: 'result', id: msg.id, response: await engine.search(msg.request) });
+    } else {
+      post({ type: 'chapterResult', id: msg.id, view: await engine.chapter(msg.book, msg.chapter) });
+    }
+  } catch (e) {
+    const id = msg.type === 'init' ? undefined : msg.id;
+    post({ type: 'error', ...(id !== undefined ? { id } : {}), code: codeOf(e), message: e instanceof Error ? e.message : String(e) });
+  }
+}

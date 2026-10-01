@@ -5,8 +5,8 @@ import { ERROR_CODES, handleMessage, type Engine, type WorkerOut } from '../../s
 function fakeEngine(over: Partial<Engine> = {}): Engine {
   return {
     init: vi.fn(async () => ({ keyword: true, semantic: true })),
-    search: vi.fn(async () => ({ results: [], total: 0, counts: { testament: {}, category: {} }, semanticReady: true, truncated: false, reference: null, expansions: [] })),
-    chapter: vi.fn(async () => ({ verses: [], passages: [] })),
+    search: vi.fn(async () => ({ results: [], total: 0, counts: { testament: {}, category: {} }, semanticReady: true, truncated: false, reference: null, expansions: [], granularity: 'passage' as const })),
+    chapter: vi.fn(async () => ({ label: '', verses: [], passageStarts: [] })),
     ...over,
   };
 }
