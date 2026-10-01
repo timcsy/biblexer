@@ -191,10 +191,10 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T065 [P] [US1] 在 `tests/guards/no-generation.test.ts` 撰寫守護測試：掃描 `src/**`，不得出現 `text-generation`、`text2text`、`AutoModelForCausalLM`、`Seq2Seq`、`pipeline(`（原則 4）
-- [ ] T066 [P] [US1] 在 `tests/guards/strings.test.ts` 撰寫守護測試：`src/ui/strings.ts` 不得含「最佳」「推薦」「最正確」「答案」「解釋」「建議」；結果區標題為「可能相關的段落」（FR-014）
-- [ ] T067 [P] [US1] 在 `tests/unit/worker-protocol.test.ts` 撰寫 Worker 協定測試：`init`、`progress`、`ready`、`search`、`result`、`error` 各訊息的形狀與 id 對應；`error.code` 只能是 `NOT_DOWNLOADED`、`QUOTA`、`CORRUPT`、`INTERNAL` 之一（contracts/search-api.md §3）
-- [ ] T068 [P] [US1] 在 `e2e/search-meaning.spec.ts` 撰寫 E2E：
+- [X] T065 [P] [US1] 在 `tests/guards/no-generation.test.ts` 撰寫守護測試：掃描 `src/**`，不得出現 `text-generation`、`text2text`、`AutoModelForCausalLM`、`Seq2Seq`、`pipeline(`（原則 4）
+- [X] T066 [P] [US1] 在 `tests/guards/strings.test.ts` 撰寫守護測試：`src/ui/strings.ts` 不得含「最佳」「推薦」「最正確」「答案」「解釋」「建議」；結果區標題為「可能相關的段落」（FR-014）
+- [X] T067 [P] [US1] 在 `tests/unit/worker-protocol.test.ts` 撰寫 Worker 協定測試：`init`、`progress`、`ready`、`search`、`result`、`error` 各訊息的形狀與 id 對應；`error.code` 只能是 `NOT_DOWNLOADED`、`QUOTA`、`CORRUPT`、`INTERNAL` 之一（contracts/search-api.md §3）
+- [X] T068 [P] [US1] 在 `e2e/search-meaning.spec.ts` 撰寫 E2E：
   - 對 4 個意思型固定查詢，斷言期望經文出現在前 5 筆
   - 每筆結果顯示卷、章、節範圍與約／類別
   - 沒有孤立單節（SC-006）
