@@ -162,6 +162,70 @@ describe('平移放手：沿移動方向前進', () => {
   });
 });
 
+describe('整頁模式（桌機）：畫面上同一位置只算一個著陸點', () => {
+  const pts = landingPoints(layout, 'reading');
+  const spot = (c: { x: number; y: number }) => `${c.x.toFixed(6)},${c.y.toFixed(6)}`;
+  // 畫面順序：先依頁（框），再依頁內的行
+  const order = (c: { at?: string }) => {
+    const pos = layout.lines[pts.find((p) => p.id === c.at)!.line!]!.pos;
+    return pos.page * 100 + pos.line;
+  };
+
+  test('一路按「下一個著陸點」：畫面位置嚴格往後，不會回頭，也不會原地不動', () => {
+    let c = placeAt(pts[0]!, desktop);
+    const seen = [order(c)];
+    for (let i = 0; i < 200; i++) {
+      const n = step(c, desktop, 1, 'landing');
+      if (spot(n) === spot(c)) break;
+      seen.push(order(n));
+      c = n;
+    }
+    expect(seen.length).toBeGreaterThan(layout.pageCount);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]!).toBeGreaterThan(seen[i - 1]!);
+    // 一路往回也一樣
+    const back = step(c, desktop, -1, 'landing');
+    expect(order(back)).toBeLessThan(order(c));
+  });
+
+  test('往下捲動放手：從任何著陸點出發都往後走，不會退回', () => {
+    for (const lp of pts) {
+      const from = placeAt(lp, desktop);
+      const to = snapToward(panBy(from, 0, -80, desktop), from, desktop);
+      if (spot(to) !== spot(from)) expect(order(to)).toBeGreaterThan(order(from));
+    }
+  });
+
+  test('一頁底部往下捲動：接到閱讀順序的下一頁，而不是世界中正下方那一列的頁', () => {
+    const page = (c: { at?: string }) => layout.lines[pts.find((p) => p.id === c.at)!.line!]!.pos.page;
+    for (const lp of pts) {
+      const from = placeAt(lp, desktop);
+      const to = snapToward(panBy(from, 0, -120, desktop), from, desktop);
+      expect(page(to) - page(from)).toBeGreaterThanOrEqual(0);
+      expect(page(to) - page(from)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('手機：一欄底部往下捲動接到下一欄', () => {
+    const col = (c: { at?: string }) => {
+      const pos = layout.lines[pts.find((p) => p.id === c.at)!.line!]!.pos;
+      return pos.page * 2 + pos.column;
+    };
+    for (const lp of pts) {
+      const from = placeAt(lp, phone);
+      const to = snapToward(panBy(from, 0, -120, phone), from, phone);
+      expect(col(to) - col(from)).toBeGreaterThanOrEqual(0);
+      expect(col(to) - col(from)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('右欄的著陸點和左欄同一行時，吸附得到同一個位置', () => {
+    for (const lp of pts) {
+      const c = placeAt(lp, desktop);
+      expect(spot(snap({ x: c.x, y: c.y, scale: c.scale }, desktop))).toBe(spot(c));
+    }
+  });
+});
+
 describe('鍵盤導覽與視窗改變', () => {
   test('翻「框」：手機為下一欄頂端，桌機為下一頁頂端', () => {
     const first = placeAt(landingPoints(layout, 'reading')[0]!, phone);

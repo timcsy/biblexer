@@ -172,21 +172,67 @@ export function panBy(c: Camera, dx: number, dy: number, _ctx: CameraContext): C
   return { x: c.x - dx / c.scale, y: c.y - dy / c.scale, scale: c.scale };
 }
 
+/** 精讀時一個著陸點在畫面上的位置：（框, 行）。整頁模式下左右兩欄的同一行是同一個位置 */
+function readingSpot(lp: LandingPoint, ctx: CameraContext): number {
+  const pos = ctx.layout.lines[lp.line!]!.pos;
+  const frame = ctx.mode === 'page' ? pos.page : pos.page * ctx.layout.params.columnsPerPage + pos.column;
+  return frame * ctx.layout.params.linesPerColumn + pos.line;
+}
+
+const orderCache = new WeakMap<CameraContext, LandingPoint[]>();
+
+/** 精讀層的導覽順序：依畫面位置排列，同一位置只留一個（行號最小者，與 snap 的平手規則一致） */
+function readingOrder(ctx: CameraContext): LandingPoint[] {
+  let list = orderCache.get(ctx);
+  if (list) return list;
+  const bySpot = new Map<number, LandingPoint>();
+  for (const p of landingPoints(ctx.layout, 'reading')) {
+    const k = readingSpot(p, ctx);
+    if (!bySpot.has(k)) bySpot.set(k, p);
+  }
+  list = [...bySpot.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => p);
+  orderCache.set(ctx, list);
+  return list;
+}
+
 const PAN_INTENT_PX = 64; // 平移超過這個距離（或視窗短邊的 8%）就視為「要往那個方向走」
 
 /**
- * 平移（拖曳、捲動）放手後吸附：一般就是 snap；但若最近的仍是出發點、移動又超過門檻，
- * 就沿移動方向前進一步——垂直到上／下一個著陸點，水平到上／下一框。
- * 否則小幅度的捲動永遠會被吸回原處，讀者走不出去。
+ * 平移（拖曳、捲動）放手後吸附。
+ * - 精讀層、移動不到一個畫面：依閱讀順序決定落點——垂直移動 n 行就往閱讀順序前後找著陸點
+ *   （一欄或一頁的底部接到下一欄或下一頁，不是世界中正下方那一列）；水平移動到上／下一框。
+ * - 移動很小：留在原處。
+ * - 其他情況（拖得很遠、非精讀層）：一般的 snap；若吸附結果仍在原處，沿移動方向前進一步。
+ * 否則小幅度的捲動或拖曳永遠會被吸回原處，讀者走不出去。
  */
 export function snapToward(c: Camera, from: Camera, ctx: CameraContext): Camera {
   const s = snap(c, ctx);
-  if (s.at !== from.at || !from.at || levelOf(c.scale, ctx.readingScale) !== levelOf(from.scale, ctx.readingScale)) return s;
+  const level = levelOf(c.scale, ctx.readingScale);
+  if (!from.at || level !== levelOf(from.scale, ctx.readingScale)) return s;
   const dx = (c.x - from.x) * c.scale;
   const dy = (c.y - from.y) * c.scale;
   const threshold = Math.min(PAN_INTENT_PX, 0.08 * Math.min(ctx.viewport.width, ctx.viewport.height));
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return s;
-  return Math.abs(dy) >= Math.abs(dx) ? step(from, ctx, dy > 0 ? 1 : -1, 'landing') : step(from, ctx, dx > 0 ? 1 : -1, 'frame');
+  const small = Math.max(Math.abs(dx), Math.abs(dy)) < threshold;
+  const vertical = Math.abs(dy) >= Math.abs(dx);
+
+  if (level === 'reading' && Math.abs(dx) < ctx.viewport.width && Math.abs(dy) < ctx.viewport.height) {
+    const here = readingOrder(ctx).find((p) => p.id === from.at) ?? landingPoints(ctx.layout, 'reading').find((p) => p.id === from.at)!;
+    if (small) return placeAt(here, ctx);
+    if (!vertical) return step(from, ctx, dx > 0 ? 1 : -1, 'frame');
+    const spot = readingSpot(here, ctx);
+    const target = spot + dy / (WORLD.lineHeight * c.scale);
+    const list = readingOrder(ctx);
+    const next =
+      dy > 0
+        ? (list.filter((p) => readingSpot(p, ctx) > spot && readingSpot(p, ctx) <= target).at(-1) ?? list.find((p) => readingSpot(p, ctx) > spot))
+        : (list.find((p) => readingSpot(p, ctx) < spot && readingSpot(p, ctx) >= target) ?? list.findLast((p) => readingSpot(p, ctx) < spot));
+    return next ? placeAt(next, ctx) : placeAt(here, ctx);
+  }
+
+  // 比較的是相機位置，不是著陸點代號
+  const samePlace = Math.abs(s.x - from.x) < 1e-9 && Math.abs(s.y - from.y) < 1e-9 && s.scale === from.scale;
+  if (!samePlace || small) return s;
+  return vertical ? step(from, ctx, dy > 0 ? 1 : -1, 'landing') : step(from, ctx, dx > 0 ? 1 : -1, 'frame');
 }
 
 /** 精讀層、該節所在段落起點 */
@@ -224,19 +270,18 @@ export function step(c: Camera, ctx: CameraContext, dir: 1 | -1, unit: 'landing'
   const cur = c.at ? c : snap(c, ctx);
   const level = levelOf(cur.scale, ctx.readingScale);
   const pts = landingPoints(ctx.layout, level);
-  const idx = pts.findIndex((p) => p.id === cur.at);
-  if (level !== 'reading' || unit === 'landing') {
+  if (level !== 'reading') {
+    const idx = pts.findIndex((p) => p.id === cur.at);
     const next = pts[Math.min(pts.length - 1, Math.max(0, idx + dir))]!;
     // 換到別的著陸點是移動，不是縮放：清除 focus
     return next.id === cur.at ? cur : placeAt(next, ctx);
   }
-  const line = pts[idx]!.line!;
-  const isFrame = (p: LandingPoint) => {
-    const pos = ctx.layout.lines[p.line!]!.pos;
-    return pos.line === 0 && (ctx.mode === 'column' || pos.column === 0);
-  };
-  const frames = pts.filter(isFrame);
-  const next = dir === 1 ? frames.find((p) => p.line! > line) : frames.findLast((p) => p.line! < line);
+  const here = readingSpot(pts.find((p) => p.id === cur.at)!, ctx);
+  const perFrame = ctx.layout.params.linesPerColumn;
+  const list = readingOrder(ctx);
+  const isFrameTop = (p: LandingPoint) => readingSpot(p, ctx) % perFrame === 0;
+  const candidates = unit === 'landing' ? list : list.filter(isFrameTop);
+  const next = dir === 1 ? candidates.find((p) => readingSpot(p, ctx) > here) : candidates.findLast((p) => readingSpot(p, ctx) < here);
   return next ? placeAt(next, ctx) : cur;
 }
 
