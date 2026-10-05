@@ -174,7 +174,7 @@ function App() {
         />
       )}
       <Attribution />
-      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} onAddToCard={(it) => setCard(addItem(card, it))} />}
+      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} onAddToCard={(it) => setCard(addItem(card, it))} loadParallels={(v) => clientRef.current!.parallels(READER_BOOK, v)} loadChapter={(b, c) => clientRef.current!.chapter(b, c)} />}
       <PrintSheet views={cardViews} />
     </main>
   );

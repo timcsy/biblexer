@@ -9,7 +9,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
-import type { BookData } from '../../worker/present.ts';
+import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
+import { ParallelsPanel } from './ParallelsPanel.tsx';
 import { STRINGS } from '../strings.ts';
 import { BookLayer } from './BookLayer.tsx';
 import { CanonLayer } from './CanonLayer.tsx';
@@ -23,6 +24,9 @@ export interface ReaderProps {
   /** 開啟時的經節（相對於本書第一節）與命中範圍 */
   start?: { verseIdx: number; hit?: { from: number; to: number } };
   onBack: () => void;
+  /** 串珠（spec 004）：由主頁透過 Worker 取得 */
+  loadParallels?: (verseIdx: number) => Promise<ParallelsView>;
+  loadChapter?: (book: number, chapter: number) => Promise<ChapterView>;
   /** 加入經文卡（spec 003 US3）：目前段落 */
   onAddToCard?: (item: { start: [number, number, number]; end: [number, number, number] }) => void;
 }
@@ -54,7 +58,8 @@ const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(pre
 const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrangement =>
   level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
 
-export function Reader({ data, start, onBack, onAddToCard }: ReaderProps) {
+export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadChapter }: ReaderProps) {
+  const [parallelsOpen, setParallelsOpen] = useState(false);
   const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
   const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
   const linesByPage = useMemo(() => {
@@ -325,6 +330,14 @@ export function Reader({ data, start, onBack, onAddToCard }: ReaderProps) {
   if (progress) lastProgress.current = progress;
   const pr = progress ?? lastProgress.current;
 
+  // 串珠的來源：目前段落（有段落標示時以它為準，否則以著陸點的第一節）
+  const currentSource = useMemo(() => {
+    if (!ctx || !camera?.at) return null;
+    const lp = landingPoints(ctx.layout, levelOf(camera.scale, ctx.readingScale)).find((p) => p.id === camera.at);
+    const v = camera.at.startsWith('para:') ? Number(camera.at.slice(5)) : (lp?.verseIdx ?? null);
+    return v === null ? null : { id: camera.at, verseIdx: v };
+  }, [camera?.at, ctx]);
+
   // 目前停的段落：畫面停在框頂端，段落以左側標示線呈現（FR-011a）
   const markLines = useMemo(() => {
     if ((level !== 'reading' && level !== 'outline') || !camera?.at?.startsWith('para:')) return undefined;
@@ -378,6 +391,11 @@ export function Reader({ data, start, onBack, onAddToCard }: ReaderProps) {
         <button type="button" class="reader-arrangement" data-testid="bookstyle-toggle" aria-pressed={bookStyle === 'map'} onClick={toggleBookStyle}>
           {STRINGS.bookStyleLabel}：{bookStyle === 'map' ? STRINGS.bookStyleMap : STRINGS.bookStyleGrid}
         </button>
+        {loadParallels && (
+          <button type="button" class="reader-arrangement" data-testid="reader-parallels" aria-pressed={parallelsOpen} onClick={() => setParallelsOpen(!parallelsOpen)}>
+            {STRINGS.parallels}
+          </button>
+        )}
         {onAddToCard && (
           <button type="button" class="reader-arrangement" data-testid="reader-add-to-card" onClick={addCurrentParagraph}>
             {STRINGS.addToCard}
@@ -417,6 +435,7 @@ export function Reader({ data, start, onBack, onAddToCard }: ReaderProps) {
           </div>
         </div>
       )}
+      {parallelsOpen && loadParallels && loadChapter && currentSource && <ParallelsPanel source={currentSource} load={loadParallels} loadChapter={loadChapter} onClose={() => setParallelsOpen(false)} />}
       <p class="reader-attr" data-testid="segmentation-attribution">
         {STRINGS.segmentationAttribution}
       </p>
