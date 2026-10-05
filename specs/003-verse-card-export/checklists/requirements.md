@@ -1,4 +1,4 @@
-# Specification Quality Checklist: 輔導用經文卡匯出
+# Specification Quality Checklist: 經文卡匯出
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-05

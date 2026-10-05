@@ -1,4 +1,4 @@
-# Implementation Plan：輔導用經文卡匯出
+# Implementation Plan：經文卡匯出
 
 **Branch**: `003-verse-card-export` | **Date**: 2026-10-05 | **Spec**: [spec.md](./spec.md)
 

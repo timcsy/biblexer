@@ -1,8 +1,8 @@
 ---
-description: "輔導用經文卡匯出的任務清單"
+description: "經文卡匯出的任務清單"
 ---
 
-# Tasks：輔導用經文卡匯出
+# Tasks：經文卡匯出
 
 **Input**：`specs/003-verse-card-export/`（spec、plan、research、data-model、contracts、quickstart）
 **Tests**：TDD（constitution）。純函式與 Worker 訊息先寫測試並確認失敗；E2E 在 UI 前寫好、先紅後綠。
