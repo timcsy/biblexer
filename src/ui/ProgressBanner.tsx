@@ -23,6 +23,12 @@ export function ProgressBanner({ state }: { state: BootState }) {
         <small>{STRINGS.installHint}</small>
       </div>
     );
+  if (state.kind === 'online-only')
+    return (
+      <div class="banner" data-testid="online-only">
+        {STRINGS.onlineOnly}
+      </div>
+    );
   if (state.kind === 'need-download')
     return (
       <div class="banner warn" data-testid="need-download" role="alert">
