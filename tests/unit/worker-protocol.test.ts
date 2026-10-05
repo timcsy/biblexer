@@ -9,6 +9,7 @@ function fakeEngine(over: Partial<Engine> = {}): Engine {
     search: vi.fn(async () => ({ results: [], total: 0, counts: { testament: {}, category: {} }, semanticReady: true, truncated: false, reference: null, expansions: [], granularity: 'passage' as const })),
     chapter: vi.fn(async () => ({ label: '', verses: [], passageStarts: [] })),
     book: vi.fn(async () => ({ book: 45, verses: [], paragraphStarts: [] })),
+    card: vi.fn(async () => [null]),
     ...over,
   };
 }
@@ -32,6 +33,13 @@ describe('Worker 協定', () => {
     await handleMessage(e, { type: 'book', id: 9, book: 45 }, (m) => out.push(m));
     expect(e.book).toHaveBeenCalledWith(45);
     expect(out[0]).toMatchObject({ type: 'bookResult', id: 9, data: { book: 45 } });
+  });
+
+  test('card → cardResult（帶相同 id）', async () => {
+    const out: WorkerOut[] = [];
+    const e = fakeEngine();
+    await handleMessage(e, { type: 'card', id: 11, items: [{ start: [45, 8, 28], end: [45, 8, 28] }] }, (m) => out.push(m));
+    expect(out[0]).toMatchObject({ type: 'cardResult', id: 11, items: [null] });
   });
 
   test('錯誤以固定代碼回報，訊息帶原請求 id', async () => {

@@ -9,7 +9,7 @@ removeItem(card: Card, index: number): Card
 hasItem(card: Card, item: CardItem): boolean
 serializeCard(card: Card): string
 deserializeCard(json: string | null): Card          // 不合法 → 空卡
-resolveItem(item: CardItem, verses: StoredVerse[], passages: Passage[]): ResolvedItem | null
+resolveItem(item: CardItem, verses: StoredVerse[], passages: Passage[]): ResolvedRange | null // 索引範圍與標籤；合併節的佔位節併入所選範圍
 ```
 
 ## Worker 訊息
@@ -17,7 +17,7 @@ resolveItem(item: CardItem, verses: StoredVerse[], passages: Passage[]): Resolve
 | 方向 | `type` | 內容 |
 |---|---|---|
 | UI → Worker | `card` | `{ id, items: CardItem[] }` |
-| Worker → UI | `cardResult` | `{ id, items: (ResolvedItem \| null)[] }` |
+| Worker → UI | `cardResult` | `{ id, items: (CardView \| null)[] }`（`CardView`：start、end、label、contextLabel、所在段落的 `PresentedVerse[]`，所選經節 `inResult`） |
 
 ## UI 測試介面
 

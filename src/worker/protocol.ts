@@ -1,6 +1,7 @@
 // Worker 訊息協定（contracts/search-api.md §3）
 import type { SearchRequest } from '../core/search.ts';
-import type { BookData, ChapterView, PresentedResponse } from './present.ts';
+import type { CardItem } from '../core/card.ts';
+import type { BookData, CardView, ChapterView, PresentedResponse } from './present.ts';
 
 export const ERROR_CODES = ['NOT_DOWNLOADED', 'QUOTA', 'CORRUPT', 'INTERNAL'] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -15,7 +16,8 @@ export type WorkerIn =
   | { type: 'loadSemantic' }
   | { type: 'search'; id: number; request: SearchRequest }
   | { type: 'chapter'; id: number; book: number; chapter: number }
-  | { type: 'book'; id: number; book: number };
+  | { type: 'book'; id: number; book: number }
+  | { type: 'card'; id: number; items: CardItem[] };
 
 export type WorkerOut =
   | ({ type: 'ready' } & ReadyState)
@@ -23,6 +25,7 @@ export type WorkerOut =
   | { type: 'result'; id: number; response: PresentedResponse }
   | { type: 'chapterResult'; id: number; view: ChapterView }
   | { type: 'bookResult'; id: number; data: BookData }
+  | { type: 'cardResult'; id: number; items: Array<CardView | null> }
   | { type: 'error'; id?: number; code: ErrorCode; message: string };
 
 export interface Engine {
@@ -32,6 +35,7 @@ export interface Engine {
   search(request: SearchRequest): Promise<PresentedResponse>;
   chapter(book: number, chapter: number): Promise<ChapterView>;
   book(book: number): Promise<BookData>;
+  card(items: CardItem[]): Promise<Array<CardView | null>>;
 }
 
 export class EngineError extends Error {
@@ -56,6 +60,8 @@ export async function handleMessage(engine: Engine, msg: WorkerIn, post: (m: Wor
       post({ type: 'ready', ...(await engine.loadSemantic()) });
     } else if (msg.type === 'search') {
       post({ type: 'result', id: msg.id, response: await engine.search(msg.request) });
+    } else if (msg.type === 'card') {
+      post({ type: 'cardResult', id: msg.id, items: await engine.card(msg.items) });
     } else if (msg.type === 'book') {
       post({ type: 'bookResult', id: msg.id, data: await engine.book(msg.book) });
     } else {

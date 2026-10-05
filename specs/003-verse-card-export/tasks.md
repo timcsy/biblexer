@@ -9,10 +9,10 @@ description: "輔導用經文卡匯出的任務清單"
 
 ## Phase 1：Foundational（經文卡資料）
 
-- [ ] T001 [P] `tests/unit/card.test.ts`：addItem 去重、moveItem 邊界、removeItem、serialize／deserialize 往返、不合法輸入回傳空卡（data-model「驗證」）
-- [ ] T002 [P] `tests/unit/card-resolve.test.ts`：resolveItem——單節展開為所在段落並標示所選經節；跨段範圍取連續段落；label／contextLabel；合併節；不存在的經節回傳 null
-- [ ] T003 實作 `src/core/card.ts`；確認 T001、T002 通過
-- [ ] T004 `tests/unit/worker-protocol.test.ts` 增補 `card` → `cardResult`；實作 `src/worker/protocol.ts`、`engine.ts`（engine.card）、`client.ts`
+- [X] T001 [P] `tests/unit/card.test.ts`：addItem 去重、moveItem 邊界、removeItem、serialize／deserialize 往返、不合法輸入回傳空卡（data-model「驗證」）
+- [X] T002 [P] `tests/unit/card-resolve.test.ts`：resolveItem——單節展開為所在段落並標示所選經節；跨段範圍取連續段落；label／contextLabel；合併節；不存在的經節回傳 null
+- [X] T003 實作 `src/core/card.ts`；確認 T001、T002 通過
+- [X] T004 `tests/unit/worker-protocol.test.ts` 增補 `card` → `cardResult`；實作 `src/worker/protocol.ts`、`engine.ts`（engine.card）、`client.ts`
 
 ## Phase 2：User Story 1＋2 — 收集、整理、保留、列印（P1）🎯 MVP
 

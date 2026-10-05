@@ -44,6 +44,15 @@ export interface BookData {
   paragraphStarts: number[];
 }
 
+/** 經文卡的一段（spec 003）：所在段落的經文，所選經節 inResult = true */
+export interface CardView {
+  start: [number, number, number];
+  end: [number, number, number];
+  label: string;
+  contextLabel: string | null;
+  verses: PresentedVerse[];
+}
+
 export function presentVerses(verses: readonly StoredVerse[], from: number, to: number, inResult: (i: number) => boolean): PresentedVerse[] {
   const out: PresentedVerse[] = [];
   for (let i = from; i <= to; i++) {

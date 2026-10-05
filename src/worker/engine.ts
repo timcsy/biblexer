@@ -10,7 +10,8 @@ import { toSearchText } from '../core/text.ts';
 import { deserializeVectorStore } from '../core/vectors.ts';
 import type { Embedder, Pooling } from '../embed/embedder.ts';
 import { EngineError, type Engine, type ReadyState } from './protocol.ts';
-import { presentResponse, presentVerses, type BookData, type ChapterView } from './present.ts';
+import { resolveItem, type CardItem } from '../core/card.ts';
+import { presentResponse, presentVerses, type BookData, type CardView, type ChapterView } from './present.ts';
 
 export interface ModelInfo {
   id: string;
@@ -94,6 +95,15 @@ export function createEngine(deps: EngineDeps): Engine {
         verses: presentVerses(verses, first, last, () => true),
         passageStarts: c.passages.filter((p) => p.start >= first && p.start <= last).map((p) => p.start - first),
       };
+    },
+
+    async card(items: CardItem[]): Promise<Array<CardView | null>> {
+      const c = requireCorpus();
+      return items.map((item) => {
+        const r = resolveItem(item, verses, c.passages);
+        if (!r) return null;
+        return { start: item.start, end: item.end, label: r.label, contextLabel: r.contextLabel, verses: presentVerses(verses, r.from, r.to, (i) => i >= r.selFrom && i <= r.selTo) };
+      });
     },
 
     async book(book): Promise<BookData> {

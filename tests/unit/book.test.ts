@@ -71,3 +71,21 @@ describe('整卷資料', () => {
     await expect(engineWithData().book(45)).rejects.toMatchObject({ code: 'NOT_DOWNLOADED' });
   });
 });
+
+describe('經文卡（spec 003）', () => {
+  test('依經文位置取出所在段落，所選經節標為 inResult；找不到的回傳 null', async () => {
+    const e = engineWithData();
+    await e.init('/data/manifest.json', undefined, false);
+    const [a, b] = await e.card([
+      { start: [45, 1, 2], end: [45, 1, 2] },
+      { start: [45, 9, 1], end: [45, 9, 1] },
+    ]);
+    // 1:3 合併在 1:2 裡（和合本「2–3」）：選 1:2 即包含 1:3
+    expect(a).toMatchObject({ label: '羅馬書 1:2–3', contextLabel: null, start: [45, 1, 2], end: [45, 1, 2] });
+    expect(a!.verses.map((x) => [x.ref.verse, x.inResult])).toEqual([
+      [2, true],
+      [3, true],
+    ]);
+    expect(b).toBeNull();
+  });
+});
