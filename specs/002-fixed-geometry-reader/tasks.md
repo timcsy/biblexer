@@ -134,6 +134,22 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ---
 
+## Phase 7：試讀後的修訂（2026-10-05）
+
+**依據**：spec〈修訂：試讀後的設計〉、research R3a、R4a、R5a、R8、R9。先在獨立分支 `prototype-strip` 做比較原型、逐項由使用者確認，再快轉併回本分支。
+**TDD 紀錄（如實）**：純函式（排列、換算、過場路徑、方向吸附、點擊、拖動、章節地圖、各層放法）皆先寫單元測試、確認失敗再實作；標 ⚠️ 的 E2E 是在實作後補寫——其中「不切開頁」一項另以舊規則突變確認會失敗。
+
+- [X] T024 [US2] 滾輪與觸控板雙指捲動改為平移、Ctrl＋滾輪縮放；平移放手沿方向前進（`snapToward`）——`tests/unit/reader-camera.test.ts`（突變驗證）、`e2e/reader-zoom.spec.ts`〈滾輪〉
+- [X] T025 [US2] 導覽依畫面位置與閱讀順序，整頁模式不來回跳、頁底接閱讀順序的下一頁——`tests/unit/reader-camera.test.ts`
+- [X] T026 [P] 排列與換算（`arrange`、`remap`）、過場路徑（`flyPath`）——`tests/unit/reader-arrangement.test.ts`；`src/reader/world.ts`、`src/reader/camera.ts`
+- [X] T027 閱讀器整合：排列切換（`arrangement-toggle`，預設長卷，記在瀏覽器）、過場動畫（可中斷、減少動態效果時不播放）、進度提示——`src/ui/reader/Reader.tsx`、`gestures.ts`；`playwright.config.ts` 設 `reducedMotion: 'reduce'`；⚠️ `e2e/reader-revision.spec.ts` 前三項
+- [X] T028 [US4] 縮小後點擊進入（`tapTarget`）、可拖動的進度條（`scrubTarget`，章刻度、吸附）——`tests/unit/reader-seek.test.ts`；⚠️ E2E〈拖動進度條〉〈點章號、點段落〉
+- [X] T029 精讀不切開頁、段落改以標示線呈現（FR-011a）——`tests/unit/reader-camera.test.ts`；⚠️ E2E〈停在頁中間的段落〉（已用舊規則突變確認會失敗）
+- [X] T030 段落輪廓以段落所在頁為中心整頁顯示、標示目前段落（FR-023）——`tests/unit/reader-camera.test.ts`
+- [X] T031 書卷層兩種全貌（FR-022）：章節地圖（每塊一段）與頁面網格（章號對齊每列左側），全貌放得進畫面就整張置中、放不下保住章號欄——`tests/unit/reader-chapter-map.test.ts`、`tests/unit/reader-arrangement.test.ts`；`bookstyle-toggle`
+- [X] T032 更新 spec（US4、FR-011a、FR-018～FR-024、SC-002a、SC-007）、research（R3a、R4a、R5a、R8、R9）、data-model、contracts、quickstart；清除程式中的「原型」標註
+- [ ] T033 版面比較測驗（SC-007）：依 `prototype-comparison.md` 由使用者與幾位信望愛的朋友實測，結果記在該檔記錄表；手機部分待 HTTPS 預覽方式決定
+
 ## Dependencies & Execution Order
 
 - **Setup（Phase 1）** → **Foundational（Phase 2）** → **US1（Phase 3）** → **US2（Phase 4）** → **US3（Phase 5）** → **Polish**

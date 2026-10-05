@@ -24,6 +24,17 @@ panBy(camera: Camera, dx: number, dy: number, ctx: CameraContext): Camera       
 cameraForVerse(verseIdx: number, ctx: CameraContext): Camera // 精讀層、該節所在段落起點
 ```
 
+```ts
+// 2026-10-05 新增（research R3a、R4a、R5a、R8）
+arrange(layout: Layout, a: 'strip' | 'grid' | 'chapters'): Layout     // world.ts：只改世界擺放，版面不變
+remap(camera: Camera, from: CameraContext, to: CameraContext): Camera // 排列切換：停在著陸點就放到同一著陸點，否則中心最近的行不動
+flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: number; at(t: number): Camera } // 過場路徑；at(1) 恰為 b
+snapToward(c: Camera, from: Camera, ctx: CameraContext): Camera        // 平移放手：精讀層一次翻一框（閱讀順序）
+step(c: Camera, ctx: CameraContext, dir: 1 | -1, unit: 'landing' | 'frame'): Camera // 方向鍵逐段／翻框
+tapTarget(c: Camera, pt: Point, ctx: CameraContext): Camera | null     // 書卷、段落輪廓層點擊 → 該處段落的精讀著陸點
+scrubTarget(f: number, ctx: CameraContext): { chapter: number; page: number; camera: Camera } // 進度條
+```
+
 ### 行為保證（皆有測試）
 
 | 保證 | 測試類型 |
@@ -60,3 +71,8 @@ cameraForVerse(verseIdx: number, ctx: CameraContext): Camera // 精讀層、該�
 | 搜尋結果上的入口 | `data-testid="open-in-reader"`（只在羅馬書範圍內出現） |
 | 返回搜尋 | `data-testid="reader-back"` |
 | 命中範圍 | 精讀層的經節加上 `data-hit="true"` |
+| 排列（2026-10-05） | 閱讀器根元素 `data-arrangement="strip|grid"`、`data-book-style="map|grid"`；切換按鈕 `data-testid="arrangement-toggle"`、`data-testid="bookstyle-toggle"` |
+| 段落標記 | `data-testid="para-mark"`、`data-line="<page>:<column>:<line>"`（目前段落所占的行） |
+| 進度與拖動 | `data-testid="reader-progress"`（「第幾章 · 第幾／N 頁」）、`data-testid="reader-scrub"`（可拖動）、`data-testid="scrub-tick"`＋`data-chapter`、`data-testid="scrub-thumb"` |
+| 書卷層章號 | `data-testid="book-chapter"`＋`data-chapter`（可點擊；目前的章 `aria-current="location"`） |
+| 段落輪廓目前段落 | `data-testid="outline-para"` 加 `aria-current="location"` |

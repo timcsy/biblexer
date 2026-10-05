@@ -1,4 +1,4 @@
-// 原型（prototype-strip）：冊頁長卷、版面切換、進度提示
+// 守護：FR-011a、FR-018、FR-020、FR-021（試讀後的修訂）：冊頁長卷、版面切換、進度、找章節、不切開頁
 import { expect, test } from '@playwright/test';
 import { openReader, waitReady } from './helpers.ts';
 

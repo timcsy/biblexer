@@ -1,4 +1,4 @@
-// 原型：快速找到章節——縮小後點擊進入、拖動進度條（對應紙本的「按比例翻開、看頁眉、微調」）
+// 守護：US4、FR-020、FR-021——快速找到章節——縮小後點擊進入、拖動進度條（對應紙本的「按比例翻開、看頁眉、微調」）
 import { describe, expect, test } from 'vitest';
 import { cameraForVerse, createContext, landingPoints, placeAt, scrubTarget, tapTarget, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';

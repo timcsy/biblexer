@@ -66,7 +66,7 @@ export interface Layout {
   chapters: Array<{ chapter: number; line: number }>;
   pageCount: number;
   /**
-   * 原型：另一種世界排列中每一行的位置（依行的索引）。有值時世界座標以它為準，
+   * 另一種世界排列中每一行的位置（research R8）（依行的索引）。有值時世界座標以它為準，
    * 版面（頁、欄、行、格）不變。用於書卷層的章節地圖。
    */
   lineRects?: ReadonlyArray<{ x: number; y: number; w: number; h: number }>;

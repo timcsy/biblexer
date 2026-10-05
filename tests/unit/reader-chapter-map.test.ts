@@ -1,4 +1,4 @@
-// 原型：書卷層的「章節地圖」——同一批行依章重排成一章一列，章號對齊在左側邊緣
+// 守護：FR-022、research R8——書卷層的「章節地圖」——同一批行依章重排成一章一列，章號對齊在左側邊緣
 import { describe, expect, test } from 'vitest';
 import { cameraForVerse, createContext, landingPoints, placeAt, remap, tapTarget, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';

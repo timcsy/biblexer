@@ -127,19 +127,19 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
   if (lp.level === 'reading') {
     const pos = ctx.layout.lines[lp.line!]!.pos;
     const frame = ctx.mode === 'page' ? pageRect(ctx.layout, pos.page) : columnRect(ctx.layout, pos.page, pos.column);
-    // 框水平置中；頂端對齊框的上緣——永遠看到完整的一欄或一頁，不把頁切開（原型；原本對齊著陸點那一行）。
+    // 框水平置中；頂端對齊框的上緣——永遠看到完整的一欄或一頁，不把頁切開（FR-011a、research R4a；初版對齊著陸點那一行）。
     // 段落著陸點只改變 at（介面以標記呈現），不移動畫面。
     return { x: frame.x - (vw - frame.w) / 2, y: frame.y, scale, focus: lp.id, at: lp.id };
   }
   const m = SCREEN_MARGIN / scale;
-  // 段落輪廓層：以段落所在的頁為中心，整頁完整顯示、左右露出前後幾頁（原型：不切開頁）；
+  // 段落輪廓層：以段落所在的頁為中心，整頁完整顯示、左右露出前後幾頁（FR-023：不切開頁）；
   // 同一頁的段落相機位置相同，段落以標籤標示
   if (lp.level === 'outline') {
     const page = pageRect(ctx.layout, ctx.layout.lines[lp.line!]!.pos.page);
     const vh = ctx.viewport.height / scale;
     return { x: page.x + page.w / 2 - vw / 2, y: page.y + page.h / 2 - vh / 2, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
   }
-  // 書卷層（看全貌，原型）：不切開全貌——
+  // 書卷層（看全貌，FR-022）：不切開全貌——
   // 放得進畫面就整張置中（同一畫面上所有章的相機相同，目前的章以標示呈現）；
   // 放不下時保住左側章號欄，並讓該章那一列在畫面上方
   if (lp.level === 'book') {
@@ -304,7 +304,7 @@ export function refit(c: Camera, from: CameraContext, to: CameraContext): Camera
 }
 
 /**
- * 排列切換（原型）：停在著陸點上時，在新的排列中放到同一個著陸點；
+ * 排列切換（research R3a）：停在著陸點上時，在新的排列中放到同一個著陸點；
  * 手勢中則讓視窗中心所在的頁在螢幕上不動，其他頁圍繞它重排。
  * 著陸點代號與 focus 在兩種排列下相同（都以行、段落、欄定義）。
  */
@@ -381,7 +381,7 @@ export function flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: n
 }
 
 /**
- * 縮小後點擊（原型）：在書卷層或段落輪廓點到某一行，就以該行所在段落進入精讀。
+ * 縮小後點擊（FR-021）：在書卷層或段落輪廓點到某一行，就以該行所在段落進入精讀。
  * 縮放層級是一棵樹（正典 → 章 → 段落），每點一下往下一層——對數級的找法，底數是每層的分支數。
  */
 export function tapTarget(c: Camera, pt: Point, ctx: CameraContext): Camera | null {
@@ -404,7 +404,7 @@ export function tapTarget(c: Camera, pt: Point, ctx: CameraContext): Camera | nu
 const SCRUB_MAGNET = 0.012; // 拖到章刻度這個距離內就吸到該章開頭（占全長的比例）
 
 /**
- * 拖動進度條（原型）：對應紙本的「按比例翻開 → 看頁眉 → 微調」。
+ * 拖動進度條（FR-020）：對應紙本的「按比例翻開 → 看頁眉 → 微調」。
  * 位置 f∈[0,1] 依行數比例對應到某一頁的頂端；接近章刻度時吸到該章開頭。
  */
 export function scrubTarget(f: number, ctx: CameraContext): { chapter: number; page: number; camera: Camera } {

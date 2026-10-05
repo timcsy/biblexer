@@ -1,7 +1,7 @@
 // 閱讀器根元件：相機狀態、層級切換、虛擬化（research R5）
 // 版面（layout）與視窗無關；視窗大小只改變相機（原則 1）。放手一律吸附到著陸點（根公理）。
 //
-// 原型（prototype-strip，見 knowledge/draft/2026-10-05-閱讀順序與平面的接縫.md）：
+// 試讀後的修訂（research R3a～R8；討論見 knowledge/draft/2026-10-05-閱讀順序與平面的接縫.md）：
 // - 版面可切換「長卷」（精讀、段落輪廓時所有頁排成一列，書卷、正典層才折成每列 6 頁）與「每列六頁」
 // - 離散的移動（按鍵、按鈕、放手吸附）以過場動畫著陸（van Wijk & Nuij）；手勢開始即中斷；減少動態效果時不播放
 // - 進度提示：第幾章、第幾頁
@@ -308,7 +308,7 @@ export function Reader({ data, start, onBack }: ReaderProps) {
   if (progress) lastProgress.current = progress;
   const pr = progress ?? lastProgress.current;
 
-  // 目前停的段落：畫面停在框頂端，段落以左側標示線呈現（原型）
+  // 目前停的段落：畫面停在框頂端，段落以左側標示線呈現（FR-011a）
   const markLines = useMemo(() => {
     if ((level !== 'reading' && level !== 'outline') || !camera?.at?.startsWith('para:')) return undefined;
     const v = Number(camera.at.slice(5));

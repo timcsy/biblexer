@@ -1,4 +1,4 @@
-// 原型（prototype-strip）：冊頁長卷的排列、排列切換時的相機換算、過場路徑
+// 守護：FR-018、FR-019、research R3a、R5a——冊頁長卷的排列、排列切換時的相機換算、過場路徑
 import { describe, expect, test } from 'vitest';
 import { cameraForVerse, createContext, flyPath, landingPoints, placeAt, remap, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';

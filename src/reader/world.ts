@@ -56,7 +56,7 @@ export function lineRect(layout: Layout, pos: LinePos): Rect {
 }
 
 /**
- * 頁面的排列（原型）：grid＝每列 6 頁；strip＝冊頁長卷，所有頁排成一列。
+ * 頁面的排列（research R3a、R8）：strip＝冊頁長卷，所有頁排成一列；grid＝每列 6 頁；chapters＝章節地圖。
  * 只改世界中頁的擺放，不改版面（行、經節座標）。
  */
 export type Arrangement = 'grid' | 'strip' | 'chapters';
@@ -84,7 +84,7 @@ function withoutRects(layout: Layout): Layout {
 }
 
 /**
- * 章節地圖（原型，書卷層用）：同一批行依章重排成一章一列，章號對齊在左側邊緣；
+ * 章節地圖（書卷層用，research R8）：同一批行依章重排成一章一列，章號對齊在左側邊緣；
  * 列內每一塊是一個段落（新標點和合本分段），塊寬隨段落長度（一欄 MAP_COLUMN_LINES 行），
  * 所以列的長度就是那一章的篇幅、塊的多寡就是段落的多寡。
  * 章在這一層是「地址」（像目錄），精讀時的長卷仍不中斷。
