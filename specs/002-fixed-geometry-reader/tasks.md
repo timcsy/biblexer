@@ -18,7 +18,7 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ## Phase 1：Setup
 
-- [ ] T001 依 plan.md 建立目錄 `src/reader/`、`src/ui/reader/`；在 `src/ui/strings.ts` 加入閱讀器的固定介面文字（「閱讀」「在閱讀器中開啟」「返回搜尋」「放大」「縮小」、層級名稱「正典」「書卷」「段落輪廓」「精讀」、分段署名「段落分段：新標點和合本（香港聖經公會）之分段，僅取邊界」、「本階段尚未提供閱讀」），確認 `tests/guards/strings.test.ts` 仍通過（不得含「最佳」「推薦」等字眼）
+- [X] T001 依 plan.md 建立目錄 `src/reader/`、`src/ui/reader/`；在 `src/ui/strings.ts` 加入閱讀器的固定介面文字（「閱讀」「在閱讀器中開啟」「返回搜尋」「放大」「縮小」、層級名稱「正典」「書卷」「段落輪廓」「精讀」、分段署名「段落分段：新標點和合本（香港聖經公會）之分段，僅取邊界」、「本階段尚未提供閱讀」），確認 `tests/guards/strings.test.ts` 仍通過（不得含「最佳」「推薦」等字眼）
 
 ---
 
@@ -26,8 +26,8 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 **⚠️ CRITICAL**：US1～US3 都需要從 Worker 取得一整卷的經節與段落。
 
-- [ ] T002 [P] 在 `tests/unit/worker-protocol.test.ts` 增補 `book` → `bookResult` 訊息的測試（帶相同 id）；在 `tests/unit/chapter.test.ts` 旁新增 `tests/unit/book.test.ts`：引擎的 `book(45)` 回傳羅馬書所有經節（含合併節的 `mergedTo`）與 `paragraphStarts`（相對於本書第一節的索引），不含任何標題（contracts §2）
-- [ ] T003 在 `src/worker/protocol.ts`、`src/worker/engine.ts`、`src/worker/client.ts` 實作 `book` 訊息與 `engine.book()`；確認 T002 通過
+- [X] T002 [P] 在 `tests/unit/worker-protocol.test.ts` 增補 `book` → `bookResult` 訊息的測試（帶相同 id）；在 `tests/unit/chapter.test.ts` 旁新增 `tests/unit/book.test.ts`：引擎的 `book(45)` 回傳羅馬書所有經節（含合併節的 `mergedTo`）與 `paragraphStarts`（相對於本書第一節的索引），不含任何標題（contracts §2）
+- [X] T003 在 `src/worker/protocol.ts`、`src/worker/engine.ts`、`src/worker/client.ts` 實作 `book` 訊息與 `engine.book()`；確認 T002 通過
 
 **Checkpoint**：UI 能以 `client.book(45)` 取得羅馬書資料。
 
@@ -41,29 +41,29 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T004 [P] [US1] 在 `tests/unit/reader-layout.test.ts` 撰寫排版單元測試（research R2）：
+- [X] T004 [P] [US1] 在 `tests/unit/reader-layout.test.ts` 撰寫排版單元測試（research R2）：
   - 段落首行縮排 2 格；章起點先佔一行章號標籤「第 N 章」
   - 節號為半形數字、佔 1 格；合併節的佔位節不佔格，承載節節號為「29–30」、佔 2 格
   - 和合本譯註與正文一起排、每字一格，`kind` 為 `note`
   - 一節跨行、跨欄、跨頁時，`VersePos.start` 為起始格、`end` 為結束格
-- [ ] T005 [P] [US1] 在 `tests/property/reader-layout.prop.test.ts` 撰寫排版性質測試（data-model「排版」性質）：
+- [X] T005 [P] [US1] 在 `tests/property/reader-layout.prop.test.ts` 撰寫排版性質測試（data-model「排版」性質）：
   - 「每行格數 ≤ 18，懸掛行 ≤ 19 且第 19 格必為結尾標點」
   - 「行首不為結尾標點；行尾不為開頭標點（除非該行只有此一字）」
   - 「每個段落起點、章起點都在行首」
   - 「每一個非佔位經節恰有一個 `VersePos`；`start` 依經節順序嚴格遞增」
   - 以隨機產生的經節（含標點、譯註、合併節）與段落起點驗證
-- [ ] T006 [P] [US1] 在 `tests/unit/reader-world.test.ts` 撰寫世界座標測試：頁 `p` 的左上角為 `x = (p mod 6) × pageWidth`、`y = floor(p / 6) × pageHeight`；同頁兩欄左右相鄰；`bookTiles` 回傳 66 塊、依正典順序每列 11 塊、羅馬書方塊等於其頁面網格外框
-- [ ] T007 [P] [US1] 在 `e2e/reader-geometry.spec.ts` 撰寫 E2E（SC-001、FR-003）：
+- [X] T006 [P] [US1] 在 `tests/unit/reader-world.test.ts` 撰寫世界座標測試：頁 `p` 的左上角為 `x = (p mod 6) × pageWidth`、`y = floor(p / 6) × pageHeight`；同頁兩欄左右相鄰；`bookTiles` 回傳 66 塊、依正典順序每列 11 塊、羅馬書方塊等於其頁面網格外框
+- [X] T007 [P] [US1] 在 `e2e/reader-geometry.spec.ts` 撰寫 E2E（SC-001、FR-003）：
   - 以 390×844、820×1180、1440×900 三種視窗開啟閱讀器，逐頁讀出 433 節的 `data-pos`，三者完全相同
   - 閱讀器顯示 `segmentation-attribution`，內容含「新標點和合本」
   - 視窗寬度改變（在同一頁面中 `setViewportSize`）後 `data-pos` 不變
 
 ### 實作
 
-- [ ] T008 [US1] 在 `src/reader/layout.ts` 實作 `layoutBook`、`isClosingPunct`、`isOpeningPunct`（LayoutParams：`cellsPerLine` 18、`linesPerColumn` 16、`columnsPerPage` 2、`pagesPerRow` 6、`paragraphIndent` 2）；函式簽名不得接收任何視窗參數；確認 T004、T005 通過
-- [ ] T009 [US1] 在 `src/reader/world.ts` 實作 `lineRect`、`pageRect`、`bookTiles`；確認 T006 通過
-- [ ] T010 [US1] 在 `src/ui/reader/ReadingLayer.tsx` 實作精讀層：每格為固定寬度方格（不依字型字寬），經節加 `data-testid="verse"`、`data-ref`、`data-pos`，行加 `data-testid="line"`、`data-line`；譯註次要樣式、節號上標；只渲染視窗附近的頁（前後各 1 頁）
-- [ ] T011 [US1] 在 `src/ui/reader/Reader.tsx` 實作閱讀器根元件（`data-testid="reader"`、`data-level`）：以 CSS `transform` 呈現相機（本階段先只有精讀層的平移）、可見區域 `data-testid="reader-viewport"`、分段署名 `data-testid="segmentation-attribution"`；在 `src/main.tsx` 加入「閱讀」視圖入口（開啟羅馬書第 1 章）；確認 T007 通過
+- [X] T008 [US1] 在 `src/reader/layout.ts` 實作 `layoutBook`、`isClosingPunct`、`isOpeningPunct`（LayoutParams：`cellsPerLine` 18、`linesPerColumn` 16、`columnsPerPage` 2、`pagesPerRow` 6、`paragraphIndent` 2）；函式簽名不得接收任何視窗參數；確認 T004、T005 通過
+- [X] T009 [US1] 在 `src/reader/world.ts` 實作 `lineRect`、`pageRect`、`bookTiles`；確認 T006 通過
+- [X] T010 [US1] 在 `src/ui/reader/ReadingLayer.tsx` 實作精讀層：每格為固定寬度方格（不依字型字寬），經節加 `data-testid="verse"`、`data-ref`、`data-pos`，行加 `data-testid="line"`、`data-line`；譯註次要樣式、節號上標；只渲染視窗附近的頁（前後各 1 頁）
+- [X] T011 [US1] 在 `src/ui/reader/Reader.tsx` 實作閱讀器根元件（`data-testid="reader"`、`data-level`）：以 CSS `transform` 呈現相機（本階段先只有精讀層的平移）、可見區域 `data-testid="reader-viewport"`、分段署名 `data-testid="segmentation-attribution"`；在 `src/main.tsx` 加入「閱讀」視圖入口（開啟羅馬書第 1 章）；確認 T007 通過
 
 **Checkpoint**：羅馬書可在固定版面上閱讀，跨視窗座標一致。
 
@@ -77,12 +77,12 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T012 [P] [US2] 在 `tests/unit/reader-camera.test.ts` 撰寫相機單元測試：
+- [X] T012 [P] [US2] 在 `tests/unit/reader-camera.test.ts` 撰寫相機單元測試：
   - `levelOf`：以精讀比例 r 為準，≥ 0.6r 為精讀、0.25r～0.6r 為段落輪廓、0.06r～0.25r 為書卷、< 0.06r 為正典
   - `landingPoints`：正典＝66 卷；書卷＝羅馬書 16 章的起點；段落輪廓＝段落起點；精讀＝段落起點 ∪ 欄頂端
   - 精讀層吸附後頂端對齊行的上緣；可見高度取整數行
   - `cameraForVerse(羅 8:28)` 落在該節所在段落起點的精讀著陸點
-- [ ] T013 [P] [US2] 在 `tests/property/reader-camera.prop.test.ts` 撰寫相機性質測試（data-model「相機」性質）：
+- [X] T013 [P] [US2] 在 `tests/property/reader-camera.prop.test.ts` 撰寫相機性質測試（data-model「相機」性質）：
   - 「`snap(snap(c)) = snap(c)`（冪等）」
   - 「`snap(c)` 的位置屬於 `landingPoints(levelOf(snap(c).scale))`」
   - 「從精讀著陸點 L 只做縮放（不平移）到任一層級再放大回精讀並吸附，結果為 L」
@@ -98,7 +98,7 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ### 實作
 
-- [ ] T015 [US2] 在 `src/reader/camera.ts` 實作 `levelOf`、`landingPoints`、`snap`、`zoomAt`、`panBy`、`cameraForVerse`（含 `focus` 規則）；確認 T012、T013 通過
+- [X] T015 [US2] 在 `src/reader/camera.ts` 實作 `levelOf`、`landingPoints`、`snap`、`zoomAt`、`panBy`、`cameraForVerse`（含 `focus` 規則）；確認 T012、T013 通過
 - [ ] T016 [P] [US2] 在 `src/ui/reader/OutlineLayer.tsx` 實作段落輪廓層：每行以長條表示（保留段落形狀），段落旁顯示範圍（如「8:28–30」）與該段經文的開頭字句；不得顯示任何標題或摘要（FR-014）
 - [ ] T017 [P] [US2] 在 `src/ui/reader/BookLayer.tsx` 與 `src/ui/reader/CanonLayer.tsx` 實作書卷層（頁面縮圖＋章號）與正典層（66 卷方塊依正典順序、可依舊約／新約分組；羅馬書以外標示「本階段尚未提供閱讀」）
 - [ ] T018 [US2] 在 `src/ui/reader/gestures.ts` 實作手勢：Pointer Events 拖曳與雙指縮放、`wheel`、按鈕 `zoom-in`／`zoom-out`、鍵盤（＋／−、方向鍵）；手勢中只更新 transform，放手後呼叫 `snap`；在 `Reader.tsx` 依 `levelOf` 切換四個層級並輸出 `data-focus`；確認 T014 通過

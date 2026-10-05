@@ -44,3 +44,29 @@ export async function clearDataCaches(page: Page): Promise<void> {
     for (const k of await caches.keys()) if (k.startsWith('biblexer-')) await caches.delete(k);
   });
 }
+
+/** 從首頁開啟閱讀器（羅馬書） */
+export async function openReader(page: Page): Promise<void> {
+  await page.getByTestId('open-reader').click();
+  await expect(page.getByTestId('reader')).toBeVisible();
+  await expect(page.getByTestId('verse').first()).toBeVisible({ timeout: 30_000 });
+}
+
+/** 逐「框」（手機一欄、桌機一頁）往後翻，讀出全部經節的 data-pos */
+export async function collectVersePositions(page: Page, max = 200): Promise<Map<string, string>> {
+  const reader = page.getByTestId('reader');
+  const seen = new Map<string, string>();
+  for (let i = 0; i < max; i++) {
+    const pairs = await reader.getByTestId('verse').evaluateAll((els) => els.map((e) => [e.getAttribute('data-ref')!, e.getAttribute('data-pos')!] as const));
+    for (const [r, p] of pairs) seen.set(r, p);
+    const before = await reader.getAttribute('data-focus');
+    await page.keyboard.press('PageDown');
+    const after = await reader.getAttribute('data-focus');
+    if (after === before) {
+      // 等待一下再確認是否真的到底
+      await page.waitForTimeout(100);
+      if ((await reader.getAttribute('data-focus')) === before) break;
+    }
+  }
+  return seen;
+}

@@ -5,16 +5,18 @@ import { ProgressBanner } from './ui/ProgressBanner.tsx';
 import type { Granularity } from './core/search.ts';
 import { Attribution } from './ui/Attribution.tsx';
 import { ChapterView } from './ui/ChapterView.tsx';
+import { Reader } from './ui/reader/Reader.tsx';
 import { toSearchFilter, type FilterKey } from './ui/FilterBar.tsx';
 import { ResultList } from './ui/ResultList.tsx';
 import { SearchBox } from './ui/SearchBox.tsx';
 import { STRINGS } from './ui/strings.ts';
 import './ui/style.css';
 import { SearchClient } from './worker/client.ts';
-import type { ChapterView as ChapterData, PresentedResponse, PresentedResult } from './worker/present.ts';
+import type { BookData, ChapterView as ChapterData, PresentedResponse, PresentedResult } from './worker/present.ts';
 import type { ReadyState } from './worker/protocol.ts';
 
 const PAGE = 10;
+const READER_BOOK = 45; // 本階段只有羅馬書可進入閱讀器
 
 function App() {
   const [ready, setReady] = useState<ReadyState>({ keyword: false, semantic: false });
@@ -25,6 +27,8 @@ function App() {
   const [results, setResults] = useState<PresentedResponse['results']>([]);
   const [filter, setFilter] = useState<FilterKey | null>(null);
   const [chapter, setChapter] = useState<{ data: ChapterData; hit: { from: number; to: number } } | null>(null);
+  const [bookData, setBookData] = useState<BookData | null>(null);
+  const [reader, setReader] = useState<{ verseIdx: number; hit?: { from: number; to: number } } | null>(null);
   const seq = useRef(0);
 
   const [bootState, setBootState] = useState<BootState>({ kind: 'starting' });
@@ -78,13 +82,29 @@ function App() {
     setResults([...results, ...r.results]);
   };
 
+  const loadBook = async () => {
+    if (bookData) return bookData;
+    const d = await clientRef.current!.book(READER_BOOK);
+    setBookData(d);
+    return d;
+  };
+  const openReader = async (start: { verseIdx: number; hit?: { from: number; to: number } } = { verseIdx: 0 }) => {
+    await loadBook();
+    setReader(start);
+  };
+
   const status = ready.semantic ? STRINGS.statusSemanticReady : ready.keyword ? STRINGS.statusKeywordReady : STRINGS.statusLoadingText;
   const statusId = ready.semantic ? 'status-semantic-ready' : ready.keyword ? 'status-keyword-ready' : 'status-loading';
 
   return (
     <main>
       <header class="top">
-        <h1>{STRINGS.appTitle}</h1>
+        <div class="top-actions">
+          <h1>{STRINGS.appTitle}</h1>
+          <button type="button" class="open-reader" data-testid="open-reader" disabled={!ready.keyword} onClick={() => void openReader()}>
+            {STRINGS.readerTitle}
+          </button>
+        </div>
         <p class="status" data-testid={statusId}>{status}</p>
         <ProgressBanner state={bootState} />
       </header>
@@ -114,6 +134,7 @@ function App() {
         />
       )}
       <Attribution />
+      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} />}
     </main>
   );
 }

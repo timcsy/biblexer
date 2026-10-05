@@ -1,6 +1,6 @@
 // Worker 訊息協定（contracts/search-api.md §3）
 import type { SearchRequest } from '../core/search.ts';
-import type { ChapterView, PresentedResponse } from './present.ts';
+import type { BookData, ChapterView, PresentedResponse } from './present.ts';
 
 export const ERROR_CODES = ['NOT_DOWNLOADED', 'QUOTA', 'CORRUPT', 'INTERNAL'] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -14,13 +14,15 @@ export type WorkerIn =
   | { type: 'init'; manifestUrl: string; semantic?: boolean }
   | { type: 'loadSemantic' }
   | { type: 'search'; id: number; request: SearchRequest }
-  | { type: 'chapter'; id: number; book: number; chapter: number };
+  | { type: 'chapter'; id: number; book: number; chapter: number }
+  | { type: 'book'; id: number; book: number };
 
 export type WorkerOut =
   | ({ type: 'ready' } & ReadyState)
   | { type: 'progress'; phase: 'text' | 'model' | 'vectors'; loaded: number; total: number }
   | { type: 'result'; id: number; response: PresentedResponse }
   | { type: 'chapterResult'; id: number; view: ChapterView }
+  | { type: 'bookResult'; id: number; data: BookData }
   | { type: 'error'; id?: number; code: ErrorCode; message: string };
 
 export interface Engine {
@@ -29,6 +31,7 @@ export interface Engine {
   loadSemantic(): Promise<ReadyState>;
   search(request: SearchRequest): Promise<PresentedResponse>;
   chapter(book: number, chapter: number): Promise<ChapterView>;
+  book(book: number): Promise<BookData>;
 }
 
 export class EngineError extends Error {
@@ -53,6 +56,8 @@ export async function handleMessage(engine: Engine, msg: WorkerIn, post: (m: Wor
       post({ type: 'ready', ...(await engine.loadSemantic()) });
     } else if (msg.type === 'search') {
       post({ type: 'result', id: msg.id, response: await engine.search(msg.request) });
+    } else if (msg.type === 'book') {
+      post({ type: 'bookResult', id: msg.id, data: await engine.book(msg.book) });
     } else {
       post({ type: 'chapterResult', id: msg.id, view: await engine.chapter(msg.book, msg.chapter) });
     }

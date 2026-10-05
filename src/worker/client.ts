@@ -1,7 +1,7 @@
 // 型別化的 Worker 用戶端：以請求 id 對應回應
 import type { SearchRequest } from '../core/search.ts';
 import type { ReadyState, WorkerIn, WorkerOut } from './protocol.ts';
-import type { ChapterView, PresentedResponse } from './present.ts';
+import type { BookData, ChapterView, PresentedResponse } from './present.ts';
 
 export interface ClientEvents {
   onReady(s: ReadyState): void;
@@ -36,6 +36,10 @@ export class SearchClient {
     return this.request((id) => ({ type: 'chapter', id, book, chapter }));
   }
 
+  book(book: number): Promise<BookData> {
+    return this.request((id) => ({ type: 'book', id, book }));
+  }
+
   private request<T>(make: (id: number) => WorkerIn): Promise<T> {
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
@@ -47,10 +51,10 @@ export class SearchClient {
   private receive(m: WorkerOut): void {
     if (m.type === 'ready') this.events.onReady({ keyword: m.keyword, semantic: m.semantic });
     else if (m.type === 'progress') this.events.onProgress(m.phase, m.loaded, m.total);
-    else if (m.type === 'result' || m.type === 'chapterResult') {
+    else if (m.type === 'result' || m.type === 'chapterResult' || m.type === 'bookResult') {
       const p = this.pending.get(m.id);
       this.pending.delete(m.id);
-      p?.resolve(m.type === 'result' ? m.response : m.view);
+      p?.resolve(m.type === 'result' ? m.response : m.type === 'chapterResult' ? m.view : m.data);
     } else {
       const p = m.id !== undefined ? this.pending.get(m.id) : undefined;
       if (p && m.id !== undefined) {

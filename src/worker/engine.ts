@@ -10,7 +10,7 @@ import { toSearchText } from '../core/text.ts';
 import { deserializeVectorStore } from '../core/vectors.ts';
 import type { Embedder, Pooling } from '../embed/embedder.ts';
 import { EngineError, type Engine, type ReadyState } from './protocol.ts';
-import { presentResponse, presentVerses, type ChapterView } from './present.ts';
+import { presentResponse, presentVerses, type BookData, type ChapterView } from './present.ts';
 
 export interface ModelInfo {
   id: string;
@@ -93,6 +93,19 @@ export function createEngine(deps: EngineDeps): Engine {
         label: `${bookById(book)!.name} ${chapter}`,
         verses: presentVerses(verses, first, last, () => true),
         passageStarts: c.passages.filter((p) => p.start >= first && p.start <= last).map((p) => p.start - first),
+      };
+    },
+
+    async book(book): Promise<BookData> {
+      const c = requireCorpus();
+      const first = verses.findIndex((v) => v.ref.book === book);
+      if (first < 0) throw new EngineError('INTERNAL', `找不到書卷 ${book}`);
+      let last = first;
+      while (verses[last + 1]?.ref.book === book) last++;
+      return {
+        book,
+        verses: presentVerses(verses, first, last, () => true),
+        paragraphStarts: c.passages.filter((p) => p.start >= first && p.start <= last).map((p) => p.start - first),
       };
     },
   };

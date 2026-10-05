@@ -57,3 +57,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .banner.ok { color: var(--accent); }
 .banner.ok small { color: var(--muted); }
 .banner.warn { border-color: var(--accent); color: var(--accent); }
+.top-actions { display: flex; gap: 0.5rem; align-items: center; }
+.open-reader { font-size: 0.9rem; padding: 0.3rem 0.8rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--card); color: var(--fg); cursor: pointer; }
+.reader { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; background: var(--bg); color: var(--fg); }
+.reader-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--line); }
+.reader-bar h2 { font-size: 1rem; margin: 0; color: var(--accent); }
+.reader-level { color: var(--muted); font-size: 0.85rem; }
+.reader-zoom { margin-left: auto; display: flex; gap: 0.25rem; }
+.reader-zoom button { min-width: 2.2rem; font-size: 1rem; padding: 0.2rem 0.5rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--card); color: var(--fg); cursor: pointer; }
+.reader-stage { flex: 1; position: relative; overflow: hidden; touch-action: none; user-select: none; }
+.reader-viewport { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.rline { position: absolute; white-space: nowrap; font-size: 20px; line-height: 42px; }
+.cell { display: inline-block; text-align: center; }
+.cell.note { color: var(--muted); font-size: 0.85em; }
+.cell.verseNum { color: var(--muted); font-size: 0.55em; vertical-align: top; line-height: 28px; font-family: system-ui, sans-serif; }
+.cell.chapterLabel { color: var(--accent); font-size: 0.8em; text-align: left; }
+.vfrag.hit { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.reader-attr { margin: 0; padding: 0.3rem 0.75rem; font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--line); }
+.sheet { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }

@@ -8,6 +8,7 @@ function fakeEngine(over: Partial<Engine> = {}): Engine {
     loadSemantic: vi.fn(async () => ({ keyword: true, semantic: true })),
     search: vi.fn(async () => ({ results: [], total: 0, counts: { testament: {}, category: {} }, semanticReady: true, truncated: false, reference: null, expansions: [], granularity: 'passage' as const })),
     chapter: vi.fn(async () => ({ label: '', verses: [], passageStarts: [] })),
+    book: vi.fn(async () => ({ book: 45, verses: [], paragraphStarts: [] })),
     ...over,
   };
 }
@@ -23,6 +24,14 @@ describe('Worker 協定', () => {
     expect(out.map((m) => m.type)).toEqual(['ready', 'result', 'chapterResult']);
     expect(out[1]).toMatchObject({ type: 'result', id: 7 });
     expect(out[2]).toMatchObject({ type: 'chapterResult', id: 8 });
+  });
+
+  test('book → bookResult（帶相同 id）', async () => {
+    const out: WorkerOut[] = [];
+    const e = fakeEngine();
+    await handleMessage(e, { type: 'book', id: 9, book: 45 }, (m) => out.push(m));
+    expect(e.book).toHaveBeenCalledWith(45);
+    expect(out[0]).toMatchObject({ type: 'bookResult', id: 9, data: { book: 45 } });
   });
 
   test('錯誤以固定代碼回報，訊息帶原請求 id', async () => {

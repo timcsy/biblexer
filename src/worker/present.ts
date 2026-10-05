@@ -36,6 +36,14 @@ export interface ChapterView {
   passageStarts: number[];
 }
 
+/** 閱讀器用：一整卷的經節與段落起點（contracts/reader-api.md §2） */
+export interface BookData {
+  book: number;
+  verses: PresentedVerse[];
+  /** 段落起點（經節索引，相對於本書第一節） */
+  paragraphStarts: number[];
+}
+
 export function presentVerses(verses: readonly StoredVerse[], from: number, to: number, inResult: (i: number) => boolean): PresentedVerse[] {
   const out: PresentedVerse[] = [];
   for (let i = from; i <= to; i++) {
