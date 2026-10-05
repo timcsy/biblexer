@@ -123,7 +123,7 @@ test('段落輪廓層只有段落範圍與經文開頭字句，沒有標題', as
   await expect(first.getByTestId('outline-excerpt')).toHaveText(/^耶穌基督的僕人保羅/);
 });
 
-test('正典層：66 卷依正典順序；羅馬書以外標示尚未提供閱讀；點羅馬書回到精讀', async ({ page }) => {
+test('正典層：66 卷依正典順序；點羅馬書回到精讀（其他卷可進入，見 e2e/whole-bible.spec.ts）', async ({ page }) => {
   await waitReady(page, false);
   await openReader(page);
   for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
@@ -131,8 +131,7 @@ test('正典層：66 卷依正典順序；羅馬書以外標示尚未提供閱�
   const tiles = page.getByTestId('canon-book');
   await expect(tiles).toHaveCount(66);
   expect(await tiles.evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-book'))))).toEqual(Array.from({ length: 66 }, (_, i) => i + 1));
-  await expect(page.locator('[data-testid="canon-book"][data-book="46"]')).toContainText('本階段尚未提供閱讀');
-  await expect(page.locator('[data-testid="canon-book"][data-book="45"]')).not.toContainText('本階段尚未提供閱讀');
+  await expect(page.locator('[data-testid="canon-book"][data-book="45"]')).toHaveAttribute('aria-current', 'location');
   await page.locator('[data-testid="canon-book"][data-book="45"]').click();
   await expect(page.getByTestId('reader')).toHaveAttribute('data-level', 'reading');
 });

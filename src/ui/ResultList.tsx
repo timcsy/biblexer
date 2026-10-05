@@ -19,7 +19,7 @@ export interface ResultListProps {
   filter: FilterKey | null;
   onFilter: (k: FilterKey | null) => void;
   onExpand: (r: PresentedResult) => void;
-  /** 本階段只有羅馬書可進入閱讀器（FR-015） */
+  /** 在閱讀器中開啟（任何書卷，spec 005 FR-003） */
   onOpenInReader?: (r: PresentedResult) => void;
   /** 經文卡（spec 003） */
   onAddToCard?: (r: PresentedResult) => void;

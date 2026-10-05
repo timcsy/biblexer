@@ -9,7 +9,6 @@ import { CardPanel } from './ui/card/CardPanel.tsx';
 import { PrintSheet } from './ui/card/PrintSheet.tsx';
 import { loadCard, saveCard } from './ui/card/store.ts';
 import { ChapterView } from './ui/ChapterView.tsx';
-import { READER_BOOK } from './ui/PassageCard.tsx';
 import { Reader } from './ui/reader/Reader.tsx';
 import { toSearchFilter, type FilterKey } from './ui/FilterBar.tsx';
 import { ResultList } from './ui/ResultList.tsx';
@@ -31,8 +30,11 @@ function App() {
   const [results, setResults] = useState<PresentedResponse['results']>([]);
   const [filter, setFilter] = useState<FilterKey | null>(null);
   const [chapter, setChapter] = useState<{ data: ChapterData; hit: { from: number; to: number } } | null>(null);
+  // 全本閱讀器（spec 005）：書卷資料依需要取得、快取在記憶體
+  const books = useRef(new Map<number, BookData>());
   const [bookData, setBookData] = useState<BookData | null>(null);
-  const [reader, setReader] = useState<{ verseIdx: number; hit?: { from: number; to: number } } | null>(null);
+  const [reader, setReader] = useState<{ book: number; verseIdx: number; hit?: { from: number; to: number } } | null>(null);
+  const lastBook = useRef(45);
   const seq = useRef(0);
 
   // 經文卡（spec 003）：只存在這台裝置；顯示與列印時由 Worker 取出所在段落
@@ -96,25 +98,30 @@ function App() {
     setResults([...results, ...r.results]);
   };
 
-  const loadBook = async () => {
-    if (bookData) return bookData;
-    const d = await clientRef.current!.book(READER_BOOK);
+  const loadBook = async (book: number) => {
+    let d = books.current.get(book);
+    if (!d) {
+      d = await clientRef.current!.book(book);
+      books.current.set(book, d);
+    }
     setBookData(d);
+    lastBook.current = book;
     return d;
   };
-  const openReader = async (start: { verseIdx: number; hit?: { from: number; to: number } } = { verseIdx: 0 }) => {
-    await loadBook();
-    setReader(start);
+  const openReader = async (book = lastBook.current, start: { verseIdx: number; hit?: { from: number; to: number } } = { verseIdx: 0 }) => {
+    await loadBook(book);
+    setReader({ book, ...start });
   };
 
-  // FR-015：開在命中段落起點並標示命中範圍；搜尋畫面留在底下，返回時查詢與捲動位置不變（FR-016）
+  // FR-015（spec 005：任何書卷）：開在命中段落起點並標示命中範圍；搜尋畫面留在底下，返回時查詢與捲動位置不變（FR-016）
   const openResultInReader = async (r: PresentedResult) => {
-    const d = await loadBook();
+    const book = r.startRef.book;
+    const d = await loadBook(book);
     const same = (a: { chapter: number; verse: number }, b: { chapter: number; verse: number }) => a.chapter === b.chapter && a.verse === b.verse;
     const from = d.verses.findIndex((v) => same(v.ref, r.startRef));
     const to = d.verses.findIndex((v) => same(v.ref, r.endRef));
     if (from < 0 || to < 0) return;
-    setReader({ verseIdx: from, hit: { from, to } });
+    setReader({ book, verseIdx: from, hit: { from, to } });
   };
 
   useEffect(() => {
@@ -174,7 +181,18 @@ function App() {
         />
       )}
       <Attribution />
-      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} onAddToCard={(it) => setCard(addItem(card, it))} loadParallels={(v) => clientRef.current!.parallels(READER_BOOK, v)} loadChapter={(b, c) => clientRef.current!.chapter(b, c)} />}
+      {reader && bookData && bookData.book === reader.book && (
+        <Reader
+          key={JSON.stringify(reader)}
+          data={bookData}
+          start={reader}
+          onBack={() => setReader(null)}
+          onOpenBook={(b) => void openReader(b)}
+          onAddToCard={(it) => setCard(addItem(card, it))}
+          loadParallels={(v) => clientRef.current!.parallels(reader.book, v)}
+          loadChapter={(b, c) => clientRef.current!.chapter(b, c)}
+        />
+      )}
       <PrintSheet views={cardViews} />
     </main>
   );

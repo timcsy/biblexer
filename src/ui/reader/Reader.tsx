@@ -11,6 +11,7 @@ import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
+import { bookById } from '../../core/canon.ts';
 import { STRINGS } from '../strings.ts';
 import { BookLayer } from './BookLayer.tsx';
 import { CanonLayer } from './CanonLayer.tsx';
@@ -24,6 +25,8 @@ export interface ReaderProps {
   /** 開啟時的經節（相對於本書第一節）與命中範圍 */
   start?: { verseIdx: number; hit?: { from: number; to: number } };
   onBack: () => void;
+  /** 正典層點其他書卷：開啟那一卷（spec 005） */
+  onOpenBook?: (book: number) => void;
   /** 串珠（spec 004）：由主頁透過 Worker 取得 */
   loadParallels?: (verseIdx: number) => Promise<ParallelsView>;
   loadChapter?: (book: number, chapter: number) => Promise<ChapterView>;
@@ -58,7 +61,7 @@ const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(pre
 const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrangement =>
   level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
 
-export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadChapter }: ReaderProps) {
+export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParallels, loadChapter }: ReaderProps) {
   const [parallelsOpen, setParallelsOpen] = useState(false);
   const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
   const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
@@ -222,7 +225,11 @@ export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadCh
   };
   useEffect(() => interrupt, []);
 
-  /** 正典層點羅馬書：回到 focus，沒有就到書首 */
+  /** 正典層點書卷：目前這一卷回到 focus（沒有就到書首）；其他卷開啟那一卷（spec 005） */
+  const enterTile = (book: number) => {
+    if (book !== data.book) onOpenBook?.(book);
+    else enterBook();
+  };
   const enterBook = () => {
     const c = camRef.current;
     const x = ctxRef.current;
@@ -326,6 +333,8 @@ export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadCh
     return { chapter, page: page + 1, pages: base.pageCount, fraction: line / base.lines.length };
   }, [camera?.at, centerPage, level, layout]);
 
+  const nChapters = base.chapters.length;
+  const labelStep = nChapters <= 24 ? 1 : nChapters <= 60 ? 5 : nChapters <= 120 ? 10 : 20;
   const lastProgress = useRef(progress);
   if (progress) lastProgress.current = progress;
   const pr = progress ?? lastProgress.current;
@@ -359,7 +368,7 @@ export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadCh
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
-    return <CanonLayer layout={layout} px={pxKey} onEnter={enterBook} />;
+    return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
   }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
   const paperBody = useMemo(
@@ -381,7 +390,7 @@ export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadCh
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
         </button>
-        <h2>羅馬書</h2>
+        <h2 data-testid="reader-title">{bookById(data.book)?.name}</h2>
         <span class="reader-level" data-testid="reader-level">
           {LEVEL_LABEL[level]}
         </span>
@@ -428,7 +437,8 @@ export function Reader({ data, start, onBack, onAddToCard, loadParallels, loadCh
             <span class="scrub-rail" />
             {base.chapters.map((c) => (
               <span key={c.chapter} class="scrub-tick" data-testid="scrub-tick" data-chapter={c.chapter} style={{ left: `${(c.line / base.lines.length) * 100}%` }}>
-                <small>{c.chapter}</small>
+                {/* 章多時章號稀疏顯示（刻度全部保留），標籤不互相重疊（spec 005 FR-005） */}
+                {(c.chapter === 1 || c.chapter % labelStep === 0) && <small>{c.chapter}</small>}
               </span>
             ))}
             <span class="scrub-thumb" data-testid="scrub-thumb" style={{ left: `${pr.fraction * 100}%` }} />

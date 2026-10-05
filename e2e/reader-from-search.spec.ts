@@ -6,11 +6,8 @@ test('羅馬書範圍內的結果可在閱讀器中開啟：落在命中段落�
   await waitReady(page);
   await search(page, '萬事都互相效力');
   const results = page.getByTestId('result');
-  // 羅馬書以外的結果沒有入口
-  for (const r of await results.all()) {
-    const start = (await r.getAttribute('data-start'))!;
-    await expect(r.getByTestId('open-in-reader')).toHaveCount(start.startsWith('45:') ? 1 : 0);
-  }
+  // 每筆結果都有入口（spec 005 FR-003 取代 002 FR-015 的「羅馬書範圍內」）
+  for (const r of await results.all()) await expect(r.getByTestId('open-in-reader')).toHaveCount(1);
   const romans = page.locator('[data-testid="result"][data-start^="45:"]').first();
   const start = (await romans.getAttribute('data-start'))!;
   const end = (await romans.getAttribute('data-end'))!;

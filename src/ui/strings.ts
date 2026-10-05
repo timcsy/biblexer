@@ -51,7 +51,6 @@ export const STRINGS = {
   levelOutline: '段落輪廓',
   levelReading: '精讀',
   segmentationAttribution: '段落分段：新標點和合本（香港聖經公會）之分段，僅取邊界',
-  notAvailable: '本階段尚未提供閱讀',
   chapterLabel: (n: number) => `第 ${n} 章`,
   arrangementLabel: '版面',
   scrubLabel: '在全書中的位置（可拖動）',

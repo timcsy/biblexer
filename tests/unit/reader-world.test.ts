@@ -8,6 +8,15 @@ const verse: BookVerse = { ref: { book: 45, chapter: 1, verse: 1 }, parts: [{ ki
 const layout = layoutBook({ book: 45, verses: [verse], paragraphStarts: [0] });
 const { pagesPerRow, linesPerColumn } = DEFAULT_LAYOUT;
 
+describe('正典方塊以目前書卷為原點（spec 005 FR-001）', () => {
+  test('創世記：第 1 卷的方塊在原點；羅馬書：第 45 卷的方塊在原點', () => {
+    for (const book of [1, 45]) {
+      const l = layoutBook({ book, verses: [{ ...verse, ref: { book, chapter: 1, verse: 1 } }], paragraphStarts: [0] });
+      expect(bookTiles(l)[book - 1]!.rect).toMatchObject({ x: 0, y: 0 });
+    }
+  });
+});
+
 describe('世界座標', () => {
   test('頁 p 的左上角：x = (p mod 6) × pageWidth，y = floor(p / 6) × pageHeight', () => {
     expect(layout.pageCount).toBeGreaterThan(pagesPerRow);

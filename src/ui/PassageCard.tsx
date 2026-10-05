@@ -4,9 +4,6 @@ import { formatCopy } from './copy.ts';
 import { STRINGS } from './strings.ts';
 import type { PresentedResult, PresentedVerse } from '../worker/present.ts';
 
-/** 本階段只有羅馬書可進入閱讀器 */
-export const READER_BOOK = 45;
-
 const refKey = (r: { book: number; chapter: number; verse: number }) => `${r.book}:${r.chapter}:${r.verse}`;
 
 export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readonly string[] }) {
@@ -57,7 +54,7 @@ export function PassageCard({ r, onExpand, onOpenInReader, onAddToCard, inCard }
             {STRINGS.expandChapter}
           </button>
         )}
-        {onOpenInReader && r.startRef.book === READER_BOOK && (
+        {onOpenInReader && (
           <button type="button" class="link" data-testid="open-in-reader" onClick={() => onOpenInReader(r)}>
             {STRINGS.openInReader}
           </button>

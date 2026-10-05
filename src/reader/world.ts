@@ -1,6 +1,6 @@
 // 版面 → 世界座標（data-model「World」；research R3）
 // 世界以「格」為單位；頁面每列 pagesPerRow 頁，由左而右、由上而下。
-// 正典層級的 66 卷方塊與羅馬書的頁面網格同大，羅馬書方塊就是它的頁面網格本身——
+// 正典層級的 66 卷方塊與目前書卷的頁面網格同大，目前書卷的方塊就是它的頁面網格本身——
 // 所以從正典縮放到精讀是同一個幾何空間（根公理「連續地探索」）。
 import { DEFAULT_LAYOUT, type Layout, type LinePos } from './layout.ts';
 
@@ -19,7 +19,6 @@ const pageGapX = 4;
 const pageGapY = 2 * lineHeight; // 頁與頁的垂直間距為整數行：世界中所有行都對齊同一個行網格（FR-011 不切行）
 const tileGap = 40;
 const BOOKS_PER_ROW = 11;
-const ROMANS = 45;
 
 export const WORLD = {
   lineHeight,
@@ -132,13 +131,13 @@ export function gridRect(layout: Layout): Rect {
   return { x: 0, y: 0, w: layout.params.pagesPerRow * WORLD.pageWidth, h: rows * WORLD.pageHeight };
 }
 
-/** 正典層級：66 卷依正典順序每列 11 卷；羅馬書方塊位於世界原點 */
+/** 正典層級：66 卷依正典順序每列 11 卷；目前書卷（layout.book）的方塊位於世界原點（spec 005 FR-001） */
 export function bookTiles(layout: Layout): Array<{ book: number; rect: Rect }> {
   const g = gridRect(layout);
   const stepX = g.w + tileGap;
   const stepY = g.h + tileGap;
-  const col0 = (ROMANS - 1) % BOOKS_PER_ROW;
-  const row0 = Math.floor((ROMANS - 1) / BOOKS_PER_ROW);
+  const col0 = (layout.book - 1) % BOOKS_PER_ROW;
+  const row0 = Math.floor((layout.book - 1) / BOOKS_PER_ROW);
   return Array.from({ length: 66 }, (_, i) => ({
     book: i + 1,
     rect: { x: ((i % BOOKS_PER_ROW) - col0) * stepX, y: (Math.floor(i / BOOKS_PER_ROW) - row0) * stepY, w: g.w, h: g.h },
