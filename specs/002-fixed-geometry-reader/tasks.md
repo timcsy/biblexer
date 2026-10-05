@@ -128,7 +128,7 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ## Phase 6：Polish 與跨切面
 
-- [ ] T021 執行全部測試：`npm test`、`npm run lint`、`npm run typecheck`、`npm run build`、`npm run test:data`、`npm run test:acceptance`、`npm run e2e`，確認階段 1 的 21 個 E2E 與驗收未退步，且首次下載量不變（不新增下載）
+- [X] T021 執行全部測試：`npm test`、`npm run lint`、`npm run typecheck`、`npm run build`、`npm run test:data`、`npm run test:acceptance`、`npm run e2e`，確認階段 1 的 21 個 E2E 與驗收未退步，且首次下載量不變（不新增下載）
 - [ ] T022 依 quickstart.md 第 2 節做手動驗證（SC-005 縮放流暢、SC-006 跨裝置找回位置），結果記錄在 `specs/002-fixed-geometry-reader/manual-verification.md`（若使用者決定延後，比照 001 T108 註明）
 - [ ] T023 知識回流（需使用者確認後才寫入核心檔）：更新 `knowledge/vision.md` 階段 2 勾選與「現狀」；實作中的教訓依四段式提議寫入 `knowledge/experience.md`；檢查 `knowledge/draft/2026-09-30-Farey定址座標系.md` 未解問題「這是閱讀器的主座標，還是只作為雙曲『切面』之一？」是否已可回答並記錄
 

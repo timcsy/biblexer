@@ -19,6 +19,13 @@
 - 展開全章、附出處複製、舊約／新約兩層分類篩選
 - 首次載入後完全離線（PWA），查詢不離開裝置；首次下載約 94 MB
 
+## 功能（階段 2：固定幾何閱讀器，羅馬書）
+
+- 方格排版（每行 18 格、每欄 16 行、每頁 2 欄）：同一節在手機、平板、桌機上的頁／欄／行／格完全相同，視窗大小只改變相機，不重新排版
+- 連續縮放：精讀 → 段落輪廓 → 書卷 → 正典；放手一律吸附到結構上的著陸點（段落起點、欄頂端、章、書卷），縮小再放大回到原處
+- 操作：拖曳平移、雙指或滾輪縮放、畫面上的 ＋／−；鍵盤 PageUp／PageDown 翻欄（桌機翻頁）、方向鍵到上／下一個著陸點、＋／− 縮放
+- 羅馬書範圍內的搜尋結果可「在閱讀器中開啟」，落在命中段落並標示命中範圍
+
 ## 開發
 
 需要 Node 24。
@@ -37,7 +44,7 @@ npm test                  # 單元、性質與守護測試
 npm run test:data         # 建置產物完整性、首次下載量（需先 build:data 與 build）
 npm run test:acceptance   # 固定查詢驗收
 npm run bench             # 模型評測，輸出 bench/report.md
-npm run e2e               # 端到端測試（含離線與不外洩）
+npm run e2e               # 端到端測試（含離線與不外洩；E2E_PORT 可改預覽埠號，預設 4173）
 npm run lint && npm run typecheck
 ```
 
@@ -45,5 +52,5 @@ npm run lint && npm run typecheck
 
 ## 專案文件
 
-- 規格、計畫、任務：`specs/001-offline-hybrid-search/`
+- 規格、計畫、任務：`specs/001-offline-hybrid-search/`、`specs/002-fixed-geometry-reader/`
 - 專案知識（原則、願景、經驗、決策歷史）：`knowledge/`
