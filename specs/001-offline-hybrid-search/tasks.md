@@ -354,7 +354,7 @@ description: "離線混合檢索（全本和合本）的任務清單"
 
 - [X] T106 [P] 撰寫 `README.md`（繁體中文）：專案用途、「工具只指路，不代言」的定位、建置與測試指令（連到 quickstart.md）
 - [X] T107 [P] 撰寫 `docs/資料來源.md`：由 `scripts/sources.json` 整理出經文、分段邊界、模型、ONNX Runtime 各自的來源、版本、用途與授權現況，並標出使用了哪些非經文本身的資料（分段邊界），供使用者與信望愛溝通時使用
-- [ ] T108 依 quickstart.md 第 4 節在 iPhone（Safari，加入主畫面）與 Android（Chrome）**各一台**做手動驗證（SC-004、SC-005、SC-009），把結果記錄在 `specs/001-offline-hybrid-search/manual-verification.md`
+- [ ] T108 （2026-10-05 使用者決定延後，尚未執行；SC-004、SC-005、SC-009 的實機數據待補）依 quickstart.md 第 4 節在 iPhone（Safari，加入主畫面）與 Android（Chrome）**各一台**做手動驗證（SC-004、SC-005、SC-009），把結果記錄在 `specs/001-offline-hybrid-search/manual-verification.md`
 - [X] T109 完整執行 quickstart.md 第 1～3 節（`build:data`、`bench`、`test`、`test:data`、`test:acceptance`、`lint`、`typecheck`、`e2e`），全部通過
 - [X] T110 知識回流：
   - 更新 `knowledge/vision.md` 的「現狀」與階段 1 勾選框（標完成日期）；把「腓 4:6 附近」改為與 spec 一致的重疊定義
