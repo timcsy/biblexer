@@ -130,6 +130,13 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
     return { x: frame.x - (vw - frame.w) / 2, y: frame.y, scale, focus: lp.id, at: lp.id };
   }
   const m = SCREEN_MARGIN / scale;
+  // 段落輪廓層：以段落所在的頁為中心，整頁完整顯示、左右露出前後幾頁（原型：不切開頁）；
+  // 同一頁的段落相機位置相同，段落以標籤標示
+  if (lp.level === 'outline') {
+    const page = pageRect(ctx.layout, ctx.layout.lines[lp.line!]!.pos.page);
+    const vh = ctx.viewport.height / scale;
+    return { x: page.x + page.w / 2 - vw / 2, y: page.y + page.h / 2 - vh / 2, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
+  }
   // 書卷層（看全貌）：整列放得進視窗時，頁面網格水平置中，垂直對齊章所在那一列的頂端
   if (lp.level === 'book') {
     const g = gridRect(ctx.layout);

@@ -80,8 +80,16 @@ test('書卷層點章號、段落輪廓點段落：直接進入精讀的那個�
 
   await page.getByTestId('zoom-out').click();
   await expect(reader).toHaveAttribute('data-level', 'outline');
-  const para = page.locator('[data-testid="outline-para"]').nth(2);
-  const range = (await para.getAttribute('data-range'))!;
+  // 挑一個完整在畫面內、且不是目前段落的標籤
+  const range = await page.evaluate(() => {
+    const vp = document.querySelector('[data-testid="reader-viewport"]')!.getBoundingClientRect();
+    const el = [...document.querySelectorAll('[data-testid="outline-para"]:not([aria-current])')].find((e) => {
+      const r = e.getBoundingClientRect();
+      return r.left >= vp.left && r.right <= vp.right && r.top >= vp.top && r.bottom <= vp.bottom;
+    })!;
+    return el.getAttribute('data-range')!;
+  });
+  const para = page.locator(`[data-testid="outline-para"][data-range="${range}"]`);
   await para.click();
   await expect(reader).toHaveAttribute('data-level', 'reading');
   await expect(reader.locator(`[data-testid="verse"][data-ref="45:${range.split('–')[0]}"]`)).toBeInViewport();

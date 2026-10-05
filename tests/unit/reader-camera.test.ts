@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest';
 import { cameraForVerse, createContext, landingPoints, levelOf, panBy, placeAt, refit, snap, snapToward, step, zoomAt, zoomStep, LEVEL_SCALE } from '../../src/reader/camera.ts';
 import { layoutBook, type BookVerse } from '../../src/reader/layout.ts';
-import { WORLD, lineRect } from '../../src/reader/world.ts';
+import { WORLD, lineRect, pageRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
 
 const sample = sampleBook();
@@ -63,6 +63,21 @@ describe('吸附與定位', () => {
         expect(ly).toBeGreaterThanOrEqual(c.y);
         expect(ly + WORLD.lineHeight).toBeLessThanOrEqual(c.y + layout.params.linesPerColumn * WORLD.lineHeight + 1e-9);
         expect(c).toMatchObject({ at: lp.id, focus: lp.id });
+      }
+    }
+  });
+
+  test('段落輪廓層：以段落所在的頁為中心（水平、垂直都置中），整頁不被切開', () => {
+    for (const ctx of [phone, desktop]) {
+      for (const lp of landingPoints(layout, 'outline')) {
+        const c = placeAt(lp, ctx);
+        const page = pageRect(layout, layout.lines[lp.line!]!.pos.page);
+        const vw = ctx.viewport.width / c.scale;
+        const vh = ctx.viewport.height / c.scale;
+        expect(c.x + vw / 2).toBeCloseTo(page.x + page.w / 2, 6);
+        expect(c.y + vh / 2).toBeCloseTo(page.y + page.h / 2, 6);
+        expect(page.h).toBeLessThanOrEqual(vh);
+        expect(c).toMatchObject({ at: lp.id });
       }
     }
   });

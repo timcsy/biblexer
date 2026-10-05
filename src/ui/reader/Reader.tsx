@@ -270,7 +270,7 @@ export function Reader({ data, start, onBack }: ReaderProps) {
 
   // 目前停的段落：畫面停在框頂端，段落以左側標示線呈現（原型）
   const markLines = useMemo(() => {
-    if (level !== 'reading' || !camera?.at?.startsWith('para:')) return undefined;
+    if ((level !== 'reading' && level !== 'outline') || !camera?.at?.startsWith('para:')) return undefined;
     const v = Number(camera.at.slice(5));
     const k = base.paragraphs.findIndex((p) => p.verseIdx === v);
     if (k < 0) return undefined;
@@ -287,7 +287,7 @@ export function Reader({ data, start, onBack }: ReaderProps) {
   const body = useMemo(() => {
     if (!ctx || !camera) return null;
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
-    if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} />;
+    if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} {...(progress ? { current: progress.chapter } : {})} />;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterBook} />;
   }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);

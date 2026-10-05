@@ -37,11 +37,18 @@ export function LineBars({ layout, lines }: { layout: Layout; lines: Line[] }) {
 }
 
 /** 段落輪廓層的標籤（頁面底色與行長條由 Reader 共用渲染，讓排列切換時能以動畫折疊） */
-export function OutlineLayer({ layout, data, pages, px }: { layout: Layout; data: BookData; pages: number[]; px: number }) {
+export function OutlineLayer({ layout, data, pages, px, current, markLines }: { layout: Layout; data: BookData; pages: number[]; px: number; current?: number; markLines?: ReadonlySet<number> }) {
   const shown = new Set(pages);
   const paras = layout.paragraphs;
   return (
     <>
+      {markLines &&
+        layout.lines
+          .filter((l) => markLines.has(l.index) && shown.has(l.pos.page))
+          .map((l) => {
+            const r = lineRect(layout, l.pos);
+            return <div key={`mark-${l.index}`} class="para-mark" style={{ left: `${(r.x - 0.7) * U}px`, top: `${r.y * U}px`, width: `${0.35 * U}px`, height: `${WORLD.lineHeight * U}px` }} />;
+          })}
       {layout.chapters
         // 章起點緊接段落起點時，章號併入段落標籤（避免兩個標籤重疊）
         .filter((c) => shown.has(layout.lines[c.line]!.pos.page) && !layout.lines[c.line + 1]?.paragraphStart)
@@ -61,7 +68,7 @@ export function OutlineLayer({ layout, data, pages, px }: { layout: Layout; data
         const label = layout.lines[p.line - 1]?.chapterStart ? layout.lines[p.line - 1]! : null;
         const r = lineRect(layout, (label ?? line).pos);
         return (
-          <div key={p.verseIdx} class="olabel" data-testid="outline-para" data-range={range} style={{ left: `${r.x * U}px`, top: `${r.y * U}px`, maxWidth: `${r.w * U}px`, fontSize: `${13 * px}px` }}>
+          <div key={p.verseIdx} class={p.verseIdx === current ? 'olabel current' : 'olabel'} aria-current={p.verseIdx === current ? 'location' : undefined} data-testid="outline-para" data-range={range} style={{ left: `${r.x * U}px`, top: `${r.y * U}px`, maxWidth: `${r.w * U}px`, fontSize: `${13 * px}px` }}>
             {label && <span class="ochapter">{`${label.cells[0]!.char} · `}</span>}
             <span class="orange">{range}</span> <span data-testid="outline-excerpt">{paragraphExcerpt(data, p.verseIdx)}</span>
           </div>
