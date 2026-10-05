@@ -15,7 +15,7 @@ import { BookLayer } from './BookLayer.tsx';
 import { CanonLayer } from './CanonLayer.tsx';
 import { attachGestures } from './gestures.ts';
 import { LineBars, OutlineLayer } from './OutlineLayer.tsx';
-import { PageSheets, ReadingLayer } from './ReadingLayer.tsx';
+import { PageSheets, ReadingLayer, RowSheets } from './ReadingLayer.tsx';
 import { U } from './units.ts';
 
 export interface ReaderProps {
@@ -27,8 +27,19 @@ export interface ReaderProps {
 
 const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outline: STRINGS.levelOutline, reading: STRINGS.levelReading } as const;
 const ARRANGEMENT_KEY = 'biblexer.reader.arrangement';
+const BOOK_STYLE_KEY = 'biblexer.reader.bookStyle';
+/** 書卷層的全貌：章節地圖（一章一列、章號對齊左側）或頁面網格（每列六頁、章號對齊每列左側） */
+type BookStyle = 'map' | 'grid';
+const loadBookStyle = (): BookStyle => {
+  try {
+    return localStorage.getItem(BOOK_STYLE_KEY) === 'grid' ? 'grid' : 'map';
+  } catch {
+    return 'map';
+  }
+};
+type Mode = 'strip' | 'grid';
 
-const loadArrangement = (): Arrangement => {
+const loadArrangement = (): Mode => {
   try {
     return localStorage.getItem(ARRANGEMENT_KEY) === 'grid' ? 'grid' : 'strip';
   } catch {
@@ -38,11 +49,12 @@ const loadArrangement = (): Arrangement => {
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** 長卷模式：精讀、段落輪廓用長卷；書卷、正典層折成每列 6 頁 */
-const arrangementFor = (mode: Arrangement, level: ZoomLevel): Arrangement => (mode === 'strip' && (level === 'reading' || level === 'outline') ? 'strip' : 'grid');
+const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrangement =>
+  level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
 
 export function Reader({ data, start, onBack }: ReaderProps) {
   const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
-  const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid') }), [base]);
+  const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
   const linesByPage = useMemo(() => {
     const m = new Map<number, Line[]>();
     for (const l of base.lines) (m.get(l.pos.page) ?? m.set(l.pos.page, []).get(l.pos.page)!).push(l);
@@ -51,9 +63,12 @@ export function Reader({ data, start, onBack }: ReaderProps) {
   const verseStart = useMemo(() => new Map(base.verses.map((v) => [v.verseIdx, `${v.start.page}:${v.start.column}:${v.start.line}:${v.start.cell}`])), [base]);
 
   const stage = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<Arrangement>(loadArrangement);
+  const [mode, setMode] = useState<Mode>(loadArrangement);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const [bookStyle, setBookStyle] = useState<BookStyle>(loadBookStyle);
+  const styleRef = useRef(bookStyle);
+  styleRef.current = bookStyle;
   const ctxsRef = useRef<Record<Arrangement, CameraContext> | null>(null);
   const [ctx, setCtx] = useState<CameraContext | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
@@ -70,7 +85,7 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     const from = ctxRef.current;
     const all = ctxsRef.current;
     if (!from || !all) return c;
-    const to = all[arrangementFor(modeRef.current, levelOf(c.scale, from.readingScale))];
+    const to = all[arrangementFor(modeRef.current, styleRef.current, levelOf(c.scale, from.readingScale))];
     if (to === from) return c;
     useCtx(to);
     return remap(c, from, to);
@@ -113,16 +128,16 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     const measure = () => {
       interrupt();
       const vp = { width: el.clientWidth, height: el.clientHeight };
-      const next = { strip: createContext(layouts.strip, vp), grid: createContext(layouts.grid, vp) };
+      const next = { strip: createContext(layouts.strip, vp), grid: createContext(layouts.grid, vp), chapters: createContext(layouts.chapters, vp) };
       const prev = ctxRef.current;
       const cam = camRef.current;
       ctxsRef.current = next;
       if (cam && prev) {
-        const same = next[prev.layout === layouts.strip ? 'strip' : 'grid'];
+        const same = next[prev.layout === layouts.strip ? 'strip' : prev.layout === layouts.chapters ? 'chapters' : 'grid'];
         useCtx(same);
         set(refit(cam, prev, same));
       } else {
-        const first = next[arrangementFor(modeRef.current, 'reading')];
+        const first = next[arrangementFor(modeRef.current, styleRef.current, 'reading')];
         useCtx(first);
         set(cameraForVerse(start?.verseIdx ?? 0, first));
       }
@@ -176,7 +191,7 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     const all = ctxsRef.current;
     if (!all) return;
     const r = el.getBoundingClientRect();
-    const read = all[arrangementFor(modeRef.current, 'reading')];
+    const read = all[arrangementFor(modeRef.current, styleRef.current, 'reading')];
     const t = scrubTarget((clientX - r.left) / r.width, read);
     if (ctxRef.current !== read) useCtx(read);
     interrupt();
@@ -208,8 +223,29 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     land(c.focus ? snap({ ...c, scale: x.readingScale }, x) : cameraForVerse(0, x));
   };
 
+  /** 書卷層點章號：飛到那一章的開頭（精讀） */
+  const enterChapter = (chapter: number) => {
+    const all = ctxsRef.current;
+    if (!all) return;
+    const v = data.verses.findIndex((x) => x.ref.chapter === chapter && !x.merged);
+    if (v >= 0) land(cameraForVerse(v, all[arrangementFor(modeRef.current, styleRef.current, 'reading')]));
+  };
+
+  const toggleBookStyle = () => {
+    const next: BookStyle = bookStyle === 'map' ? 'grid' : 'map';
+    try {
+      localStorage.setItem(BOOK_STYLE_KEY, next);
+    } catch {
+      /* 不能存就只在這次有效 */
+    }
+    styleRef.current = next;
+    setBookStyle(next);
+    const c = camRef.current;
+    if (c) show(settleArrangement(c));
+  };
+
   const toggleMode = () => {
-    const next: Arrangement = mode === 'strip' ? 'grid' : 'strip';
+    const next: Mode = mode === 'strip' ? 'grid' : 'strip';
     try {
       localStorage.setItem(ARRANGEMENT_KEY, next);
     } catch {
@@ -237,8 +273,12 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     const cx = camera.x + vw / 2;
     const cy = camera.y + vh / 2;
     let best = Infinity;
-    // 視窗附近的頁（前後各多一頁）
+    // 視窗附近的頁（前後各多一頁）；章節地圖不分頁，全部畫出
     for (let p = 0; p < layout.pageCount; p++) {
+      if (layout.lineRects) {
+        pages.push(p);
+        continue;
+      }
       const r = pageRect(layout, p);
       if (r.x + r.w >= camera.x - WORLD.pageWidth && r.x <= camera.x + vw + WORLD.pageWidth && r.y + r.h >= camera.y - WORLD.pageHeight && r.y <= camera.y + vh + WORLD.pageHeight) pages.push(p);
       const d = Math.hypot(Math.max(r.x - cx, 0, cx - r.x - r.w), Math.max(r.y - cy, 0, cy - r.y - r.h));
@@ -288,16 +328,25 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     if (!ctx || !camera) return null;
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
-    if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} {...(progress ? { current: progress.chapter } : {})} />;
+    if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterBook} />;
   }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
-  const paperBody = useMemo(() => (paper ? [<PageSheets key="sheets" layout={layout} pages={pages} />, <LineBars key="bars" layout={layout} lines={pages.flatMap((p) => linesByPage.get(p) ?? [])} />] : null), [paper, pagesKey, layout]);
+  const paperBody = useMemo(
+    () =>
+      paper
+        ? [
+            layout.rows ? <RowSheets key="rows" layout={layout} /> : <PageSheets key="sheets" layout={layout} pages={pages} />,
+            <LineBars key="bars" layout={layout} lines={pages.flatMap((p) => linesByPage.get(p) ?? []).filter((l) => !(layout.lineRects && l.chapterStart))} />,
+          ]
+        : null,
+    [paper, pagesKey, layout],
+  );
 
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class="reader" data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode}>
+    <section class="reader" data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -308,6 +357,9 @@ export function Reader({ data, start, onBack }: ReaderProps) {
         </span>
         <button type="button" class="reader-arrangement" data-testid="arrangement-toggle" aria-pressed={mode === 'strip'} title={STRINGS.arrangementLabel} onClick={toggleMode}>
           {STRINGS.arrangementLabel}：{mode === 'strip' ? STRINGS.arrangementStrip : STRINGS.arrangementGrid}
+        </button>
+        <button type="button" class="reader-arrangement" data-testid="bookstyle-toggle" aria-pressed={bookStyle === 'map'} onClick={toggleBookStyle}>
+          {STRINGS.bookStyleLabel}：{bookStyle === 'map' ? STRINGS.bookStyleMap : STRINGS.bookStyleGrid}
         </button>
         <span class="reader-zoom">
           <button type="button" data-testid="zoom-out" aria-label={STRINGS.zoomOut} onClick={() => ctx && camera && land(zoomStep(camera.at ? camera : snap(camera, ctx), ctx, -1))}>

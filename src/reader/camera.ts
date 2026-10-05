@@ -72,6 +72,8 @@ export function levelOf(scale: number, readingScale: number): ZoomLevel {
 
 const topLeft = (r: { x: number; y: number }): Point => ({ x: r.x, y: r.y });
 const SCREEN_MARGIN = 16; // 非精讀層：著陸點與視窗左上角的距離（px）
+/** 頁面網格的書卷層：章號以固定的螢幕字級排在網格左側，所需寬度以 px 計 */
+const BOOK_LABEL_PX = 120;
 
 const cache = new WeakMap<Layout, Map<ZoomLevel, LandingPoint[]>>();
 
@@ -137,14 +139,23 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
     const vh = ctx.viewport.height / scale;
     return { x: page.x + page.w / 2 - vw / 2, y: page.y + page.h / 2 - vh / 2, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
   }
-  // 書卷層（看全貌）：整列放得進視窗時，頁面網格水平置中，垂直對齊章所在那一列的頂端
+  // 書卷層（看全貌，原型）：不切開全貌——
+  // 放得進畫面就整張置中（同一畫面上所有章的相機相同，目前的章以標示呈現）；
+  // 放不下時保住左側章號欄，並讓該章那一列在畫面上方
   if (lp.level === 'book') {
     const g = gridRect(ctx.layout);
-    if (g.w + 2 * m <= vw) {
-      const page = ctx.layout.lines[lp.line!]!.pos.page;
-      const rowTop = Math.floor(page / ctx.layout.params.pagesPerRow) * WORLD.pageHeight;
-      return { x: g.x + g.w / 2 - vw / 2, y: rowTop - m, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
+    const vh = ctx.viewport.height / scale;
+    const label = ctx.layout.lineRects ? 0 : BOOK_LABEL_PX / scale; // 頁面網格的章號排在網格左側
+    const x = g.w + 2 * m + label <= vw ? g.x + g.w / 2 - vw / 2 - label / 2 : g.x - m - label;
+    let y: number;
+    if (g.h + 2 * m <= vh) y = g.y + g.h / 2 - vh / 2;
+    else {
+      const pos = ctx.layout.lines[lp.line!]!.pos;
+      // 章節地圖：章那一列的頂端；頁面網格：章所在頁那一列的頂端
+      const rowTop = ctx.layout.lineRects ? lineRect(ctx.layout, pos).y : Math.floor(pos.page / ctx.layout.params.pagesPerRow) * WORLD.pageHeight;
+      y = rowTop - m;
     }
+    return { x, y, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
   }
   // 其他層：著陸點放在視窗左上角（留一點邊），讓後面的內容出現在畫面上
   return { x: lp.anchor.x - m, y: lp.anchor.y - m, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
@@ -298,28 +309,28 @@ export function refit(c: Camera, from: CameraContext, to: CameraContext): Camera
  * 著陸點代號與 focus 在兩種排列下相同（都以行、段落、欄定義）。
  */
 export function remap(c: Camera, from: CameraContext, to: CameraContext): Camera {
-  if (from.layout.params.pagesPerRow === to.layout.params.pagesPerRow) return c;
+  if (from.layout === to.layout) return c;
   // 停在著陸點上：在新的排列中放到同一個著陸點
   if (c.at) {
     const lp = landingPoints(to.layout, levelOf(c.scale, to.readingScale)).find((p) => p.id === c.at);
     if (lp) return placeAt(lp, to, c.focus);
   }
-  // 手勢中：視窗中心所在的頁不動
+  // 手勢中：視窗中心最近的那一行在螢幕上不動
   const center = viewCenter(c, from);
   let best = 0;
   let bestD = Infinity;
-  for (let p = 0; p < from.layout.pageCount; p++) {
-    const r = pageRect(from.layout, p);
+  for (const l of from.layout.lines) {
+    const r = lineRect(from.layout, l.pos);
     const dx = Math.max(r.x - center.x, 0, center.x - (r.x + r.w));
     const dy = Math.max(r.y - center.y, 0, center.y - (r.y + r.h));
     const d = dx * dx + dy * dy;
     if (d < bestD) {
       bestD = d;
-      best = p;
+      best = l.index;
     }
   }
-  const a = pageRect(from.layout, best);
-  const b = pageRect(to.layout, best);
+  const a = lineRect(from.layout, from.layout.lines[best]!.pos);
+  const b = lineRect(to.layout, to.layout.lines[best]!.pos);
   return { ...c, x: c.x + (b.x - a.x), y: c.y + (b.y - a.y) };
 }
 

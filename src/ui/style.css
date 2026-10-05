@@ -80,7 +80,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .olabel { position: absolute; z-index: 1; padding: 0 0.3em; line-height: 1.4; background: color-mix(in srgb, var(--card) 88%, transparent); border-radius: 0.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .olabel .orange { color: var(--accent); font-family: system-ui, sans-serif; }
 .ochapter { color: var(--accent); font-weight: bold; }
-.bchap { position: absolute; color: var(--accent); font-weight: bold; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--card) 85%, transparent); padding: 0 0.25em; border-radius: 0.3em; }
+.bchap-at { position: absolute; }
+.bchap { display: inline-block; color: var(--accent); font-weight: bold; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--card) 85%, transparent); padding: 0 0.3em; border-radius: 0.3em; cursor: pointer; }
+.brow { position: absolute; display: flex; gap: 0.25em; justify-content: flex-end; }
+.btick { position: absolute; background: var(--accent); opacity: 0.6; }
+.btick.current { opacity: 1; }
 .ctile { position: absolute; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3em; color: var(--muted); }
 .ctile.nt { background: color-mix(in srgb, var(--accent) 6%, var(--card)); }
 .ctile.open { border: 3px solid var(--accent); color: var(--accent); cursor: pointer; }
@@ -101,3 +105,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .para-mark { position: absolute; background: var(--accent); border-radius: 3px; opacity: 0.75; }
 .olabel.current { background: var(--accent); color: var(--card); }
 .olabel.current .orange, .olabel.current .ochapter { color: var(--card); }
+.reader-bar { white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+.reader-bar > * { flex-shrink: 0; }
+@media (max-width: 520px) { .reader-level { display: none; } .reader-bar { gap: 0.5rem; } }

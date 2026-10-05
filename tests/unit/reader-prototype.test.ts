@@ -97,18 +97,23 @@ describe('過場路徑（van Wijk 與 Nuij）', () => {
 });
 
 describe('書卷層：看全貌', () => {
-  test('整列放得進視窗時，頁面網格水平置中；垂直對齊章所在那一列的頂端', () => {
+  test('整個網格放得進視窗時整個置中；否則垂直對齊章所在那一列的頂端', () => {
     const ctx = createContext(grid, vp);
     for (const lp of landingPoints(grid, 'book')) {
       const c = placeAt(lp, ctx);
       const g = gridRect(grid);
       const vw = vp.width / c.scale;
-      expect(g.w).toBeLessThan(vw);
-      expect(c.x + vw / 2).toBeCloseTo(g.x + g.w / 2, 6);
-      const page = grid.lines[lp.line!]!.pos.page;
-      const rowTop = Math.floor(page / grid.params.pagesPerRow) * WORLD.pageHeight;
-      expect(c.y).toBeLessThanOrEqual(rowTop);
-      expect(c.y).toBeGreaterThan(rowTop - WORLD.pageHeight / 2);
+      expect(g.w + 120 / c.scale).toBeLessThan(vw);
+      // 置中的是「左側章號欄（120 px）＋網格」
+      expect(c.x + vw / 2).toBeCloseTo(g.x + g.w / 2 - 60 / c.scale, 6);
+      const vh = vp.height / c.scale;
+      if (g.h + 32 / c.scale <= vh) expect(c.y + vh / 2).toBeCloseTo(g.y + g.h / 2, 6);
+      else {
+        const page = grid.lines[lp.line!]!.pos.page;
+        const rowTop = Math.floor(page / grid.params.pagesPerRow) * WORLD.pageHeight;
+        expect(c.y).toBeLessThanOrEqual(rowTop);
+        expect(c.y).toBeGreaterThan(rowTop - WORLD.pageHeight / 2);
+      }
     }
   });
 });

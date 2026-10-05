@@ -65,6 +65,14 @@ export interface Layout {
   /** 章號標籤所在的行 */
   chapters: Array<{ chapter: number; line: number }>;
   pageCount: number;
+  /**
+   * 原型：另一種世界排列中每一行的位置（依行的索引）。有值時世界座標以它為準，
+   * 版面（頁、欄、行、格）不變。用於書卷層的章節地圖。
+   */
+  lineRects?: ReadonlyArray<{ x: number; y: number; w: number; h: number }>;
+  /** 有 lineRects 時：整個排列的外框，以及每一章那一列的外框 */
+  bounds?: { x: number; y: number; w: number; h: number };
+  rows?: ReadonlyArray<{ chapter: number; rect: { x: number; y: number; w: number; h: number } }>;
 }
 
 const CLOSING = new Set('，。、；：？！」』）】〉》─…');

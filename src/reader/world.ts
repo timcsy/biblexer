@@ -46,7 +46,11 @@ export function columnRect(layout: Layout, page: number, column: number): Rect {
   return { x: p.x + column * (columnWidth + columnGap), y: p.y, w: columnWidth, h: p.h };
 }
 
+/** 行在版面中的索引（行是連續排的） */
+export const lineIndexOf = (layout: Layout, pos: LinePos): number => (pos.page * layout.params.columnsPerPage + pos.column) * layout.params.linesPerColumn + pos.line;
+
 export function lineRect(layout: Layout, pos: LinePos): Rect {
+  if (layout.lineRects) return layout.lineRects[lineIndexOf(layout, pos)]!;
   const c = columnRect(layout, pos.page, pos.column);
   return { x: c.x, y: c.y + pos.line * lineHeight, w: columnWidth, h: lineHeight };
 }
@@ -55,15 +59,59 @@ export function lineRect(layout: Layout, pos: LinePos): Rect {
  * 頁面的排列（原型）：grid＝每列 6 頁；strip＝冊頁長卷，所有頁排成一列。
  * 只改世界中頁的擺放，不改版面（行、經節座標）。
  */
-export type Arrangement = 'grid' | 'strip';
+export type Arrangement = 'grid' | 'strip' | 'chapters';
+
+/** 章節地圖：一欄幾行（比閱讀時的 16 行短，讓 16 章的列放得進一個畫面） */
+export const MAP_COLUMN_LINES = 6;
+const MAP_GUTTER = 6; // 左側章號欄寬（格）
+const MAP_ROW_GAP = 1.75; // 列與列之間留一行
 
 export function arrange(layout: Layout, a: Arrangement): Layout {
+  const base: Layout = layout.lineRects ? withoutRects(layout) : layout;
+  if (a === 'chapters') return chapterMap(base);
   const pagesPerRow = a === 'strip' ? Math.max(1, layout.pageCount) : DEFAULT_LAYOUT.pagesPerRow;
-  return layout.params.pagesPerRow === pagesPerRow ? layout : { ...layout, params: { ...layout.params, pagesPerRow } };
+  return base === layout && layout.params.pagesPerRow === pagesPerRow ? layout : { ...base, params: { ...base.params, pagesPerRow } };
+}
+
+function withoutRects(layout: Layout): Layout {
+  const copy = { ...layout };
+  delete copy.lineRects;
+  delete copy.bounds;
+  delete copy.rows;
+  return copy;
+}
+
+/**
+ * 章節地圖（原型，書卷層用）：同一批行依章重排成一章一列——章號對齊在左側邊緣，
+ * 列內一欄 MAP_COLUMN_LINES 行、欄由左往右，所以列的長度就是那一章的篇幅。
+ * 章在這一層是「地址」（像目錄），精讀時的長卷仍不中斷。
+ */
+function chapterMap(layout: Layout): Layout {
+  const lh = lineHeight;
+  const rowH = MAP_COLUMN_LINES * lh;
+  const step = columnWidth + columnGap;
+  const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(layout.lines.length);
+  const rows: Array<{ chapter: number; rect: { x: number; y: number; w: number; h: number } }> = [];
+  let maxW = 0;
+  layout.chapters.forEach((c, k) => {
+    const end = layout.chapters[k + 1]?.line ?? layout.lines.length;
+    const top = k * (rowH + MAP_ROW_GAP);
+    rects[c.line] = { x: 0, y: top, w: MAP_GUTTER - 2, h: lh };
+    const n = end - c.line - 1;
+    for (let j = 0; j < n; j++) rects[c.line + 1 + j] = { x: MAP_GUTTER + Math.floor(j / MAP_COLUMN_LINES) * step, y: top + (j % MAP_COLUMN_LINES) * lh, w: columnWidth, h: lh };
+    const w = MAP_GUTTER + Math.max(1, Math.ceil(n / MAP_COLUMN_LINES)) * step - columnGap;
+    rows.push({ chapter: c.chapter, rect: { x: 0, y: top, w, h: rowH } });
+    maxW = Math.max(maxW, w);
+  });
+  // 第一章之前若有行（理論上不會），排在第一列前面
+  for (let i = 0; i < rects.length; i++) rects[i] ??= { x: MAP_GUTTER, y: 0, w: columnWidth, h: lh };
+  const h = layout.chapters.length * (rowH + MAP_ROW_GAP) - MAP_ROW_GAP;
+  return { ...layout, lineRects: rects, bounds: { x: 0, y: 0, w: maxW, h }, rows };
 }
 
 /** 本書頁面網格的外框 */
 export function gridRect(layout: Layout): Rect {
+  if (layout.bounds) return layout.bounds;
   const rows = Math.max(1, Math.ceil(layout.pageCount / layout.params.pagesPerRow));
   return { x: 0, y: 0, w: layout.params.pagesPerRow * WORLD.pageWidth, h: rows * WORLD.pageHeight };
 }
