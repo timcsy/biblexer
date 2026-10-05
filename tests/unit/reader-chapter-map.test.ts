@@ -1,6 +1,6 @@
 // 原型：書卷層的「章節地圖」——同一批行依章重排成一章一列，章號對齊在左側邊緣
 import { describe, expect, test } from 'vitest';
-import { cameraForVerse, createContext, landingPoints, placeAt, remap, zoomStep } from '../../src/reader/camera.ts';
+import { cameraForVerse, createContext, landingPoints, placeAt, remap, tapTarget, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';
 import { MAP_COLUMN_LINES, WORLD, arrange, gridRect, lineRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
@@ -35,16 +35,35 @@ describe('章節地圖排列', () => {
     expect(xs[0]!).toBeLessThan(textX);
   });
 
-  test('列內依閱讀順序：一欄 MAP_COLUMN_LINES 行由上往下，欄由左往右；列的長度隨章的篇幅', () => {
+  test('每一塊＝一個段落：段落起點在那一塊的左上角（該列頂端），塊在前一塊的右邊並留縫', () => {
     for (const c of base.chapters) {
       const end = base.chapters.find((x) => x.chapter === c.chapter + 1)?.line ?? base.lines.length;
-      const body = base.lines.slice(c.line + 1, end);
-      body.forEach((l, k) => {
-        const r = lineRect(map, l.pos);
-        const first = lineRect(map, body[0]!.pos);
+      const rowTop = lineRect(map, base.lines[c.line]!.pos).y;
+      const starts = base.paragraphs.filter((p) => p.line > c.line && p.line < end);
+      let prevRight = -Infinity;
+      for (const p of starts) {
+        const r = lineRect(map, base.lines[p.line]!.pos);
+        expect(r.y).toBeCloseTo(rowTop, 9);
+        expect(r.x).toBeGreaterThan(prevRight);
+        const block = map.blocks!.find((b) => b.verseIdx === p.verseIdx)!;
+        expect(block.rect.x).toBeCloseTo(r.x, 9);
+        prevRight = block.rect.x + block.rect.w;
+      }
+    }
+  });
+
+  test('塊內依閱讀順序：以段落起點為第 0 行，一欄 MAP_COLUMN_LINES 行由上往下、欄由左往右；塊寬隨段落長度', () => {
+    for (const p of base.paragraphs) {
+      const next = base.lines.findIndex((l, i) => i > p.line && (l.paragraphStart || l.chapterStart));
+      const end = next < 0 ? base.lines.length : next;
+      const first = lineRect(map, base.lines[p.line]!.pos);
+      for (let k = 0; p.line + k < end; k++) {
+        const r = lineRect(map, base.lines[p.line + k]!.pos);
         expect(r.y).toBeCloseTo(first.y + (k % MAP_COLUMN_LINES) * WORLD.lineHeight, 9);
         expect(r.x).toBeCloseTo(first.x + Math.floor(k / MAP_COLUMN_LINES) * (WORLD.columnWidth + WORLD.columnGap), 9);
-      });
+      }
+      const block = map.blocks!.find((b) => b.verseIdx === p.verseIdx)!;
+      expect(block.rect.w).toBeCloseTo(Math.ceil((end - p.line) / MAP_COLUMN_LINES) * (WORLD.columnWidth + WORLD.columnGap) - WORLD.columnGap, 9);
     }
   });
 
@@ -62,6 +81,16 @@ describe('章節地圖排列', () => {
 describe('章節地圖上的相機', () => {
   const ctx = createContext(map, vp);
 
+  test('點一塊（含塊內空白處）：進入那一段的精讀著陸點', () => {
+    const c = placeAt(landingPoints(map, 'book')[0]!, ctx);
+    const strip = createContext(arrange(base, 'strip'), vp);
+    for (const b of map.blocks!.slice(0, 20)) {
+      // 塊的右下角附近（短段落時那裡沒有行）
+      const pt = { x: (b.rect.x + b.rect.w - 0.5 - c.x) * c.scale, y: (b.rect.y + b.rect.h - 0.5 - c.y) * c.scale };
+      expect(tapTarget(c, pt, ctx)!.at).toBe(cameraForVerse(b.verseIdx, strip).at);
+    }
+  });
+
   test('書卷層：整張地圖放得進畫面時整張置中（不切開全貌），16 章都看得到', () => {
     const g = gridRect(map);
     for (const lp of landingPoints(map, 'book')) {
@@ -69,7 +98,9 @@ describe('章節地圖上的相機', () => {
       const vw = vp.width / c.scale;
       const vh = vp.height / c.scale;
       expect(g.h).toBeLessThan(vh);
-      expect(c.x + vw / 2).toBeCloseTo(g.x + g.w / 2, 6);
+      // 寬度放得下就水平置中；放不下就保住左側章號欄（留 16 px 邊距）
+      if (g.w + 32 / c.scale <= vw) expect(c.x + vw / 2).toBeCloseTo(g.x + g.w / 2, 6);
+      else expect((g.x - c.x) * c.scale).toBeCloseTo(16, 6);
       expect(c.y + vh / 2).toBeCloseTo(g.y + g.h / 2, 6);
       expect(c.at).toBe(lp.id);
     }

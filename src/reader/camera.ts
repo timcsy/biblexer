@@ -389,6 +389,9 @@ export function tapTarget(c: Camera, pt: Point, ctx: CameraContext): Camera | nu
   if (level !== 'book' && level !== 'outline') return null;
   const wx = c.x + pt.x / c.scale;
   const wy = c.y + pt.y / c.scale;
+  // 章節地圖：點到一塊（含塊內空白處）就進入那一段
+  const block = ctx.layout.blocks?.find((b) => wx >= b.rect.x && wx <= b.rect.x + b.rect.w && wy >= b.rect.y && wy <= b.rect.y + b.rect.h);
+  if (block) return cameraForVerse(block.verseIdx, ctx);
   const line = ctx.layout.lines.find((l) => {
     const r = lineRect(ctx.layout, l.pos);
     return wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h;

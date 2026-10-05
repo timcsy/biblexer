@@ -69,12 +69,12 @@ export function PageSheets({ layout, pages }: { layout: Layout; pages: number[] 
   );
 }
 
-/** 章節地圖：每一章那一列的底色 */
+/** 章節地圖：每一塊（段落）的底色 */
 export function RowSheets({ layout }: { layout: Layout }) {
   return (
     <>
-      {(layout.rows ?? []).map(({ chapter, rect: r }) => (
-        <div key={`row-${chapter}`} class="sheet" style={{ left: `${(r.x - 1) * U}px`, top: `${(r.y - 0.5) * U}px`, width: `${(r.w + 2) * U}px`, height: `${(r.h + 1) * U}px` }} />
+      {(layout.blocks ?? []).map(({ verseIdx, rect: r }) => (
+        <div key={`block-${verseIdx}-${r.y}`} class="sheet block" style={{ left: `${(r.x - 0.6) * U}px`, top: `${(r.y - 0.4) * U}px`, width: `${(r.w + 1.2) * U}px`, height: `${(r.h + 0.8) * U}px` }} />
       ))}
     </>
   );

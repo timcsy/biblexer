@@ -73,6 +73,8 @@ export interface Layout {
   /** 有 lineRects 時：整個排列的外框，以及每一章那一列的外框 */
   bounds?: { x: number; y: number; w: number; h: number };
   rows?: ReadonlyArray<{ chapter: number; rect: { x: number; y: number; w: number; h: number } }>;
+  /** 章節地圖：每一塊（一個段落，或段落跨章時在新章的那一部分）與它的第一節 */
+  blocks?: ReadonlyArray<{ verseIdx: number; rect: { x: number; y: number; w: number; h: number } }>;
 }
 
 const CLOSING = new Set('，。、；：？！」』）】〉》─…');

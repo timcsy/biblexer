@@ -65,6 +65,7 @@ export type Arrangement = 'grid' | 'strip' | 'chapters';
 export const MAP_COLUMN_LINES = 6;
 const MAP_GUTTER = 6; // 左側章號欄寬（格）
 const MAP_ROW_GAP = 1.75; // 列與列之間留一行
+const MAP_BLOCK_GAP = 3; // 段落（塊）之間的縫
 
 export function arrange(layout: Layout, a: Arrangement): Layout {
   const base: Layout = layout.lineRects ? withoutRects(layout) : layout;
@@ -78,12 +79,14 @@ function withoutRects(layout: Layout): Layout {
   delete copy.lineRects;
   delete copy.bounds;
   delete copy.rows;
+  delete copy.blocks;
   return copy;
 }
 
 /**
- * 章節地圖（原型，書卷層用）：同一批行依章重排成一章一列——章號對齊在左側邊緣，
- * 列內一欄 MAP_COLUMN_LINES 行、欄由左往右，所以列的長度就是那一章的篇幅。
+ * 章節地圖（原型，書卷層用）：同一批行依章重排成一章一列，章號對齊在左側邊緣；
+ * 列內每一塊是一個段落（新標點和合本分段），塊寬隨段落長度（一欄 MAP_COLUMN_LINES 行），
+ * 所以列的長度就是那一章的篇幅、塊的多寡就是段落的多寡。
  * 章在這一層是「地址」（像目錄），精讀時的長卷仍不中斷。
  */
 function chapterMap(layout: Layout): Layout {
@@ -92,21 +95,34 @@ function chapterMap(layout: Layout): Layout {
   const step = columnWidth + columnGap;
   const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(layout.lines.length);
   const rows: Array<{ chapter: number; rect: { x: number; y: number; w: number; h: number } }> = [];
+  const blocks: Array<{ verseIdx: number; rect: { x: number; y: number; w: number; h: number } }> = [];
   let maxW = 0;
   layout.chapters.forEach((c, k) => {
     const end = layout.chapters[k + 1]?.line ?? layout.lines.length;
     const top = k * (rowH + MAP_ROW_GAP);
     rects[c.line] = { x: 0, y: top, w: MAP_GUTTER - 2, h: lh };
-    const n = end - c.line - 1;
-    for (let j = 0; j < n; j++) rects[c.line + 1 + j] = { x: MAP_GUTTER + Math.floor(j / MAP_COLUMN_LINES) * step, y: top + (j % MAP_COLUMN_LINES) * lh, w: columnWidth, h: lh };
-    const w = MAP_GUTTER + Math.max(1, Math.ceil(n / MAP_COLUMN_LINES)) * step - columnGap;
+    let x = MAP_GUTTER;
+    let i = c.line + 1;
+    while (i < end) {
+      // 一塊：從這一行到下一個段落起點（或章尾）之前
+      let j = i + 1;
+      while (j < end && !layout.lines[j]!.paragraphStart) j++;
+      const n = j - i;
+      for (let t = 0; t < n; t++) rects[i + t] = { x: x + Math.floor(t / MAP_COLUMN_LINES) * step, y: top + (t % MAP_COLUMN_LINES) * lh, w: columnWidth, h: lh };
+      const w = Math.ceil(n / MAP_COLUMN_LINES) * step - columnGap;
+      const verseIdx = layout.lines[i]!.cells.find((cell) => cell.verseIdx !== null)?.verseIdx ?? 0;
+      blocks.push({ verseIdx, rect: { x, y: top, w, h: rowH } });
+      x += w + MAP_BLOCK_GAP;
+      i = j;
+    }
+    const w = x - MAP_BLOCK_GAP;
     rows.push({ chapter: c.chapter, rect: { x: 0, y: top, w, h: rowH } });
     maxW = Math.max(maxW, w);
   });
   // 第一章之前若有行（理論上不會），排在第一列前面
   for (let i = 0; i < rects.length; i++) rects[i] ??= { x: MAP_GUTTER, y: 0, w: columnWidth, h: lh };
   const h = layout.chapters.length * (rowH + MAP_ROW_GAP) - MAP_ROW_GAP;
-  return { ...layout, lineRects: rects, bounds: { x: 0, y: 0, w: maxW, h }, rows };
+  return { ...layout, lineRects: rects, bounds: { x: 0, y: 0, w: maxW, h }, rows, blocks };
 }
 
 /** 本書頁面網格的外框 */
