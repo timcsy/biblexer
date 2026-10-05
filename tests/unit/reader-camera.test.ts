@@ -5,7 +5,8 @@ import { layoutBook, type BookVerse } from '../../src/reader/layout.ts';
 import { WORLD, lineRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
 
-const layout = layoutBook(sampleBook());
+const sample = sampleBook();
+const layout = layoutBook(sample);
 const phone = createContext(layout, { width: 390, height: 744 });
 const desktop = createContext(layout, { width: 1440, height: 800 });
 
@@ -88,6 +89,41 @@ describe('吸附與定位', () => {
     // 放大回來回到原處
     for (let i = 0; i < 4; i++) c = zoomStep(c, phone, 1);
     expect(c).toEqual(cameraForVerse(10, phone));
+  });
+});
+
+describe('縮放按鈕沿結構上下移動', () => {
+  test('放大：章 → 含該章第一節的段落 → 同一段落的精讀著陸點', () => {
+    const ch = layout.chapters[3]!;
+    const book = landingPoints(layout, 'book').find((p) => p.id === `chapter:45:${ch.chapter}`)!;
+    const outline = zoomStep(placeAt(book, phone), phone, 1);
+    const firstVerse = book.verseIdx!;
+    const para = layout.paragraphs.filter((p) => p.verseIdx <= firstVerse).at(-1)!;
+    expect(outline.at).toBe(`para:${para.verseIdx}`);
+    expect(zoomStep(outline, phone, 1).at).toBe(`para:${para.verseIdx}`);
+  });
+
+  test('縮小：段落 → 所在的章 → 本書', () => {
+    const para = layout.paragraphs.find((p) => p.verseIdx > 60)!;
+    let c = cameraForVerse(para.verseIdx, phone);
+    c = zoomStep(c, phone, -1);
+    expect(c.at).toBe(`para:${para.verseIdx}`);
+    c = zoomStep(c, phone, -1);
+    const chapter = layout.chapters.filter((x) => x.line <= para.line).at(-1)!;
+    expect(c.at).toBe(`chapter:45:${chapter.chapter}`);
+    c = zoomStep(c, phone, -1);
+    expect(c.at).toBe('book:45');
+  });
+
+  test('在書卷層用方向鍵換章是移動：清除 focus，放大後落在新的那一章', () => {
+    let c = zoomStep(zoomStep(cameraForVerse(0, phone), phone, -1), phone, -1);
+    expect(c.focus).toBeDefined();
+    c = step(c, phone, 1, 'landing');
+    expect(c.at).toBe('chapter:45:2');
+    expect(c.focus).toBeUndefined();
+    c = zoomStep(zoomStep(c, phone, 1), phone, 1);
+    const firstOfCh2 = sample.verses.findIndex((v) => v.ref.chapter === 2);
+    expect(c.at).toBe(`para:${layout.paragraphs.filter((p) => p.verseIdx <= firstOfCh2).at(-1)!.verseIdx}`);
   });
 });
 

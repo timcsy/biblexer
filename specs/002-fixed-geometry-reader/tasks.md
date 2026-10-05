@@ -88,7 +88,7 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
   - 「從精讀著陸點 L 只做縮放（不平移）到任一層級再放大回精讀並吸附，結果為 L」
   - 「`scale` 被夾在 [最小, 最大] 之間」
   - `panBy` 清除 `focus`；`zoomAt` 保留 `focus`
-- [ ] T014 [P] [US2] 在 `e2e/reader-zoom.spec.ts` 撰寫 E2E（SC-002、SC-003、FR-007～014）：
+- [X] T014 [P] [US2] 在 `e2e/reader-zoom.spec.ts` 撰寫 E2E（SC-002、SC-003、FR-007～014）：
   - 按 `zoom-out` 依序經過精讀 → 段落輪廓 → 書卷 → 正典，`data-level` 隨之改變，到正典後再按不再變化（邊界）
   - 從羅 8:28 所在著陸點縮小到正典再放大回精讀，`data-focus` 與原本相同
   - 精讀層吸附後，所有可見行（`data-testid="line"`）的上下緣都在 `reader-viewport` 之內
@@ -99,9 +99,9 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 ### 實作
 
 - [X] T015 [US2] 在 `src/reader/camera.ts` 實作 `levelOf`、`landingPoints`、`snap`、`zoomAt`、`panBy`、`cameraForVerse`（含 `focus` 規則）；確認 T012、T013 通過
-- [ ] T016 [P] [US2] 在 `src/ui/reader/OutlineLayer.tsx` 實作段落輪廓層：每行以長條表示（保留段落形狀），段落旁顯示範圍（如「8:28–30」）與該段經文的開頭字句；不得顯示任何標題或摘要（FR-014）
-- [ ] T017 [P] [US2] 在 `src/ui/reader/BookLayer.tsx` 與 `src/ui/reader/CanonLayer.tsx` 實作書卷層（頁面縮圖＋章號）與正典層（66 卷方塊依正典順序、可依舊約／新約分組；羅馬書以外標示「本階段尚未提供閱讀」）
-- [ ] T018 [US2] 在 `src/ui/reader/gestures.ts` 實作手勢：Pointer Events 拖曳與雙指縮放、`wheel`、按鈕 `zoom-in`／`zoom-out`、鍵盤（＋／−、方向鍵）；手勢中只更新 transform，放手後呼叫 `snap`；在 `Reader.tsx` 依 `levelOf` 切換四個層級並輸出 `data-focus`；確認 T014 通過
+- [X] T016 [P] [US2] 在 `src/ui/reader/OutlineLayer.tsx` 實作段落輪廓層：每行以長條表示（保留段落形狀），段落旁顯示範圍（如「8:28–30」）與該段經文的開頭字句；不得顯示任何標題或摘要（FR-014）
+- [X] T017 [P] [US2] 在 `src/ui/reader/BookLayer.tsx` 與 `src/ui/reader/CanonLayer.tsx` 實作書卷層（頁面縮圖＋章號）與正典層（66 卷方塊依正典順序、可依舊約／新約分組；羅馬書以外標示「本階段尚未提供閱讀」）
+- [X] T018 [US2] 在 `src/ui/reader/gestures.ts` 實作手勢：Pointer Events 拖曳與雙指縮放、`wheel`、按鈕 `zoom-in`／`zoom-out`、鍵盤（＋／−、方向鍵）；手勢中只更新 transform，放手後呼叫 `snap`；在 `Reader.tsx` 依 `levelOf` 切換四個層級並輸出 `data-focus`；確認 T014 通過
 
 **Checkpoint**：根公理「連續地探索，離散地著陸」可實際操作。
 

@@ -76,3 +76,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .vfrag.hit { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .reader-attr { margin: 0; padding: 0.3rem 0.75rem; font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--line); }
 .sheet { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+.obar { position: absolute; background: color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 4px; }
+.olabel { position: absolute; z-index: 1; padding: 0 0.3em; line-height: 1.4; background: color-mix(in srgb, var(--card) 88%, transparent); border-radius: 0.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.olabel .orange { color: var(--accent); font-family: system-ui, sans-serif; }
+.ochapter { color: var(--accent); font-weight: bold; }
+.bchap { position: absolute; color: var(--accent); font-weight: bold; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--card) 85%, transparent); padding: 0 0.25em; border-radius: 0.3em; }
+.ctile { position: absolute; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3em; color: var(--muted); }
+.ctile.nt { background: color-mix(in srgb, var(--accent) 6%, var(--card)); }
+.ctile.open { border: 3px solid var(--accent); color: var(--accent); cursor: pointer; }
+.ctile .cname { font-weight: bold; }
+.ctile .cnote { font-size: 0.75em; }

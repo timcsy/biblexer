@@ -45,7 +45,7 @@ export interface CameraContext {
 export interface LandingPoint {
   id: string;
   level: ZoomLevel;
-  /** 精讀層：行的左上角；其他層：區塊中心 */
+  /** 行或區塊的左上角 */
   anchor: Point;
   verseIdx: number | null;
   /** 所在的行（書卷與正典以外） */
@@ -70,7 +70,8 @@ export function levelOf(scale: number, readingScale: number): ZoomLevel {
   return k >= 0.6 ? 'reading' : k >= 0.25 ? 'outline' : k >= 0.06 ? 'book' : 'canon';
 }
 
-const center = (r: { x: number; y: number; w: number; h: number }): Point => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+const topLeft = (r: { x: number; y: number }): Point => ({ x: r.x, y: r.y });
+const SCREEN_MARGIN = 16; // 非精讀層：著陸點與視窗左上角的距離（px）
 
 const cache = new WeakMap<Layout, Map<ZoomLevel, LandingPoint[]>>();
 
@@ -87,13 +88,13 @@ function computeLanding(layout: Layout, level: ZoomLevel): LandingPoint[] {
   // 段落緊接章號標籤時，著陸點在標籤行（讓章號留在畫面上）
   const landLine = (line: number) => (layout.lines[line - 1]?.chapterStart ? line - 1 : line);
   if (level === 'canon') {
-    return bookTiles(layout).map((t) => ({ id: `book:${t.book}`, level, anchor: center(t.rect), verseIdx: t.book === layout.book ? 0 : null }));
+    return bookTiles(layout).map((t) => ({ id: `book:${t.book}`, level, anchor: topLeft(t.rect), verseIdx: t.book === layout.book ? 0 : null }));
   }
   if (level === 'book') {
-    return layout.chapters.map((c) => ({ id: `chapter:${layout.book}:${c.chapter}`, level, anchor: center(rectOf(c.line)), verseIdx: firstVerseFrom(layout, c.line), line: c.line }));
+    return layout.chapters.map((c) => ({ id: `chapter:${layout.book}:${c.chapter}`, level, anchor: topLeft(rectOf(c.line)), verseIdx: firstVerseFrom(layout, c.line), line: c.line }));
   }
   if (level === 'outline') {
-    return layout.paragraphs.map((p) => ({ id: `para:${p.verseIdx}`, level, anchor: center(rectOf(landLine(p.line))), verseIdx: p.verseIdx, line: landLine(p.line) }));
+    return layout.paragraphs.map((p) => ({ id: `para:${p.verseIdx}`, level, anchor: topLeft(rectOf(landLine(p.line))), verseIdx: p.verseIdx, line: landLine(p.line) }));
   }
   // 精讀：段落起點 ∪ 欄頂端；同一行兩者皆是時以段落起點為準
   const byLine = new Map<number, LandingPoint>();
@@ -121,14 +122,15 @@ function firstVerseFrom(layout: Layout, line: number): number | null {
 export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): Camera {
   const scale = LEVEL_SCALE[lp.level] * ctx.readingScale;
   const vw = ctx.viewport.width / scale;
-  const vh = ctx.viewport.height / scale;
   if (lp.level === 'reading') {
     const pos = ctx.layout.lines[lp.line!]!.pos;
     const frame = ctx.mode === 'page' ? pageRect(ctx.layout, pos.page) : columnRect(ctx.layout, pos.page, pos.column);
     // 框水平置中；頂端對齊行的上緣（FR-011）
     return { x: frame.x - (vw - frame.w) / 2, y: lp.anchor.y, scale, focus: lp.id, at: lp.id };
   }
-  return { x: lp.anchor.x - vw / 2, y: lp.anchor.y - vh / 2, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
+  // 其他層：著陸點放在視窗左上角（留一點邊），讓後面的內容出現在畫面上
+  const m = SCREEN_MARGIN / scale;
+  return { x: lp.anchor.x - m, y: lp.anchor.y - m, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
 }
 
 const viewCenter = (c: Camera, ctx: CameraContext): Point => ({ x: c.x + ctx.viewport.width / (2 * c.scale), y: c.y + ctx.viewport.height / (2 * c.scale) });
@@ -177,12 +179,27 @@ export function cameraForVerse(verseIdx: number, ctx: CameraContext): Camera {
   return placeAt(paras.at(-1) ?? pts[0]!, ctx);
 }
 
-/** 按鈕：到上一個／下一個層級的標準比例（以視窗中心縮放），然後吸附 */
+/**
+ * 按鈕：沿結構上下移動一個層級——放大到含目前經節的下一層著陸點（精讀層有 focus 時回到 focus），
+ * 縮小到含它的段落、章、書卷。保留 focus。
+ */
 export function zoomStep(c: Camera, ctx: CameraContext, dir: 1 | -1): Camera {
-  const i = LEVELS.indexOf(levelOf(c.scale, ctx.readingScale));
-  const next = LEVELS[Math.min(LEVELS.length - 1, Math.max(0, i + dir))]!;
-  const z = zoomAt(c, (LEVEL_SCALE[next] * ctx.readingScale) / c.scale, { x: ctx.viewport.width / 2, y: ctx.viewport.height / 2 }, ctx);
-  return snap(z, ctx);
+  const cur = c.at ? c : snap(c, ctx);
+  const level = levelOf(cur.scale, ctx.readingScale);
+  const next = LEVELS[Math.min(LEVELS.length - 1, Math.max(0, LEVELS.indexOf(level) + dir))]!;
+  if (next === level) return cur;
+  const here = landingPoints(ctx.layout, level).find((p) => p.id === cur.at)!;
+  // 正典層的其他書卷不可進入
+  if (here.verseIdx === null) return cur;
+  if (next === 'reading' && cur.focus) return snap({ ...cur, scale: ctx.readingScale }, ctx);
+  const pts = landingPoints(ctx.layout, next);
+  const target =
+    next === 'canon'
+      ? pts.find((p) => p.id === `book:${ctx.layout.book}`)!
+      : next === 'reading'
+        ? (pts.filter((p) => p.id.startsWith('para:') && p.verseIdx! <= here.verseIdx!).at(-1) ?? pts[0]!)
+        : (pts.filter((p) => p.verseIdx! <= here.verseIdx!).at(-1) ?? pts[0]!);
+  return placeAt(target, ctx, cur.focus);
 }
 
 /** 鍵盤：到下一個／上一個著陸點（landing），或下一個／上一個框——手機為欄、桌機為頁（frame） */
@@ -193,7 +210,8 @@ export function step(c: Camera, ctx: CameraContext, dir: 1 | -1, unit: 'landing'
   const idx = pts.findIndex((p) => p.id === cur.at);
   if (level !== 'reading' || unit === 'landing') {
     const next = pts[Math.min(pts.length - 1, Math.max(0, idx + dir))]!;
-    return next.id === cur.at ? cur : placeAt(next, ctx, cur.focus);
+    // 換到別的著陸點是移動，不是縮放：清除 focus
+    return next.id === cur.at ? cur : placeAt(next, ctx);
   }
   const line = pts[idx]!.line!;
   const isFrame = (p: LandingPoint) => {
