@@ -2,7 +2,6 @@
 import { lineWidth, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, lineRect } from '../../reader/world.ts';
 import type { BookData } from '../../worker/present.ts';
-import { PageSheets } from './ReadingLayer.tsx';
 import { U } from './units.ts';
 
 const EXCERPT = 12;
@@ -37,13 +36,12 @@ export function LineBars({ layout, lines }: { layout: Layout; lines: Line[] }) {
   );
 }
 
-export function OutlineLayer({ layout, data, pages, linesByPage, px }: { layout: Layout; data: BookData; pages: number[]; linesByPage: Map<number, Line[]>; px: number }) {
+/** 段落輪廓層的標籤（頁面底色與行長條由 Reader 共用渲染，讓排列切換時能以動畫折疊） */
+export function OutlineLayer({ layout, data, pages, px }: { layout: Layout; data: BookData; pages: number[]; px: number }) {
   const shown = new Set(pages);
   const paras = layout.paragraphs;
   return (
     <>
-      <PageSheets layout={layout} pages={pages} />
-      <LineBars layout={layout} lines={pages.flatMap((p) => linesByPage.get(p) ?? [])} />
       {layout.chapters
         // 章起點緊接段落起點時，章號併入段落標籤（避免兩個標籤重疊）
         .filter((c) => shown.has(layout.lines[c.line]!.pos.page) && !layout.lines[c.line + 1]?.paragraphStart)

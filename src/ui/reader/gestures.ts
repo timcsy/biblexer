@@ -5,7 +5,12 @@ import { panBy, snapToward, zoomAt, type Camera, type CameraContext } from '../.
 export interface GestureTarget {
   camera(): Camera | null;
   ctx(): CameraContext | null;
+  /** 手勢中：立即更新相機（不動畫） */
   set(c: Camera): void;
+  /** 放手：以過場動畫著陸 */
+  land(c: Camera): void;
+  /** 手勢開始：中斷進行中的過場 */
+  interrupt(): void;
 }
 
 const DRAG_THRESHOLD = 4;
@@ -26,11 +31,12 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
   const settle = () => {
     const c = t.camera();
     const x = t.ctx();
-    if (c && x) t.set(snapToward(c, from ?? c, x));
+    if (c && x) t.land(snapToward(c, from ?? c, x));
     from = null;
   };
 
   const down = (e: PointerEvent) => {
+    t.interrupt();
     pts.set(e.pointerId, local(e));
     if (pts.size === 1) {
       moved = false;
@@ -74,10 +80,14 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
   };
   const wheel = (e: WheelEvent) => {
     e.preventDefault();
+    if (!from) t.interrupt();
     const c = t.camera();
     const x = t.ctx();
     if (!c || !x) return;
-    from ??= c;
+    if (!from) {
+      t.interrupt();
+      from = t.camera() ?? c;
+    }
     // 觸控板雙指捏合會帶 ctrlKey：縮放；其他滾輪與雙指捲動：平移
     if (e.ctrlKey) t.set(zoomAt(c, Math.exp(-e.deltaY * 0.01), local(e), x));
     else {

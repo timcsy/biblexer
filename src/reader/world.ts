@@ -51,6 +51,17 @@ export function lineRect(layout: Layout, pos: LinePos): Rect {
   return { x: c.x, y: c.y + pos.line * lineHeight, w: columnWidth, h: lineHeight };
 }
 
+/**
+ * 頁面的排列（原型）：grid＝每列 6 頁；strip＝冊頁長卷，所有頁排成一列。
+ * 只改世界中頁的擺放，不改版面（行、經節座標）。
+ */
+export type Arrangement = 'grid' | 'strip';
+
+export function arrange(layout: Layout, a: Arrangement): Layout {
+  const pagesPerRow = a === 'strip' ? Math.max(1, layout.pageCount) : DEFAULT_LAYOUT.pagesPerRow;
+  return layout.params.pagesPerRow === pagesPerRow ? layout : { ...layout, params: { ...layout.params, pagesPerRow } };
+}
+
 /** 本書頁面網格的外框 */
 export function gridRect(layout: Layout): Rect {
   const rows = Math.max(1, Math.ceil(layout.pageCount / layout.params.pagesPerRow));

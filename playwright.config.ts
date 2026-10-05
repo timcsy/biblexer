@@ -12,6 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     serviceWorkers: 'allow',
+    // 閱讀器的過場動畫在「減少動態效果」時不播放：測試只看最終著陸點
+    reducedMotion: 'reduce',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

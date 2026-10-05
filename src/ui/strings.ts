@@ -53,4 +53,8 @@ export const STRINGS = {
   segmentationAttribution: '段落分段：新標點和合本（香港聖經公會）之分段，僅取邊界',
   notAvailable: '本階段尚未提供閱讀',
   chapterLabel: (n: number) => `第 ${n} 章`,
+  arrangementLabel: '版面',
+  arrangementStrip: '長卷',
+  arrangementGrid: '每列六頁',
+  progress: (chapter: number, page: number, pages: number) => `第 ${chapter} 章 · 第 ${page}／${pages} 頁`,
 } as const;

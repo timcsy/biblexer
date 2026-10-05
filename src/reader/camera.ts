@@ -1,7 +1,7 @@
 // 相機：層級、著陸點、吸附（research R4；根公理「連續地探索，離散地著陸」）
 // 版面不動（layout.ts）；視窗大小只改變相機（原則 1）。每個層級的著陸點集合都由文本結構定義（原則 3）。
 import type { Layout } from './layout.ts';
-import { WORLD, bookTiles, columnRect, lineRect, pageRect } from './world.ts';
+import { WORLD, bookTiles, columnRect, gridRect, lineRect, pageRect } from './world.ts';
 
 export type ZoomLevel = 'canon' | 'book' | 'outline' | 'reading';
 export const LEVELS: readonly ZoomLevel[] = ['canon', 'book', 'outline', 'reading'];
@@ -128,8 +128,17 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
     // 框水平置中；頂端對齊行的上緣（FR-011）
     return { x: frame.x - (vw - frame.w) / 2, y: lp.anchor.y, scale, focus: lp.id, at: lp.id };
   }
-  // 其他層：著陸點放在視窗左上角（留一點邊），讓後面的內容出現在畫面上
   const m = SCREEN_MARGIN / scale;
+  // 書卷層（看全貌）：整列放得進視窗時，頁面網格水平置中，垂直對齊章所在那一列的頂端
+  if (lp.level === 'book') {
+    const g = gridRect(ctx.layout);
+    if (g.w + 2 * m <= vw) {
+      const page = ctx.layout.lines[lp.line!]!.pos.page;
+      const rowTop = Math.floor(page / ctx.layout.params.pagesPerRow) * WORLD.pageHeight;
+      return { x: g.x + g.w / 2 - vw / 2, y: rowTop - m, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
+    }
+  }
+  // 其他層：著陸點放在視窗左上角（留一點邊），讓後面的內容出現在畫面上
   return { x: lp.anchor.x - m, y: lp.anchor.y - m, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
 }
 
@@ -291,4 +300,81 @@ export function refit(c: Camera, from: CameraContext, to: CameraContext): Camera
   const lp = c.at ? landingPoints(to.layout, level).find((p) => p.id === c.at) : undefined;
   if (lp) return level === 'reading' ? placeAt(lp, to) : placeAt(lp, to, c.focus);
   return snap({ ...c, scale: (c.scale / from.readingScale) * to.readingScale }, to);
+}
+
+/**
+ * 排列切換（原型）：停在著陸點上時，在新的排列中放到同一個著陸點；
+ * 手勢中則讓視窗中心所在的頁在螢幕上不動，其他頁圍繞它重排。
+ * 著陸點代號與 focus 在兩種排列下相同（都以行、段落、欄定義）。
+ */
+export function remap(c: Camera, from: CameraContext, to: CameraContext): Camera {
+  if (from.layout.params.pagesPerRow === to.layout.params.pagesPerRow) return c;
+  // 停在著陸點上：在新的排列中放到同一個著陸點
+  if (c.at) {
+    const lp = landingPoints(to.layout, levelOf(c.scale, to.readingScale)).find((p) => p.id === c.at);
+    if (lp) return placeAt(lp, to, c.focus);
+  }
+  // 手勢中：視窗中心所在的頁不動
+  const center = viewCenter(c, from);
+  let best = 0;
+  let bestD = Infinity;
+  for (let p = 0; p < from.layout.pageCount; p++) {
+    const r = pageRect(from.layout, p);
+    const dx = Math.max(r.x - center.x, 0, center.x - (r.x + r.w));
+    const dy = Math.max(r.y - center.y, 0, center.y - (r.y + r.h));
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  }
+  const a = pageRect(from.layout, best);
+  const b = pageRect(to.layout, best);
+  return { ...c, x: c.x + (b.x - a.x), y: c.y + (b.y - a.y) };
+}
+
+/**
+ * 過場路徑（van Wijk & Nuij 2003, "Smooth and efficient zooming and panning"）：
+ * 遠距離時先拉遠、平移、再拉近；回傳持續時間（ms）與 t∈[0,1] 的相機。t=1 恰為目標（含著陸點與 focus）。
+ */
+export function flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: number; at(t: number): Camera } {
+  const W = ctx.viewport.width;
+  const H = ctx.viewport.height;
+  const rho = Math.SQRT2;
+  const rho2 = rho * rho;
+  const rho4 = rho2 * rho2;
+  const [ux0, uy0, w0] = [a.x + W / (2 * a.scale), a.y + H / (2 * a.scale), W / a.scale];
+  const [ux1, uy1, w1] = [b.x + W / (2 * b.scale), b.y + H / (2 * b.scale), W / b.scale];
+  const dx = ux1 - ux0;
+  const dy = uy1 - uy0;
+  const d2 = dx * dx + dy * dy;
+  let S: number;
+  let path: (t: number) => [number, number, number];
+  if (d2 < 1e-12) {
+    S = Math.log(w1 / w0) / rho;
+    path = (t) => [ux0 + t * dx, uy0 + t * dy, w0 * Math.exp(rho * t * S)];
+  } else {
+    const d1 = Math.sqrt(d2);
+    const b0 = (w1 * w1 - w0 * w0 + rho4 * d2) / (2 * w0 * rho2 * d1);
+    const b1 = (w1 * w1 - w0 * w0 - rho4 * d2) / (2 * w1 * rho2 * d1);
+    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0);
+    const r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+    S = (r1 - r0) / rho;
+    path = (t) => {
+      const s = t * S;
+      const coshr0 = Math.cosh(r0);
+      const u = (w0 / (rho2 * d1)) * (coshr0 * Math.tanh(rho * s + r0) - Math.sinh(r0));
+      return [ux0 + u * dx, uy0 + u * dy, (w0 * coshr0) / Math.cosh(rho * s + r0)];
+    };
+  }
+  const duration = Math.min(650, Math.max(180, 180 + 160 * Math.abs(S)));
+  return {
+    duration,
+    at(t) {
+      if (t >= 1) return b;
+      const [ux, uy, w] = path(t);
+      const scale = W / w;
+      return { x: ux - W / (2 * scale), y: uy - H / (2 * scale), scale, ...(b.focus !== undefined ? { focus: b.focus } : {}) };
+    },
+  };
 }
