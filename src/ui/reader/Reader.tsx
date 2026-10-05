@@ -268,17 +268,29 @@ export function Reader({ data, start, onBack }: ReaderProps) {
   if (progress) lastProgress.current = progress;
   const pr = progress ?? lastProgress.current;
 
+  // 目前停的段落：畫面停在框頂端，段落以左側標示線呈現（原型）
+  const markLines = useMemo(() => {
+    if (level !== 'reading' || !camera?.at?.startsWith('para:')) return undefined;
+    const v = Number(camera.at.slice(5));
+    const k = base.paragraphs.findIndex((p) => p.verseIdx === v);
+    if (k < 0) return undefined;
+    const end = base.paragraphs[k + 1]?.line ?? base.lines.length;
+    const set = new Set<number>();
+    for (let i = base.paragraphs[k]!.line; i < end; i++) if (!base.lines[i]!.chapterStart) set.add(i);
+    return set;
+  }, [level, camera?.at, base]);
+
   // 縮放、平移期間只改 transform；層的內容只在頁或層級改變時重畫（標籤字級除外）
   const pagesKey = pages.join(',');
   const pxKey = level === 'reading' ? 0 : Math.round(px * 100) / 100;
   const paper = level === 'outline' || level === 'book';
   const body = useMemo(() => {
     if (!ctx || !camera) return null;
-    if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} />;
+    if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} {...(progress ? { current: progress.chapter } : {})} />;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterBook} />;
-  }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter]);
+  }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
   const paperBody = useMemo(() => (paper ? [<PageSheets key="sheets" layout={layout} pages={pages} />, <LineBars key="bars" layout={layout} lines={pages.flatMap((p) => linesByPage.get(p) ?? [])} />] : null), [paper, pagesKey, layout]);
 

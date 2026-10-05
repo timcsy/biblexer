@@ -86,3 +86,30 @@ test('書卷層點章號、段落輪廓點段落：直接進入精讀的那個�
   await expect(reader).toHaveAttribute('data-level', 'reading');
   await expect(reader.locator(`[data-testid="verse"][data-ref="45:${range.split('–')[0]}"]`)).toBeInViewport();
 });
+
+test('停在頁中間的段落：畫面仍從頁的第一行開始（不切開頁），段落以左側標示線呈現', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitReady(page, false);
+  for (const arrangement of ['grid', 'strip']) {
+    await openReader(page);
+    const reader = page.getByTestId('reader');
+    if ((await reader.getAttribute('data-arrangement')) !== arrangement) await page.getByTestId('arrangement-toggle').click();
+    // 1:8 所在的行（第 1 頁中間）
+    const target = (await reader.locator('[data-testid="verse"][data-ref="45:1:8"]').locator('xpath=ancestor::*[@data-testid="line"]').getAttribute('data-line'))!;
+    expect(target, arrangement).not.toMatch(/:0$/);
+    const mark = page.locator(`[data-testid="para-mark"][data-line="${target}"]`);
+    for (let i = 0; i < 10 && !(await mark.count()); i++) await page.keyboard.press('ArrowDown');
+    await expect(mark).toBeInViewport();
+    // 可見區域最上方的行是某一頁的第 0 行
+    const top = await page.evaluate(() => {
+      const vp = document.querySelector('[data-testid="reader-viewport"]')!.getBoundingClientRect();
+      const lines = [...document.querySelectorAll('[data-testid="line"]')]
+        .map((e) => ({ id: e.getAttribute('data-line')!, r: e.getBoundingClientRect() }))
+        .filter((x) => x.r.bottom > vp.top + 1 && x.r.top < vp.bottom - 1 && x.r.left >= vp.left - 1 && x.r.right <= vp.right + 1)
+        .sort((a, b) => a.r.top - b.r.top);
+      return lines[0]!.id;
+    });
+    expect(top, arrangement).toMatch(/^0:0:0$/);
+    await page.getByTestId('reader-back').click();
+  }
+});

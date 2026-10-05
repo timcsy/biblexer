@@ -52,15 +52,32 @@ describe('著陸點集合', () => {
 });
 
 describe('吸附與定位', () => {
-  test('精讀層吸附後頂端對齊行的上緣；比例為 r', () => {
+  test('精讀層一律停在框的頂端（手機為欄、桌機為頁），不切開頁；著陸點那一行在框內；比例為 r', () => {
     for (const ctx of [phone, desktop]) {
       for (const lp of landingPoints(layout, 'reading')) {
         const c = placeAt(lp, ctx);
+        const pos = layout.lines[lp.line!]!.pos;
         expect(c.scale).toBe(ctx.readingScale);
-        expect(c.y).toBeCloseTo(lineRect(layout, layout.lines[lp.line!]!.pos).y, 9);
+        expect(c.y).toBeCloseTo(lineRect(layout, { ...pos, line: 0 }).y, 9);
+        const ly = lineRect(layout, pos).y;
+        expect(ly).toBeGreaterThanOrEqual(c.y);
+        expect(ly + WORLD.lineHeight).toBeLessThanOrEqual(c.y + layout.params.linesPerColumn * WORLD.lineHeight + 1e-9);
         expect(c).toMatchObject({ at: lp.id, focus: lp.id });
       }
     }
+  });
+
+  test('同一框內的著陸點：相機位置相同，只有著陸點（段落標記）不同', () => {
+    const pts = landingPoints(layout, 'reading');
+    const frameOf = (lp: (typeof pts)[number]) => {
+      const pos = layout.lines[lp.line!]!.pos;
+      return pos.page * 2 + pos.column;
+    };
+    const a = pts.find((p, i) => pts[i + 1] && frameOf(pts[i + 1]!) === frameOf(p))!;
+    const b = pts[pts.indexOf(a) + 1]!;
+    const [ca, cb] = [placeAt(a, phone), placeAt(b, phone)];
+    expect([ca.x, ca.y, ca.scale]).toEqual([cb.x, cb.y, cb.scale]);
+    expect(ca.at).not.toBe(cb.at);
   });
 
   test('cameraForVerse：落在該節所在段落起點的精讀著陸點', () => {
@@ -127,31 +144,36 @@ describe('縮放按鈕沿結構上下移動', () => {
   });
 });
 
-describe('平移放手：沿移動方向前進', () => {
-  // 起點：與下一個著陸點至少相距 8 行，前一個也至少 8 行（讓「最近的仍是原點」成立）
+describe('平移放手：一次翻一框', () => {
   const pts = landingPoints(layout, 'reading');
-  const k = pts.findIndex((p, i) => i > 0 && pts[i + 1]!.line! - p.line! >= 8 && p.line! - pts[i - 1]!.line! >= 8);
-  const start = placeAt(pts[k]!, phone);
+  const frameOf = (c: { at?: string }, mode: 'column' | 'page') => {
+    const pos = layout.lines[pts.find((p) => p.id === c.at)!.line!]!.pos;
+    return mode === 'page' ? pos.page : pos.page * 2 + pos.column;
+  };
+  // 起點：手機上某欄中間的段落（不在欄頂端）
+  const mid = pts.find((p) => p.id.startsWith('para:') && layout.lines[p.line!]!.pos.line > 4 && layout.lines[p.line!]!.pos.page > 0)!;
+  const start = placeAt(mid, phone);
 
-  test('移動很小：吸附回原本的著陸點', () => {
+  test('移動很小：留在原處（同一個段落）', () => {
     expect(snapToward(panBy(start, 0, -10, phone), start, phone)).toEqual(start);
   });
 
-  test('往下捲動超過門檻、但最近的仍是原點：前進到下一個著陸點', () => {
-    const moved = panBy(start, 0, -80, phone);
-    expect(snap(moved, phone).at).toBe(start.at);
-    expect(snapToward(moved, start, phone)).toEqual(step(start, phone, 1, 'landing'));
+  test('往下捲動超過門檻：翻到下一框', () => {
+    const to = snapToward(panBy(start, 0, -80, phone), start, phone);
+    expect(to).toEqual(step(start, phone, 1, 'frame'));
+    expect(frameOf(to, 'column')).toBe(frameOf(start, 'column') + 1);
   });
 
-  test('往上捲動：回到上一個著陸點', () => {
-    expect(snapToward(panBy(start, 0, 80, phone), start, phone)).toEqual(step(start, phone, -1, 'landing'));
+  test('往上捲動：翻到上一框（不是本框頂端）', () => {
+    const to = snapToward(panBy(start, 0, 80, phone), start, phone);
+    expect(frameOf(to, 'column')).toBe(frameOf(start, 'column') - 1);
   });
 
   test('水平移動：到下一框（手機為下一欄）', () => {
     expect(snapToward(panBy(start, -80, 0, phone), start, phone)).toEqual(step(start, phone, 1, 'frame'));
   });
 
-  test('移動夠遠、最近的已是別的著陸點：照一般吸附', () => {
+  test('移動夠遠：照一般吸附', () => {
     const far = panBy(start, 0, -2000, phone);
     expect(snapToward(far, start, phone)).toEqual(snap(far, phone));
   });
@@ -162,7 +184,7 @@ describe('平移放手：沿移動方向前進', () => {
   });
 });
 
-describe('整頁模式（桌機）：畫面上同一位置只算一個著陸點', () => {
+describe('整頁模式（桌機）與閱讀順序', () => {
   const pts = landingPoints(layout, 'reading');
   const spot = (c: { x: number; y: number }) => `${c.x.toFixed(6)},${c.y.toFixed(6)}`;
   // 畫面順序：先依頁（框），再依頁內的行
@@ -171,28 +193,35 @@ describe('整頁模式（桌機）：畫面上同一位置只算一個著陸點'
     return pos.page * 100 + pos.line;
   };
 
-  test('一路按「下一個著陸點」：畫面位置嚴格往後，不會回頭，也不會原地不動', () => {
+  test('方向鍵一段一段往下：著陸點依閱讀順序前進，畫面只在跨框時才改變，框不會倒退', () => {
     let c = placeAt(pts[0]!, desktop);
-    const seen = [order(c)];
-    for (let i = 0; i < 200; i++) {
+    const ids = [c.at];
+    let page = layout.lines[pts[0]!.line!]!.pos.page;
+    for (let i = 1; i < pts.length; i++) {
       const n = step(c, desktop, 1, 'landing');
-      if (spot(n) === spot(c)) break;
-      seen.push(order(n));
+      ids.push(n.at);
+      const p = layout.lines[pts.find((x) => x.id === n.at)!.line!]!.pos.page;
+      expect(p).toBeGreaterThanOrEqual(page);
+      if (p === page) expect(spot(n)).toBe(spot(c));
+      else expect(spot(n)).not.toBe(spot(c));
+      page = p;
       c = n;
     }
-    expect(seen.length).toBeGreaterThan(layout.pageCount);
-    for (let i = 1; i < seen.length; i++) expect(seen[i]!).toBeGreaterThan(seen[i - 1]!);
-    // 一路往回也一樣
-    const back = step(c, desktop, -1, 'landing');
-    expect(order(back)).toBeLessThan(order(c));
+    expect(ids).toEqual(pts.map((p) => p.id));
+    expect(step(c, desktop, -1, 'landing').at).toBe(pts.at(-2)!.id);
   });
 
-  test('往下捲動放手：從任何著陸點出發都往後走，不會退回', () => {
-    for (const lp of pts) {
-      const from = placeAt(lp, desktop);
-      const to = snapToward(panBy(from, 0, -80, desktop), from, desktop);
-      if (spot(to) !== spot(from)) expect(order(to)).toBeGreaterThan(order(from));
+  test('PageDown 一頁一頁往後，畫面位置每次都改變；PageUp 從頁中間的段落回到上一頁', () => {
+    let c = placeAt(pts[0]!, desktop);
+    for (let i = 1; i < layout.pageCount; i++) {
+      const n = step(c, desktop, 1, 'frame');
+      expect(spot(n)).not.toBe(spot(c));
+      expect(order(n)).toBeGreaterThan(order(c));
+      c = n;
     }
+    const mid = pts.find((p) => layout.lines[p.line!]!.pos.page === 3 && layout.lines[p.line!]!.pos.line > 0)!;
+    const back = step(placeAt(mid, desktop), desktop, -1, 'frame');
+    expect(layout.lines[pts.find((p) => p.id === back.at)!.line!]!.pos.page).toBe(2);
   });
 
   test('一頁底部往下捲動：接到閱讀順序的下一頁，而不是世界中正下方那一列的頁', () => {

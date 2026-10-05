@@ -98,3 +98,4 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .scrub-tick { position: absolute; bottom: 4px; width: 1px; height: 8px; background: var(--muted); }
 .scrub-tick small { position: absolute; bottom: 9px; left: -0.5em; font-size: 0.6rem; color: var(--muted); font-family: system-ui, sans-serif; }
 .scrub-thumb { position: absolute; bottom: 2px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); }
+.para-mark { position: absolute; background: var(--accent); border-radius: 3px; opacity: 0.75; }

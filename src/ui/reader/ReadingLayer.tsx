@@ -11,6 +11,8 @@ export interface ReadingLayerProps {
   linesByPage: Map<number, Line[]>;
   verseStart: Map<number, string>;
   hit: { from: number; to: number } | null;
+  /** 目前停的段落所占的行（左側標示線）；畫面停在框頂端，段落以標記呈現 */
+  markLines?: ReadonlySet<number>;
 }
 
 const refOf = (data: BookData, i: number) => {
@@ -71,6 +73,15 @@ export function ReadingLayer(props: ReadingLayerProps) {
   return (
     <>
       <PageSheets layout={props.layout} pages={props.pages} />
+      {props.markLines &&
+        props.pages.flatMap((p) =>
+          (props.linesByPage.get(p) ?? [])
+            .filter((l) => props.markLines!.has(l.index))
+            .map((l) => {
+              const r = lineRect(props.layout, l.pos);
+              return <div key={`mark-${l.index}`} class="para-mark" data-testid="para-mark" data-line={`${l.pos.page}:${l.pos.column}:${l.pos.line}`} style={{ left: `${(r.x - 0.55) * U}px`, top: `${r.y * U}px`, width: `${0.2 * U}px`, height: `${WORLD.lineHeight * U}px` }} />;
+            }),
+        )}
       {props.pages.flatMap((p) => (props.linesByPage.get(p) ?? []).map((line) => <LineView key={line.index} line={line} layout={props.layout} data={props.data} verseStart={props.verseStart} hit={props.hit} />))}
     </>
   );

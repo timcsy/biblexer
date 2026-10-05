@@ -125,8 +125,9 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
   if (lp.level === 'reading') {
     const pos = ctx.layout.lines[lp.line!]!.pos;
     const frame = ctx.mode === 'page' ? pageRect(ctx.layout, pos.page) : columnRect(ctx.layout, pos.page, pos.column);
-    // 框水平置中；頂端對齊行的上緣（FR-011）
-    return { x: frame.x - (vw - frame.w) / 2, y: lp.anchor.y, scale, focus: lp.id, at: lp.id };
+    // 框水平置中；頂端對齊框的上緣——永遠看到完整的一欄或一頁，不把頁切開（原型；原本對齊著陸點那一行）。
+    // 段落著陸點只改變 at（介面以標記呈現），不移動畫面。
+    return { x: frame.x - (vw - frame.w) / 2, y: frame.y, scale, focus: lp.id, at: lp.id };
   }
   const m = SCREEN_MARGIN / scale;
   // 書卷層（看全貌）：整列放得進視窗時，頁面網格水平置中，垂直對齊章所在那一列的頂端
@@ -181,35 +182,17 @@ export function panBy(c: Camera, dx: number, dy: number, _ctx: CameraContext): C
   return { x: c.x - dx / c.scale, y: c.y - dy / c.scale, scale: c.scale };
 }
 
-/** 精讀時一個著陸點在畫面上的位置：（框, 行）。整頁模式下左右兩欄的同一行是同一個位置 */
-function readingSpot(lp: LandingPoint, ctx: CameraContext): number {
+/** 精讀時著陸點所在的框：手機為欄、桌機為頁（依閱讀順序編號） */
+function frameIndex(lp: LandingPoint, ctx: CameraContext): number {
   const pos = ctx.layout.lines[lp.line!]!.pos;
-  const frame = ctx.mode === 'page' ? pos.page : pos.page * ctx.layout.params.columnsPerPage + pos.column;
-  return frame * ctx.layout.params.linesPerColumn + pos.line;
-}
-
-const orderCache = new WeakMap<CameraContext, LandingPoint[]>();
-
-/** 精讀層的導覽順序：依畫面位置排列，同一位置只留一個（行號最小者，與 snap 的平手規則一致） */
-function readingOrder(ctx: CameraContext): LandingPoint[] {
-  let list = orderCache.get(ctx);
-  if (list) return list;
-  const bySpot = new Map<number, LandingPoint>();
-  for (const p of landingPoints(ctx.layout, 'reading')) {
-    const k = readingSpot(p, ctx);
-    if (!bySpot.has(k)) bySpot.set(k, p);
-  }
-  list = [...bySpot.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => p);
-  orderCache.set(ctx, list);
-  return list;
+  return ctx.mode === 'page' ? pos.page : pos.page * ctx.layout.params.columnsPerPage + pos.column;
 }
 
 const PAN_INTENT_PX = 64; // 平移超過這個距離（或視窗短邊的 8%）就視為「要往那個方向走」
 
 /**
  * 平移（拖曳、捲動）放手後吸附。
- * - 精讀層、移動不到一個畫面：依閱讀順序決定落點——垂直移動 n 行就往閱讀順序前後找著陸點
- *   （一欄或一頁的底部接到下一欄或下一頁，不是世界中正下方那一列）；水平移動到上／下一框。
+ * - 精讀層、移動不到一個畫面：一次翻一框（上／下一欄或一頁，依閱讀順序，不是世界中正下方那一列）。
  * - 移動很小：留在原處。
  * - 其他情況（拖得很遠、非精讀層）：一般的 snap；若吸附結果仍在原處，沿移動方向前進一步。
  * 否則小幅度的捲動或拖曳永遠會被吸回原處，讀者走不出去。
@@ -225,17 +208,11 @@ export function snapToward(c: Camera, from: Camera, ctx: CameraContext): Camera 
   const vertical = Math.abs(dy) >= Math.abs(dx);
 
   if (level === 'reading' && Math.abs(dx) < ctx.viewport.width && Math.abs(dy) < ctx.viewport.height) {
-    const here = readingOrder(ctx).find((p) => p.id === from.at) ?? landingPoints(ctx.layout, 'reading').find((p) => p.id === from.at)!;
+    // 精讀層、移動不到一個畫面：一次翻一框（依閱讀順序，不是世界中正下方那一列）
+    const here = landingPoints(ctx.layout, 'reading').find((p) => p.id === from.at)!;
     if (small) return placeAt(here, ctx);
-    if (!vertical) return step(from, ctx, dx > 0 ? 1 : -1, 'frame');
-    const spot = readingSpot(here, ctx);
-    const target = spot + dy / (WORLD.lineHeight * c.scale);
-    const list = readingOrder(ctx);
-    const next =
-      dy > 0
-        ? (list.filter((p) => readingSpot(p, ctx) > spot && readingSpot(p, ctx) <= target).at(-1) ?? list.find((p) => readingSpot(p, ctx) > spot))
-        : (list.find((p) => readingSpot(p, ctx) < spot && readingSpot(p, ctx) >= target) ?? list.findLast((p) => readingSpot(p, ctx) < spot));
-    return next ? placeAt(next, ctx) : placeAt(here, ctx);
+    const d = vertical ? dy : dx;
+    return step(from, ctx, d > 0 ? 1 : -1, 'frame');
   }
 
   // 比較的是相機位置，不是著陸點代號
@@ -285,12 +262,18 @@ export function step(c: Camera, ctx: CameraContext, dir: 1 | -1, unit: 'landing'
     // 換到別的著陸點是移動，不是縮放：清除 focus
     return next.id === cur.at ? cur : placeAt(next, ctx);
   }
-  const here = readingSpot(pts.find((p) => p.id === cur.at)!, ctx);
-  const perFrame = ctx.layout.params.linesPerColumn;
-  const list = readingOrder(ctx);
-  const isFrameTop = (p: LandingPoint) => readingSpot(p, ctx) % perFrame === 0;
-  const candidates = unit === 'landing' ? list : list.filter(isFrameTop);
-  const next = dir === 1 ? candidates.find((p) => readingSpot(p, ctx) > here) : candidates.findLast((p) => readingSpot(p, ctx) < here);
+  const idx = pts.findIndex((p) => p.id === cur.at);
+  if (unit === 'landing') {
+    // 一段一段：依閱讀順序（行號）前進；同一框內只移動標記，跨框才翻
+    const next = pts[Math.min(pts.length - 1, Math.max(0, idx + dir))]!;
+    return next.id === cur.at ? cur : placeAt(next, ctx);
+  }
+  const here = frameIndex(pts[idx]!, ctx);
+  const tops = pts.filter((p) => {
+    const pos = ctx.layout.lines[p.line!]!.pos;
+    return pos.line === 0 && (ctx.mode === 'column' || pos.column === 0);
+  });
+  const next = dir === 1 ? tops.find((p) => frameIndex(p, ctx) > here) : tops.findLast((p) => frameIndex(p, ctx) < here);
   return next ? placeAt(next, ctx) : cur;
 }
 
