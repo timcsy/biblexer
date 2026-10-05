@@ -11,6 +11,8 @@ export interface GestureTarget {
   land(c: Camera): void;
   /** 手勢開始：中斷進行中的過場 */
   interrupt(): void;
+  /** 點一下（按下後沒有拖動就放開）；螢幕座標相對於元素 */
+  tap(pt: { x: number; y: number }): void;
 }
 
 const DRAG_THRESHOLD = 4;
@@ -76,7 +78,10 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
   };
   const up = (e: PointerEvent) => {
     if (!pts.delete(e.pointerId)) return;
-    if (pts.size === 0 && moved) settle();
+    if (pts.size > 0) return;
+    if (moved) settle();
+    else if (origin && e.type === 'pointerup') t.tap(origin);
+    from = null;
   };
   const wheel = (e: WheelEvent) => {
     e.preventDefault();

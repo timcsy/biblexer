@@ -378,3 +378,51 @@ export function flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: n
     },
   };
 }
+
+/**
+ * 縮小後點擊（原型）：在書卷層或段落輪廓點到某一行，就以該行所在段落進入精讀。
+ * 縮放層級是一棵樹（正典 → 章 → 段落），每點一下往下一層——對數級的找法，底數是每層的分支數。
+ */
+export function tapTarget(c: Camera, pt: Point, ctx: CameraContext): Camera | null {
+  const level = levelOf(c.scale, ctx.readingScale);
+  if (level !== 'book' && level !== 'outline') return null;
+  const wx = c.x + pt.x / c.scale;
+  const wy = c.y + pt.y / c.scale;
+  const line = ctx.layout.lines.find((l) => {
+    const r = lineRect(ctx.layout, l.pos);
+    return wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h;
+  });
+  if (!line) return null;
+  const verse = firstVerseFrom(ctx.layout, line.index);
+  return verse === null ? null : cameraForVerse(verse, ctx);
+}
+
+const SCRUB_MAGNET = 0.012; // 拖到章刻度這個距離內就吸到該章開頭（占全長的比例）
+
+/**
+ * 拖動進度條（原型）：對應紙本的「按比例翻開 → 看頁眉 → 微調」。
+ * 位置 f∈[0,1] 依行數比例對應到某一頁的頂端；接近章刻度時吸到該章開頭。
+ */
+export function scrubTarget(f: number, ctx: CameraContext): { chapter: number; page: number; camera: Camera } {
+  const { layout } = ctx;
+  const n = layout.lines.length;
+  const x = Math.min(1, Math.max(0, f));
+  const near = layout.chapters.filter((ch) => Math.abs(ch.line / n - x) <= SCRUB_MAGNET).sort((a, b) => Math.abs(a.line / n - x) - Math.abs(b.line / n - x))[0];
+  if (near) {
+    return { chapter: near.chapter, page: layout.lines[near.line]!.pos.page + 1, camera: cameraForVerse(firstVerseFrom(layout, near.line) ?? 0, ctx) };
+  }
+  const line = layout.lines[Math.min(n - 1, Math.floor(x * n))]!;
+  const page = line.pos.page;
+  const top = landingPoints(layout, 'reading').find((p) => {
+    const pos = layout.lines[p.line!]!.pos;
+    return pos.page === page && pos.column === 0 && pos.line === 0;
+  })!;
+  const chapter = layout.chapters.filter((ch) => ch.line <= line.index).at(-1)?.chapter ?? 1;
+  return { chapter, page: page + 1, camera: placeAt(top, ctx) };
+}
+
+/** 章刻度在進度條上的位置 */
+scrubTarget.tickOf = (ctx: CameraContext, chapter: number): number => {
+  const ch = ctx.layout.chapters.find((c) => c.chapter === chapter);
+  return ch ? ch.line / ctx.layout.lines.length : 0;
+};

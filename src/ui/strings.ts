@@ -54,6 +54,7 @@ export const STRINGS = {
   notAvailable: '本階段尚未提供閱讀',
   chapterLabel: (n: number) => `第 ${n} 章`,
   arrangementLabel: '版面',
+  scrubLabel: '在全書中的位置（可拖動）',
   arrangementStrip: '長卷',
   arrangementGrid: '每列六頁',
   progress: (chapter: number, page: number, pages: number) => `第 ${chapter} 章 · 第 ${page}／${pages} 頁`,

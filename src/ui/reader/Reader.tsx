@@ -6,7 +6,7 @@
 // - 離散的移動（按鍵、按鈕、放手吸附）以過場動畫著陸（van Wijk & Nuij）；手勢開始即中斷；減少動態效果時不播放
 // - 進度提示：第幾章、第幾頁
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, snap, step, zoomStep, type Camera, type CameraContext, type ZoomLevel } from '../../reader/camera.ts';
+import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData } from '../../worker/present.ts';
@@ -160,7 +160,44 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  useEffect(() => attachGestures(stage.current!, { camera: () => camRef.current, ctx: () => ctxRef.current, set, land, interrupt }), []);
+  /** 縮小後點一下：以點到的那一行所在段落進入精讀 */
+  const tap = (pt: { x: number; y: number }) => {
+    const c = camRef.current;
+    const x = ctxRef.current;
+    if (!c || !x) return;
+    const t = tapTarget(c, pt, x);
+    if (t) land(t);
+  };
+  useEffect(() => attachGestures(stage.current!, { camera: () => camRef.current, ctx: () => ctxRef.current, set, land, interrupt, tap }), []);
+
+  // 拖動進度條：按比例翻到某一頁（接近章刻度時吸到該章開頭），畫面即時跟著翻；放手即停在那裡
+  const [scrub, setScrub] = useState<{ chapter: number; page: number } | null>(null);
+  const scrubTo = (el: HTMLElement, clientX: number) => {
+    const all = ctxsRef.current;
+    if (!all) return;
+    const r = el.getBoundingClientRect();
+    const read = all[arrangementFor(modeRef.current, 'reading')];
+    const t = scrubTarget((clientX - r.left) / r.width, read);
+    if (ctxRef.current !== read) useCtx(read);
+    interrupt();
+    show(t.camera);
+    setScrub({ chapter: t.chapter, page: t.page });
+  };
+  const onScrubDown = (e: PointerEvent) => {
+    e.stopPropagation();
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    scrubTo(el, e.clientX);
+  };
+  const onScrubMove = (e: PointerEvent) => {
+    if (!scrub) return;
+    e.stopPropagation();
+    scrubTo(e.currentTarget as HTMLElement, e.clientX);
+  };
+  const onScrubUp = (e: PointerEvent) => {
+    e.stopPropagation();
+    setScrub(null);
+  };
   useEffect(() => interrupt, []);
 
   /** 正典層點羅馬書：回到 focus，沒有就到書首 */
@@ -224,8 +261,12 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     const line = lp?.line ?? linesByPage.get(centerPage)?.[0]?.index ?? 0;
     const page = base.lines[line]?.pos.page ?? centerPage;
     const chapter = base.chapters.filter((c) => c.line <= line).at(-1)?.chapter ?? 1;
-    return { chapter, page: page + 1, pages: base.pageCount };
+    return { chapter, page: page + 1, pages: base.pageCount, fraction: line / base.lines.length };
   }, [camera?.at, centerPage, level, layout]);
+
+  const lastProgress = useRef(progress);
+  if (progress) lastProgress.current = progress;
+  const pr = progress ?? lastProgress.current;
 
   // 縮放、平移期間只改 transform；層的內容只在頁或層級改變時重畫（標籤字級除外）
   const pagesKey = pages.join(',');
@@ -272,15 +313,24 @@ export function Reader({ data, start, onBack }: ReaderProps) {
             {body}
           </div>
         </div>
-        {progress && (
-          <div class="reader-progress" data-testid="reader-progress" aria-live="polite">
-            <span>{STRINGS.progress(progress.chapter, progress.page, progress.pages)}</span>
-            <span class="bar">
-              <span style={{ width: `${(progress.page / progress.pages) * 100}%` }} />
-            </span>
-          </div>
-        )}
       </div>
+      {/* 一律占位：在正典層只是看不見，避免閱讀區高度改變而觸發重新量測 */}
+      {pr && (
+        <div class="reader-scrub" style={progress ? {} : { visibility: 'hidden' }}>
+          <span class={scrub ? 'scrub-label active' : 'scrub-label'} data-testid="reader-progress" aria-live="polite">
+            {STRINGS.progress(scrub?.chapter ?? pr.chapter, scrub?.page ?? pr.page, pr.pages)}
+          </span>
+          <div class="scrub-track" data-testid="reader-scrub" role="slider" aria-label={STRINGS.scrubLabel} aria-valuemin={1} aria-valuemax={pr.pages} aria-valuenow={scrub?.page ?? pr.page} onPointerDown={onScrubDown} onPointerMove={onScrubMove} onPointerUp={onScrubUp} onPointerCancel={onScrubUp}>
+            <span class="scrub-rail" />
+            {base.chapters.map((c) => (
+              <span key={c.chapter} class="scrub-tick" data-testid="scrub-tick" data-chapter={c.chapter} style={{ left: `${(c.line / base.lines.length) * 100}%` }}>
+                <small>{c.chapter}</small>
+              </span>
+            ))}
+            <span class="scrub-thumb" data-testid="scrub-thumb" style={{ left: `${pr.fraction * 100}%` }} />
+          </div>
+        </div>
+      )}
       <p class="reader-attr" data-testid="segmentation-attribution">
         {STRINGS.segmentationAttribution}
       </p>
