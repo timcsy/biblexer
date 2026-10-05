@@ -85,6 +85,32 @@ for (const viewport of [
   });
 }
 
+test('滾輪往下捲動前進到下一個著陸點；按住 Ctrl 的滾輪才縮放', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitReady(page, false);
+  await openReader(page);
+  const reader = page.getByTestId('reader');
+  const vp = (await page.getByTestId('reader-viewport').boundingBox())!;
+  await page.mouse.move(vp.x + vp.width / 2, vp.y + vp.height / 2);
+  const before = (await reader.getAttribute('data-landing'))!;
+  await page.mouse.wheel(0, 120);
+  // 捲動中 data-landing 會暫時是空的；等它吸附到一個著陸點
+  await expect(reader).toHaveAttribute('data-landing', /^(para:\d+|coltop:\d+:\d+)$/);
+  const next = (await reader.getAttribute('data-landing'))!;
+  expect(next).not.toBe(before);
+  await expect(reader).toHaveAttribute('data-level', 'reading');
+  await expect(reader).toHaveAttribute('data-focus', next);
+  await expectNoCutLines(page);
+  // 往回捲回到原處
+  await page.mouse.wheel(0, -120);
+  await expect(reader).toHaveAttribute('data-landing', before);
+  // 觸控板雙指捏合（Ctrl＋滾輪）縮放
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, 120);
+  await page.keyboard.up('Control');
+  await expect(reader).not.toHaveAttribute('data-level', 'reading');
+});
+
 test('段落輪廓層只有段落範圍與經文開頭字句，沒有標題', async ({ page }) => {
   await waitReady(page, false);
   await openReader(page);

@@ -1,6 +1,6 @@
 // 守護：research R4（層級、著陸點、吸附、focus）、contracts/reader-api.md §1（camera.ts）
 import { describe, expect, test } from 'vitest';
-import { cameraForVerse, createContext, landingPoints, levelOf, placeAt, refit, snap, step, zoomStep, LEVEL_SCALE } from '../../src/reader/camera.ts';
+import { cameraForVerse, createContext, landingPoints, levelOf, panBy, placeAt, refit, snap, snapToward, step, zoomAt, zoomStep, LEVEL_SCALE } from '../../src/reader/camera.ts';
 import { layoutBook, type BookVerse } from '../../src/reader/layout.ts';
 import { WORLD, lineRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
@@ -124,6 +124,41 @@ describe('縮放按鈕沿結構上下移動', () => {
     c = zoomStep(zoomStep(c, phone, 1), phone, 1);
     const firstOfCh2 = sample.verses.findIndex((v) => v.ref.chapter === 2);
     expect(c.at).toBe(`para:${layout.paragraphs.filter((p) => p.verseIdx <= firstOfCh2).at(-1)!.verseIdx}`);
+  });
+});
+
+describe('平移放手：沿移動方向前進', () => {
+  // 起點：與下一個著陸點至少相距 8 行，前一個也至少 8 行（讓「最近的仍是原點」成立）
+  const pts = landingPoints(layout, 'reading');
+  const k = pts.findIndex((p, i) => i > 0 && pts[i + 1]!.line! - p.line! >= 8 && p.line! - pts[i - 1]!.line! >= 8);
+  const start = placeAt(pts[k]!, phone);
+
+  test('移動很小：吸附回原本的著陸點', () => {
+    expect(snapToward(panBy(start, 0, -10, phone), start, phone)).toEqual(start);
+  });
+
+  test('往下捲動超過門檻、但最近的仍是原點：前進到下一個著陸點', () => {
+    const moved = panBy(start, 0, -80, phone);
+    expect(snap(moved, phone).at).toBe(start.at);
+    expect(snapToward(moved, start, phone)).toEqual(step(start, phone, 1, 'landing'));
+  });
+
+  test('往上捲動：回到上一個著陸點', () => {
+    expect(snapToward(panBy(start, 0, 80, phone), start, phone)).toEqual(step(start, phone, -1, 'landing'));
+  });
+
+  test('水平移動：到下一框（手機為下一欄）', () => {
+    expect(snapToward(panBy(start, -80, 0, phone), start, phone)).toEqual(step(start, phone, 1, 'frame'));
+  });
+
+  test('移動夠遠、最近的已是別的著陸點：照一般吸附', () => {
+    const far = panBy(start, 0, -2000, phone);
+    expect(snapToward(far, start, phone)).toEqual(snap(far, phone));
+  });
+
+  test('層級改變（縮放）：照一般吸附', () => {
+    const z = zoomAt(start, 0.4, { x: 100, y: 100 }, phone);
+    expect(snapToward(z, start, phone)).toEqual(snap(z, phone));
   });
 });
 

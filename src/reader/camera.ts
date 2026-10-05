@@ -172,6 +172,23 @@ export function panBy(c: Camera, dx: number, dy: number, _ctx: CameraContext): C
   return { x: c.x - dx / c.scale, y: c.y - dy / c.scale, scale: c.scale };
 }
 
+const PAN_INTENT_PX = 64; // 平移超過這個距離（或視窗短邊的 8%）就視為「要往那個方向走」
+
+/**
+ * 平移（拖曳、捲動）放手後吸附：一般就是 snap；但若最近的仍是出發點、移動又超過門檻，
+ * 就沿移動方向前進一步——垂直到上／下一個著陸點，水平到上／下一框。
+ * 否則小幅度的捲動永遠會被吸回原處，讀者走不出去。
+ */
+export function snapToward(c: Camera, from: Camera, ctx: CameraContext): Camera {
+  const s = snap(c, ctx);
+  if (s.at !== from.at || !from.at || levelOf(c.scale, ctx.readingScale) !== levelOf(from.scale, ctx.readingScale)) return s;
+  const dx = (c.x - from.x) * c.scale;
+  const dy = (c.y - from.y) * c.scale;
+  const threshold = Math.min(PAN_INTENT_PX, 0.08 * Math.min(ctx.viewport.width, ctx.viewport.height));
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return s;
+  return Math.abs(dy) >= Math.abs(dx) ? step(from, ctx, dy > 0 ? 1 : -1, 'landing') : step(from, ctx, dx > 0 ? 1 : -1, 'frame');
+}
+
 /** 精讀層、該節所在段落起點 */
 export function cameraForVerse(verseIdx: number, ctx: CameraContext): Camera {
   const pts = landingPoints(ctx.layout, 'reading');

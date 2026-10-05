@@ -1,6 +1,6 @@
 // 手勢 → 相機（research R5）：手勢中只更新相機（transform），放手後吸附到著陸點（根公理）。
-// 拖曳＝平移（清除 focus）；雙指、滾輪＝縮放（保留 focus）。
-import { panBy, snap, zoomAt, type Camera, type CameraContext } from '../../reader/camera.ts';
+// 拖曳、滾輪（含觸控板雙指捲動）＝平移（清除 focus）；雙指捏合、Ctrl＋滾輪＝縮放（保留 focus）。
+import { panBy, snapToward, zoomAt, type Camera, type CameraContext } from '../../reader/camera.ts';
 
 export interface GestureTarget {
   camera(): Camera | null;
@@ -16,6 +16,8 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
   let moved = false;
   let origin: { x: number; y: number } | null = null;
   let wheelTimer: ReturnType<typeof setTimeout> | undefined;
+  /** 這次手勢開始時的相機：放手時用來判斷移動方向 */
+  let from: Camera | null = null;
 
   const local = (e: { clientX: number; clientY: number }) => {
     const r = el.getBoundingClientRect();
@@ -24,7 +26,8 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
   const settle = () => {
     const c = t.camera();
     const x = t.ctx();
-    if (c && x) t.set(snap(c, x));
+    if (c && x) t.set(snapToward(c, from ?? c, x));
+    from = null;
   };
 
   const down = (e: PointerEvent) => {
@@ -32,6 +35,7 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
     if (pts.size === 1) {
       moved = false;
       origin = local(e);
+      from = t.camera();
     }
   };
   const move = (e: PointerEvent) => {
@@ -73,9 +77,13 @@ export function attachGestures(el: HTMLElement, t: GestureTarget): () => void {
     const c = t.camera();
     const x = t.ctx();
     if (!c || !x) return;
-    // 觸控板雙指縮放會帶 ctrlKey，位移量較小
-    const k = e.ctrlKey ? 0.01 : 0.0015;
-    t.set(zoomAt(c, Math.exp(-e.deltaY * k), local(e), x));
+    from ??= c;
+    // 觸控板雙指捏合會帶 ctrlKey：縮放；其他滾輪與雙指捲動：平移
+    if (e.ctrlKey) t.set(zoomAt(c, Math.exp(-e.deltaY * 0.01), local(e), x));
+    else {
+      const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? x.viewport.height : 1;
+      t.set(panBy(c, -e.deltaX * unit, -e.deltaY * unit, x));
+    }
     clearTimeout(wheelTimer);
     wheelTimer = setTimeout(settle, WHEEL_SETTLE_MS);
   };
