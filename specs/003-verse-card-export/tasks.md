@@ -28,5 +28,5 @@ description: "經文卡匯出的任務清單"
 
 ## Phase 4：Polish
 
-- [ ] T011 全部測試（單元、lint、typecheck、資料、E2E）；README、vision 階段 5 勾選（需列印實測者除外）
+- [X] T011 全部測試（單元、lint、typecheck、資料、E2E）；README、vision 階段 5 勾選（需列印實測者除外）
 - [ ] T012 手動驗證（quickstart「手動」：1 分鐘內完成、A4 實際手寫）——記在 `specs/003-verse-card-export/manual-verification.md`，待使用者

@@ -3,7 +3,9 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { expect, test } from '@playwright/test';
 import { resultRefs, search } from './helpers.ts';
 
-const PORT = 4180;
+// 自己啟動的預覽伺服器：主預覽埠號＋7（預設 4180），永遠不會與 E2E_PORT 衝突——
+// 曾因兩者都用 4180，自己的伺服器起不來卻連到主預覽，「關閉伺服器」沒有真的發生
+const PORT = Number(process.env.E2E_PORT ?? 4173) + 7;
 const ORIGIN = `http://localhost:${PORT}`;
 
 async function startServer(): Promise<ChildProcess> {
