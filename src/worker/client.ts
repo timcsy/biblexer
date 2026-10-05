@@ -2,7 +2,7 @@
 import type { SearchRequest } from '../core/search.ts';
 import type { ReadyState, WorkerIn, WorkerOut } from './protocol.ts';
 import type { CardItem } from '../core/card.ts';
-import type { BookData, CardView, ChapterView, PresentedResponse } from './present.ts';
+import type { BookData, CardView, ChapterView, ParallelsView, PresentedResponse } from './present.ts';
 
 export interface ClientEvents {
   onReady(s: ReadyState): void;
@@ -45,6 +45,10 @@ export class SearchClient {
     return this.request((id) => ({ type: 'card', id, items }));
   }
 
+  parallels(book: number, verseIdx: number): Promise<ParallelsView> {
+    return this.request((id) => ({ type: 'parallels', id, book, verseIdx }));
+  }
+
   private request<T>(make: (id: number) => WorkerIn): Promise<T> {
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
@@ -56,10 +60,10 @@ export class SearchClient {
   private receive(m: WorkerOut): void {
     if (m.type === 'ready') this.events.onReady({ keyword: m.keyword, semantic: m.semantic });
     else if (m.type === 'progress') this.events.onProgress(m.phase, m.loaded, m.total);
-    else if (m.type === 'result' || m.type === 'chapterResult' || m.type === 'bookResult' || m.type === 'cardResult') {
+    else if (m.type === 'result' || m.type === 'chapterResult' || m.type === 'bookResult' || m.type === 'cardResult' || m.type === 'parallelsResult') {
       const p = this.pending.get(m.id);
       this.pending.delete(m.id);
-      p?.resolve(m.type === 'result' ? m.response : m.type === 'chapterResult' ? m.view : m.type === 'bookResult' ? m.data : m.items);
+      p?.resolve(m.type === 'result' ? m.response : m.type === 'chapterResult' ? m.view : m.type === 'bookResult' || m.type === 'parallelsResult' ? m.data : m.items);
     } else {
       const p = m.id !== undefined ? this.pending.get(m.id) : undefined;
       if (p && m.id !== undefined) {

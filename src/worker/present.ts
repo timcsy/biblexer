@@ -53,6 +53,22 @@ export interface CardView {
   verses: PresentedVerse[];
 }
 
+/** 串珠（spec 004）：分層；目前只有語意近鄰層 */
+export interface ParallelItem {
+  tier: 'quotation' | 'semantic';
+  label: string;
+  startRef: StoredVerse['ref'];
+  endRef: StoredVerse['ref'];
+  verses: PresentedVerse[];
+}
+
+export interface ParallelsView {
+  semanticReady: boolean;
+  /** 語意近鄰的依據（模型識別），署名用 */
+  model: string | null;
+  items: ParallelItem[];
+}
+
 export function presentVerses(verses: readonly StoredVerse[], from: number, to: number, inResult: (i: number) => boolean): PresentedVerse[] {
   const out: PresentedVerse[] = [];
   for (let i = from; i <= to; i++) {

@@ -1,7 +1,7 @@
 // Worker 訊息協定（contracts/search-api.md §3）
 import type { SearchRequest } from '../core/search.ts';
 import type { CardItem } from '../core/card.ts';
-import type { BookData, CardView, ChapterView, PresentedResponse } from './present.ts';
+import type { BookData, CardView, ChapterView, ParallelsView, PresentedResponse } from './present.ts';
 
 export const ERROR_CODES = ['NOT_DOWNLOADED', 'QUOTA', 'CORRUPT', 'INTERNAL'] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -17,7 +17,8 @@ export type WorkerIn =
   | { type: 'search'; id: number; request: SearchRequest }
   | { type: 'chapter'; id: number; book: number; chapter: number }
   | { type: 'book'; id: number; book: number }
-  | { type: 'card'; id: number; items: CardItem[] };
+  | { type: 'card'; id: number; items: CardItem[] }
+  | { type: 'parallels'; id: number; book: number; verseIdx: number };
 
 export type WorkerOut =
   | ({ type: 'ready' } & ReadyState)
@@ -26,6 +27,7 @@ export type WorkerOut =
   | { type: 'chapterResult'; id: number; view: ChapterView }
   | { type: 'bookResult'; id: number; data: BookData }
   | { type: 'cardResult'; id: number; items: Array<CardView | null> }
+  | { type: 'parallelsResult'; id: number; data: ParallelsView }
   | { type: 'error'; id?: number; code: ErrorCode; message: string };
 
 export interface Engine {
@@ -36,6 +38,8 @@ export interface Engine {
   chapter(book: number, chapter: number): Promise<ChapterView>;
   book(book: number): Promise<BookData>;
   card(items: CardItem[]): Promise<Array<CardView | null>>;
+  /** 串珠：某書第 verseIdx 節（相對於本書第一節）所在段落的語意近鄰 */
+  parallels(book: number, verseIdx: number): Promise<ParallelsView>;
 }
 
 export class EngineError extends Error {
@@ -60,6 +64,8 @@ export async function handleMessage(engine: Engine, msg: WorkerIn, post: (m: Wor
       post({ type: 'ready', ...(await engine.loadSemantic()) });
     } else if (msg.type === 'search') {
       post({ type: 'result', id: msg.id, response: await engine.search(msg.request) });
+    } else if (msg.type === 'parallels') {
+      post({ type: 'parallelsResult', id: msg.id, data: await engine.parallels(msg.book, msg.verseIdx) });
     } else if (msg.type === 'card') {
       post({ type: 'cardResult', id: msg.id, items: await engine.card(msg.items) });
     } else if (msg.type === 'book') {

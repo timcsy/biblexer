@@ -10,6 +10,7 @@ function fakeEngine(over: Partial<Engine> = {}): Engine {
     chapter: vi.fn(async () => ({ label: '', verses: [], passageStarts: [] })),
     book: vi.fn(async () => ({ book: 45, verses: [], paragraphStarts: [] })),
     card: vi.fn(async () => [null]),
+    parallels: vi.fn(async () => ({ semanticReady: false, model: null, items: [] })),
     ...over,
   };
 }
@@ -40,6 +41,14 @@ describe('Worker 協定', () => {
     const e = fakeEngine();
     await handleMessage(e, { type: 'card', id: 11, items: [{ start: [45, 8, 28], end: [45, 8, 28] }] }, (m) => out.push(m));
     expect(out[0]).toMatchObject({ type: 'cardResult', id: 11, items: [null] });
+  });
+
+  test('parallels → parallelsResult（帶相同 id）', async () => {
+    const out: WorkerOut[] = [];
+    const e = fakeEngine();
+    await handleMessage(e, { type: 'parallels', id: 12, book: 45, verseIdx: 3 }, (m) => out.push(m));
+    expect(e.parallels).toHaveBeenCalledWith(45, 3);
+    expect(out[0]).toMatchObject({ type: 'parallelsResult', id: 12, data: { semanticReady: false, items: [] } });
   });
 
   test('錯誤以固定代碼回報，訊息帶原請求 id', async () => {

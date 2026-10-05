@@ -89,3 +89,11 @@ describe('經文卡（spec 003）', () => {
     expect(b).toBeNull();
   });
 });
+
+describe('串珠（spec 004）', () => {
+  test('語意檢索尚未載入：回報未就緒、清單為空（不報錯）', async () => {
+    const e = engineWithData();
+    await e.init('/data/manifest.json', undefined, false);
+    expect(await e.parallels(45, 0)).toEqual({ semanticReady: false, model: null, items: [] });
+  });
+});

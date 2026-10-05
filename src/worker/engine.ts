@@ -11,7 +11,9 @@ import { deserializeVectorStore } from '../core/vectors.ts';
 import type { Embedder, Pooling } from '../embed/embedder.ts';
 import { EngineError, type Engine, type ReadyState } from './protocol.ts';
 import { resolveItem, type CardItem } from '../core/card.ts';
-import { presentResponse, presentVerses, type BookData, type CardView, type ChapterView } from './present.ts';
+import { parallels } from '../core/parallels.ts';
+import { formatRange } from '../core/refs.ts';
+import { presentResponse, presentVerses, type BookData, type CardView, type ChapterView, type ParallelsView } from './present.ts';
 
 export interface ModelInfo {
   id: string;
@@ -95,6 +97,20 @@ export function createEngine(deps: EngineDeps): Engine {
         verses: presentVerses(verses, first, last, () => true),
         passageStarts: c.passages.filter((p) => p.start >= first && p.start <= last).map((p) => p.start - first),
       };
+    },
+
+    async parallels(book, verseIdx): Promise<ParallelsView> {
+      const c = requireCorpus();
+      if (!c.vectors) return { semanticReady: false, model: null, items: [] };
+      const first = verses.findIndex((v) => v.ref.book === book);
+      const global = first + verseIdx;
+      const pid = c.passages.findIndex((p) => p.start <= global && global <= p.end);
+      if (first < 0 || pid < 0) return { semanticReady: true, model: manifest?.model?.id ?? null, items: [] };
+      const items = parallels(c, pid, 8).map((id) => {
+        const p = c.passages[id]!;
+        return { tier: 'semantic' as const, label: formatRange(verses[p.start]!.ref, verses[p.end]!.ref), startRef: verses[p.start]!.ref, endRef: verses[p.end]!.ref, verses: presentVerses(verses, p.start, p.end, () => true) };
+      });
+      return { semanticReady: true, model: manifest?.model?.id ?? null, items };
     },
 
     async card(items: CardItem[]): Promise<Array<CardView | null>> {
