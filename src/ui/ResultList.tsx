@@ -19,6 +19,8 @@ export interface ResultListProps {
   filter: FilterKey | null;
   onFilter: (k: FilterKey | null) => void;
   onExpand: (r: PresentedResult) => void;
+  /** 本階段只有羅馬書可進入閱讀器（FR-015） */
+  onOpenInReader?: (r: PresentedResult) => void;
 }
 
 export function ResultList(p: ResultListProps) {
@@ -40,7 +42,7 @@ export function ResultList(p: ResultListProps) {
       )}
       {p.results.length === 0 && !p.filter && <p class="empty">{STRINGS.noResults}</p>}
       {p.results.map((r) => (
-        <PassageCard key={`${r.passage.id}`} r={r} onExpand={p.onExpand} />
+        <PassageCard key={`${r.passage.id}`} r={r} onExpand={p.onExpand} {...(p.onOpenInReader ? { onOpenInReader: p.onOpenInReader } : {})} />
       ))}
       {p.results.length < p.response.total && (
         <button type="button" class="more" data-testid="load-more" onClick={p.onLoadMore}>

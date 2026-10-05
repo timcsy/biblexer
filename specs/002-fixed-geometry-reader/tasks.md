@@ -115,14 +115,14 @@ description: "固定幾何閱讀器與語意縮放（羅馬書切片）的任務
 
 ### 測試（先寫、先確認失敗）
 
-- [ ] T019 [P] [US3] 在 `e2e/reader-from-search.spec.ts` 撰寫 E2E（SC-004、FR-015、FR-016）：
+- [X] T019 [P] [US3] 在 `e2e/reader-from-search.spec.ts` 撰寫 E2E（SC-004、FR-015、FR-016）：
   - 羅馬書範圍內的結果有 `open-in-reader`；羅馬書以外的結果沒有
   - 點擊後閱讀器的 `data-focus` 為命中段落起點的精讀著陸點，命中範圍內的經節 `data-hit="true"`
   - `reader-back` 回到原本的搜尋結果（查詢、粒度、篩選不變）
 
 ### 實作
 
-- [ ] T020 [US3] 在 `src/ui/PassageCard.tsx` 加入「在閱讀器中開啟」（只在羅馬書範圍內）；在 `src/main.tsx` 記住搜尋狀態（ReturnState）、以 `cameraForVerse` 開啟閱讀器並傳入命中範圍、提供 `reader-back`；在 `ReadingLayer.tsx` 標示 `data-hit`；確認 T019 通過
+- [X] T020 [US3] 在 `src/ui/PassageCard.tsx` 加入「在閱讀器中開啟」（只在羅馬書範圍內）；在 `src/main.tsx` 記住搜尋狀態（ReturnState）、以 `cameraForVerse` 開啟閱讀器並傳入命中範圍、提供 `reader-back`；在 `ReadingLayer.tsx` 標示 `data-hit`；確認 T019 通過
 
 ---
 

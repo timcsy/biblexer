@@ -4,6 +4,9 @@ import { formatCopy } from './copy.ts';
 import { STRINGS } from './strings.ts';
 import type { PresentedResult, PresentedVerse } from '../worker/present.ts';
 
+/** 本階段只有羅馬書可進入閱讀器 */
+export const READER_BOOK = 45;
+
 const refKey = (r: { book: number; chapter: number; verse: number }) => `${r.book}:${r.chapter}:${r.verse}`;
 
 export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readonly string[] }) {
@@ -23,7 +26,7 @@ export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readon
 }
 
 // 原則 5：以段落與前後文呈現；原則 6：不顯示任何分數
-export function PassageCard({ r, onExpand }: { r: PresentedResult; onExpand?: (r: PresentedResult) => void }) {
+export function PassageCard({ r, onExpand, onOpenInReader }: { r: PresentedResult; onExpand?: (r: PresentedResult) => void; onOpenInReader?: (r: PresentedResult) => void }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard?.writeText(formatCopy(r));
@@ -52,6 +55,11 @@ export function PassageCard({ r, onExpand }: { r: PresentedResult; onExpand?: (r
         {onExpand && (
           <button type="button" class="link" data-testid="expand-chapter" onClick={() => onExpand(r)}>
             {STRINGS.expandChapter}
+          </button>
+        )}
+        {onOpenInReader && r.startRef.book === READER_BOOK && (
+          <button type="button" class="link" data-testid="open-in-reader" onClick={() => onOpenInReader(r)}>
+            {STRINGS.openInReader}
           </button>
         )}
         <button type="button" class="link" data-testid="copy" onClick={() => void copy()}>

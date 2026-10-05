@@ -5,6 +5,7 @@ import { ProgressBanner } from './ui/ProgressBanner.tsx';
 import type { Granularity } from './core/search.ts';
 import { Attribution } from './ui/Attribution.tsx';
 import { ChapterView } from './ui/ChapterView.tsx';
+import { READER_BOOK } from './ui/PassageCard.tsx';
 import { Reader } from './ui/reader/Reader.tsx';
 import { toSearchFilter, type FilterKey } from './ui/FilterBar.tsx';
 import { ResultList } from './ui/ResultList.tsx';
@@ -16,7 +17,6 @@ import type { BookData, ChapterView as ChapterData, PresentedResponse, Presented
 import type { ReadyState } from './worker/protocol.ts';
 
 const PAGE = 10;
-const READER_BOOK = 45; // 本階段只有羅馬書可進入閱讀器
 
 function App() {
   const [ready, setReady] = useState<ReadyState>({ keyword: false, semantic: false });
@@ -93,6 +93,16 @@ function App() {
     setReader(start);
   };
 
+  // FR-015：開在命中段落起點並標示命中範圍；搜尋畫面留在底下，返回時查詢與捲動位置不變（FR-016）
+  const openResultInReader = async (r: PresentedResult) => {
+    const d = await loadBook();
+    const same = (a: { chapter: number; verse: number }, b: { chapter: number; verse: number }) => a.chapter === b.chapter && a.verse === b.verse;
+    const from = d.verses.findIndex((v) => same(v.ref, r.startRef));
+    const to = d.verses.findIndex((v) => same(v.ref, r.endRef));
+    if (from < 0 || to < 0) return;
+    setReader({ verseIdx: from, hit: { from, to } });
+  };
+
   const status = ready.semantic ? STRINGS.statusSemanticReady : ready.keyword ? STRINGS.statusKeywordReady : STRINGS.statusLoadingText;
   const statusId = ready.semantic ? 'status-semantic-ready' : ready.keyword ? 'status-keyword-ready' : 'status-loading';
 
@@ -128,6 +138,7 @@ function App() {
           onLoadMore={() => void loadMore()}
           filter={filter}
           onFilter={(k) => void run(query, granularity, expand, k)}
+          onOpenInReader={(r: PresentedResult) => void openResultInReader(r)}
           onExpand={(r: PresentedResult) =>
             void clientRef.current?.chapter(r.startRef.book, r.startRef.chapter).then((data) => setChapter({ data, hit: { from: r.startRef.verse, to: r.startRef.chapter === r.endRef.chapter ? r.endRef.verse : 999 } }))
           }
