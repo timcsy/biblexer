@@ -38,6 +38,7 @@ export const STRINGS = {
   downloadingSemantic: '正在下載語意模型…',
   offlineReady: '已可離線使用',
   installHint: '可將本頁加入主畫面，避免離線資料被瀏覽器清除。',
+  onlineOnly: '此連線無法離線保存資料，需要連網使用（以 https 或本機開啟才能離線）。',
   needDownload: '需要先連網完成一次下載，之後即可離線使用。',
   downloadError: '下載沒有完成，請確認網路後重新整理頁面。',
   quotaError: '裝置儲存空間不足，無法存放離線資料。',

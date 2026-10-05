@@ -7,6 +7,8 @@ export type BootState =
   | { kind: 'downloading'; phase: 'text' | 'semantic'; loaded: number; total: number }
   | { kind: 'ready' }
   | { kind: 'need-download' }
+  /** 沒有 Cache Storage（非安全來源、部分無痕模式）：連網使用，無法離線保存 */
+  | { kind: 'online-only' }
   | { kind: 'error'; code: string; message: string };
 
 interface Manifest {
@@ -65,6 +67,12 @@ export interface BootCallbacks {
 
 export async function boot(cb: BootCallbacks): Promise<void> {
   cb.onState({ kind: 'starting' });
+  // 沒有 Cache Storage：不能離線保存，但仍可連網使用——Worker 直接從網路取得資料
+  if (typeof caches === 'undefined') {
+    cb.onState({ kind: 'online-only' });
+    cb.initWorker(true);
+    return;
+  }
   await ensureServiceWorker();
   const loaded = await loadManifest();
   if (!loaded) {
