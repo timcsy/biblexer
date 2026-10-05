@@ -54,6 +54,7 @@ export const STRINGS = {
   chapterLabel: (n: number) => `第 ${n} 章`,
   arrangementLabel: '版面',
   scrubLabel: '在全書中的位置（可拖動）',
+  canonOrder: '書卷順序：依和合本書卷順序（新教通行順序）',
   parallels: '串珠',
   parallelsTitle: '語意上可能相關的段落',
   parallelsBasis: (model: string) => `依據：語意相似度（${model || '語意模型'}）；不含本章，可展開全章比對`,

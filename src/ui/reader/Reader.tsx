@@ -446,8 +446,10 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         </div>
       )}
       {parallelsOpen && loadParallels && loadChapter && currentSource && <ParallelsPanel source={currentSource} load={loadParallels} loadChapter={loadChapter} onClose={() => setParallelsOpen(false)} />}
-      <p class="reader-attr" data-testid="segmentation-attribution">
-        {STRINGS.segmentationAttribution}
+      {/* 署名放在同一行：層級切換時閱讀區高度不變（避免重新量測、畫面跳動） */}
+      <p class="reader-attr">
+        <span data-testid="segmentation-attribution">{STRINGS.segmentationAttribution}</span>
+        {level === 'canon' && <span data-testid="canon-order-attribution">{`；${STRINGS.canonOrder}`}</span>}
       </p>
     </section>
   );

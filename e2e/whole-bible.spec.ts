@@ -57,3 +57,14 @@ test('詩篇：進度條保留 150 個刻度，章號標籤不重疊', async ({ 
   const boxes = await page.locator('[data-testid="scrub-tick"] small').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && getComputedStyle(e).visibility !== 'hidden').map((e) => e.getBoundingClientRect()).map((r) => [r.left, r.right]));
   for (let i = 1; i < boxes.length; i++) expect(boxes[i]![0]!).toBeGreaterThanOrEqual(boxes[i - 1]![1]! - 0.5);
 });
+
+test('正典層標明書卷順序的來源（原則 9；草稿第四輪決定 7）', async ({ page }) => {
+  await waitReady(page, false);
+  await openReader(page);
+  for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
+  await expect(page.getByTestId('reader')).toHaveAttribute('data-level', 'canon');
+  await expect(page.getByTestId('canon-order-attribution')).toContainText('和合本書卷順序');
+  // 其他層級不顯示
+  await page.getByTestId('zoom-in').click();
+  await expect(page.getByTestId('canon-order-attribution')).toHaveCount(0);
+});
