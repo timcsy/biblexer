@@ -6,11 +6,12 @@
 // - 離散的移動（按鍵、按鈕、放手吸附）以過場動畫著陸（van Wijk & Nuij）；手勢開始即中斷；減少動態效果時不播放
 // - 進度提示：第幾章、第幾頁
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel } from '../../reader/camera.ts';
+import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel, placeAt } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
+import { HyperbolicCanon } from './HyperbolicCanon.tsx';
 import { bookById } from '../../core/canon.ts';
 import { STRINGS } from '../strings.ts';
 import { BookLayer } from './BookLayer.tsx';
@@ -26,7 +27,7 @@ export interface ReaderProps {
   start?: { verseIdx: number; hit?: { from: number; to: number } };
   onBack: () => void;
   /** 正典層點其他書卷：開啟那一卷（spec 005） */
-  onOpenBook?: (book: number) => void;
+  onOpenBook?: (book: number, chapter?: number) => void;
   /** 串珠（spec 004）：由主頁透過 Worker 取得 */
   loadParallels?: (verseIdx: number) => Promise<ParallelsView>;
   loadChapter?: (book: number, chapter: number) => Promise<ChapterView>;
@@ -36,6 +37,16 @@ export interface ReaderProps {
 
 const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outline: STRINGS.levelOutline, reading: STRINGS.levelReading } as const;
 const ARRANGEMENT_KEY = 'biblexer.reader.arrangement';
+const CANON_STYLE_KEY = 'biblexer.reader.canonStyle';
+/** 正典層（原型）：方塊或雙曲全貌 */
+type CanonStyle = 'tiles' | 'hyperbolic';
+const loadCanonStyle = (): CanonStyle => {
+  try {
+    return localStorage.getItem(CANON_STYLE_KEY) === 'hyperbolic' ? 'hyperbolic' : 'tiles';
+  } catch {
+    return 'tiles';
+  }
+};
 const BOOK_STYLE_KEY = 'biblexer.reader.bookStyle';
 /** 書卷層的全貌：章節地圖（一章一列、章號對齊左側）或頁面網格（每列六頁、章號對齊每列左側） */
 type BookStyle = 'map' | 'grid';
@@ -63,6 +74,16 @@ const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrange
 
 export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParallels, loadChapter }: ReaderProps) {
   const [parallelsOpen, setParallelsOpen] = useState(false);
+  const [canonStyle, setCanonStyle] = useState<CanonStyle>(loadCanonStyle);
+  const toggleCanonStyle = () => {
+    const next: CanonStyle = canonStyle === 'tiles' ? 'hyperbolic' : 'tiles';
+    try {
+      localStorage.setItem(CANON_STYLE_KEY, next);
+    } catch {
+      /* 不能存就只在這次有效 */
+    }
+    setCanonStyle(next);
+  };
   const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
   const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
   const linesByPage = useMemo(() => {
@@ -368,8 +389,9 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
+    if (canonStyle === 'hyperbolic') return null;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
-  }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
+  }, [canonStyle, level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
   const paperBody = useMemo(
     () =>
@@ -385,7 +407,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class="reader" data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle}>
+    <section class="reader" data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -410,6 +432,11 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
             {STRINGS.addToCard}
           </button>
         )}
+        {level === 'canon' && (
+          <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" aria-pressed={canonStyle === 'hyperbolic'} onClick={toggleCanonStyle}>
+            {STRINGS.canonStyleLabel}：{canonStyle === 'hyperbolic' ? STRINGS.canonStyleHyperbolic : STRINGS.canonStyleTiles}
+          </button>
+        )}
         <span class="reader-zoom">
           <button type="button" data-testid="zoom-out" aria-label={STRINGS.zoomOut} onClick={() => ctx && camera && land(zoomStep(camera.at ? camera : snap(camera, ctx), ctx, -1))}>
             −
@@ -426,6 +453,21 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
             {body}
           </div>
         </div>
+        {level === 'canon' && canonStyle === 'hyperbolic' && ctx && camera && (
+          <HyperbolicCanon
+            focusBook={camera.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
+            width={ctx.viewport.width}
+            height={ctx.viewport.height}
+            onFocus={(b) => {
+              const lp = landingPoints(ctx.layout, 'canon').find((p) => p.id === `book:${b}`);
+              if (lp) land(placeAt(lp, ctx));
+            }}
+            onEnter={(b, ch) => {
+              if (b === data.book) enterChapter(ch);
+              else onOpenBook?.(b, ch);
+            }}
+          />
+        )}
       </div>
       {/* 一律占位：在正典層只是看不見，避免閱讀區高度改變而觸發重新量測 */}
       {pr && (

@@ -4,6 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { decodePassages, decodeUnits, decodeVerses } from '../../src/core/artifacts.ts';
+import { CHAPTER_COUNTS } from '../../src/core/canon.ts';
 import { VARIANT_VERSES } from '../../scripts/lib/fhl.ts';
 
 const dataDir = join(import.meta.dirname, '../../public/data');
@@ -25,6 +26,13 @@ describe('建置產物', () => {
     const verses = decodeVerses(read('verses').toString('utf8'));
     expect(verses).toHaveLength(31103);
     expect(new Set(verses.map((v) => `${v.ref.book}:${v.ref.chapter}`)).size).toBe(1189);
+  });
+
+  test('各卷章數表（CHAPTER_COUNTS）與實際經文一致', () => {
+    const verses = decodeVerses(read('verses').toString('utf8'));
+    const max = new Array<number>(66).fill(0);
+    for (const v of verses) max[v.ref.book - 1] = Math.max(max[v.ref.book - 1]!, v.ref.chapter);
+    expect(max).toEqual([...CHAPTER_COUNTS]);
   });
 
   test('71 個合併節皆承接同章前一節；11 節異文皆有標記', () => {

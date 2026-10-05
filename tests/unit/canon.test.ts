@@ -45,3 +45,12 @@ describe('正典', () => {
     expect(new Set(BOOKS.map((b) => b.short)).size).toBe(66);
   });
 });
+
+describe('各卷章數（雙曲全貌用）', () => {
+  test('66 卷共 1189 章；詩篇 150、俄巴底亞書 1、羅馬書 16', async () => {
+    const { CHAPTER_COUNTS } = await import('../../src/core/canon.ts');
+    expect(CHAPTER_COUNTS.length).toBe(66);
+    expect(CHAPTER_COUNTS.reduce((s, n) => s + n, 0)).toBe(1189);
+    expect([CHAPTER_COUNTS[18], CHAPTER_COUNTS[30], CHAPTER_COUNTS[44]]).toEqual([150, 1, 16]);
+  });
+});

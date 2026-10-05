@@ -124,3 +124,9 @@ export const CATEGORY_LABELS: Readonly<Record<Category, string>> = {
 };
 
 export const TESTAMENT_LABELS: Readonly<Record<Testament, string>> = { OT: '舊約', NT: '新約' };
+
+/** 各卷章數（依正典順序；新教 66 卷，共 1189 章）——正典層的雙曲全貌用；資料測試與實際經文比對 */
+export const CHAPTER_COUNTS: readonly number[] = [
+  50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42, 150, 31, 12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4,
+  28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5, 3, 5, 1, 1, 1, 22,
+];

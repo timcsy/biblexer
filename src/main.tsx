@@ -108,9 +108,10 @@ function App() {
     lastBook.current = book;
     return d;
   };
-  const openReader = async (book = lastBook.current, start: { verseIdx: number; hit?: { from: number; to: number } } = { verseIdx: 0 }) => {
-    await loadBook(book);
-    setReader({ book, ...start });
+  const openReader = async (book = lastBook.current, start: { verseIdx: number; hit?: { from: number; to: number } } = { verseIdx: 0 }, chapter?: number) => {
+    const d = await loadBook(book);
+    const at = chapter ? Math.max(0, d.verses.findIndex((v) => v.ref.chapter === chapter && !v.merged)) : start.verseIdx;
+    setReader({ book, ...start, verseIdx: at });
   };
 
   // FR-015（spec 005：任何書卷）：開在命中段落起點並標示命中範圍；搜尋畫面留在底下，返回時查詢與捲動位置不變（FR-016）
@@ -187,7 +188,7 @@ function App() {
           data={bookData}
           start={reader}
           onBack={() => setReader(null)}
-          onOpenBook={(b) => void openReader(b)}
+          onOpenBook={(b, ch) => void openReader(b, { verseIdx: 0 }, ch)}
           onAddToCard={(it) => setCard(addItem(card, it))}
           loadParallels={(v) => clientRef.current!.parallels(reader.book, v)}
           loadChapter={(b, c) => clientRef.current!.chapter(b, c)}

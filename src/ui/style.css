@@ -152,3 +152,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .parallel-expanded .card-text { font-size: 0.95rem; }
 @media (max-width: 520px) { .parallels-panel { top: auto; height: 50%; width: 100%; border-left: none; border-top: 1px solid var(--line); } }
 .page-tick { position: absolute; background: var(--muted); opacity: 0.45; border-radius: 2px; }
+/* 正典的雙曲全貌（原型） */
+.hyper-canon { position: absolute; left: 0; top: 0; }
+.hyper-disk { fill: var(--card); stroke: var(--line); }
+.hyper-book { cursor: pointer; }
+.hyper-book circle { fill: var(--muted); }
+.hyper-book.nt circle { fill: color-mix(in srgb, var(--accent) 60%, var(--muted)); }
+.hyper-book.focused circle { fill: var(--accent); }
+.hyper-book text { fill: var(--fg); font-family: inherit; }
+.hyper-book.focused text { fill: var(--accent); font-weight: bold; }
+.hyper-chapter { cursor: pointer; }
+.hyper-chapter circle { fill: color-mix(in srgb, var(--accent) 18%, var(--card)); stroke: var(--accent); }
+.hyper-chapter text { fill: var(--fg); font-family: system-ui, sans-serif; }
