@@ -26,8 +26,14 @@ export function BookLayer({ layout, pages, px, current, aligned, onChapter }: { 
   );
 
   if (!aligned) {
+    // 章節地圖：每一頁的起點畫一個淡色刻度（頁碼放在 title），讓「結構」與「頁」兩種位置記憶連起來
+    const pageStarts = layout.lines.filter((l) => l.pos.column === 0 && l.pos.line === 0);
     return (
       <>
+        {pageStarts.map((l) => {
+          const r = lineRect(layout, l.pos);
+          return <div key={`ptick-${l.pos.page}`} class="page-tick" data-testid="page-tick" data-page={l.pos.page + 1} title={`第 ${l.pos.page + 1} 頁`} style={{ left: `${(r.x - 0.6) * U}px`, top: `${r.y * U}px`, width: `${Math.max(0.15, (1.5 * px) / U) * U}px`, height: `${WORLD.lineHeight * 2 * U}px` }} />;
+        })}
         {layout.chapters.map((c) => {
           const r = lineRect(layout, layout.lines[c.line]!.pos);
           return (

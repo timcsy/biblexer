@@ -121,3 +121,18 @@ test('停在頁中間的段落：畫面仍從頁的第一行開始（不切開�
     await page.getByTestId('reader-back').click();
   }
 });
+
+test('章節地圖標出頁界：每一頁的起點有一個淡色刻度，與精讀的頁一一對應', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitReady(page, false);
+  await openReader(page);
+  const reader = page.getByTestId('reader');
+  await page.getByTestId('zoom-out').click();
+  await page.getByTestId('zoom-out').click();
+  await expect(reader).toHaveAttribute('data-level', 'book');
+  if ((await reader.getAttribute('data-book-style')) !== 'map') await page.getByTestId('bookstyle-toggle').click();
+  const ticks = page.getByTestId('page-tick');
+  const pages = Number((await page.getByTestId('reader-progress').innerText()).match(/／(\d+)/)![1]);
+  await expect(ticks).toHaveCount(pages);
+  expect(await ticks.evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-page'))))).toEqual(Array.from({ length: pages }, (_, i) => i + 1));
+});

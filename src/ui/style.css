@@ -151,3 +151,4 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .parallel-excerpt { display: block; font-size: 0.85rem; color: var(--muted); }
 .parallel-expanded .card-text { font-size: 0.95rem; }
 @media (max-width: 520px) { .parallels-panel { top: auto; height: 50%; width: 100%; border-left: none; border-top: 1px solid var(--line); } }
+.page-tick { position: absolute; background: var(--muted); opacity: 0.45; border-radius: 2px; }
