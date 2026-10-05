@@ -108,3 +108,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .reader-bar { white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
 .reader-bar > * { flex-shrink: 0; }
 @media (max-width: 520px) { .reader-level { display: none; } .reader-bar { gap: 0.5rem; } }
+/* 經文卡（spec 003） */
+.card-panel { background: var(--card); border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.8rem 1rem; margin: 0.8rem 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.card-head h2 { font-size: 1.1rem; margin: 0; color: var(--accent); }
+.card-actions { display: flex; gap: 0.4rem; }
+.card-actions button { font-size: 0.9rem; padding: 0.3rem 0.7rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--card); color: var(--fg); cursor: pointer; }
+.card-actions button.danger { border-color: var(--accent); color: var(--accent); }
+.card-empty { color: var(--muted); font-size: 0.9rem; }
+.card-list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.card-item { border-top: 1px solid var(--line); padding: 0.6rem 0; }
+.card-ref { margin: 0; font-weight: bold; color: var(--accent); }
+.card-context { font-weight: normal; color: var(--muted); margin-left: 0.3rem; }
+.card-text { line-height: 1.9; margin: 0.3rem 0; }
+.card-verse sup { color: var(--muted); font-size: 0.7em; margin-right: 0.15rem; }
+.card-verse[data-selected='true'] { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.25em; }
+.card-item-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+.print-sheet { display: none; }
+@media print {
+  @page { size: A4; margin: 18mm; }
+  body { background: #fff; }
+  main > *:not(.print-sheet) { display: none !important; }
+  .reader { display: none !important; }
+  main { max-width: none; padding: 0; }
+  .print-sheet { display: block; color: #000; font-size: 13pt; }
+  .print-item { break-inside: avoid; margin-bottom: 10mm; }
+  .print-sheet .card-ref { color: #000; }
+  .print-sheet .card-context, .print-sheet .card-verse sup, .print-sheet .note { color: #444; }
+  .print-sheet .card-verse[data-selected='true'] { text-decoration-color: #000; }
+  .write-lines { margin-top: 4mm; }
+  .write-line { height: 9mm; border-bottom: 0.3mm solid #999; }
+  .print-attr { margin-top: 8mm; font-size: 9pt; color: #444; border-top: 0.3mm solid #ccc; padding-top: 2mm; }
+}

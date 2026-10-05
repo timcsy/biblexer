@@ -23,6 +23,8 @@ export interface ReaderProps {
   /** 開啟時的經節（相對於本書第一節）與命中範圍 */
   start?: { verseIdx: number; hit?: { from: number; to: number } };
   onBack: () => void;
+  /** 加入經文卡（spec 003 US3）：目前段落 */
+  onAddToCard?: (item: { start: [number, number, number]; end: [number, number, number] }) => void;
 }
 
 const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outline: STRINGS.levelOutline, reading: STRINGS.levelReading } as const;
@@ -52,7 +54,7 @@ const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(pre
 const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrangement =>
   level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
 
-export function Reader({ data, start, onBack }: ReaderProps) {
+export function Reader({ data, start, onBack, onAddToCard }: ReaderProps) {
   const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
   const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
   const linesByPage = useMemo(() => {
@@ -231,6 +233,21 @@ export function Reader({ data, start, onBack }: ReaderProps) {
     if (v >= 0) land(cameraForVerse(v, all[arrangementFor(modeRef.current, styleRef.current, 'reading')]));
   };
 
+  /** 目前段落（有段落標示時以它為準，否則以著陸點的第一節所在段落） */
+  const addCurrentParagraph = () => {
+    const c = camRef.current;
+    const x = ctxRef.current;
+    if (!c || !x || !onAddToCard) return;
+    const lp = c.at ? landingPoints(x.layout, levelOf(c.scale, x.readingScale)).find((p) => p.id === c.at) : undefined;
+    const v = c.at?.startsWith('para:') ? Number(c.at.slice(5)) : (lp?.verseIdx ?? 0);
+    const starts = data.paragraphStarts;
+    const k = starts.filter((s) => s <= v).length - 1;
+    const from = starts[k] ?? 0;
+    const to = (starts[k + 1] ?? data.verses.length) - 1;
+    const key = (i: number): [number, number, number] => [data.verses[i]!.ref.book, data.verses[i]!.ref.chapter, data.verses[i]!.ref.verse];
+    onAddToCard({ start: key(from), end: key(to) });
+  };
+
   const toggleBookStyle = () => {
     const next: BookStyle = bookStyle === 'map' ? 'grid' : 'map';
     try {
@@ -361,6 +378,11 @@ export function Reader({ data, start, onBack }: ReaderProps) {
         <button type="button" class="reader-arrangement" data-testid="bookstyle-toggle" aria-pressed={bookStyle === 'map'} onClick={toggleBookStyle}>
           {STRINGS.bookStyleLabel}：{bookStyle === 'map' ? STRINGS.bookStyleMap : STRINGS.bookStyleGrid}
         </button>
+        {onAddToCard && (
+          <button type="button" class="reader-arrangement" data-testid="reader-add-to-card" onClick={addCurrentParagraph}>
+            {STRINGS.addToCard}
+          </button>
+        )}
         <span class="reader-zoom">
           <button type="button" data-testid="zoom-out" aria-label={STRINGS.zoomOut} onClick={() => ctx && camera && land(zoomStep(camera.at ? camera : snap(camera, ctx), ctx, -1))}>
             −

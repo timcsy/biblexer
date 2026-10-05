@@ -4,6 +4,10 @@ import { boot, type BootState } from './pwa/boot.ts';
 import { ProgressBanner } from './ui/ProgressBanner.tsx';
 import type { Granularity } from './core/search.ts';
 import { Attribution } from './ui/Attribution.tsx';
+import { addItem, hasItem, moveItem, removeItem, EMPTY_CARD, type Card, type CardItem } from './core/card.ts';
+import { CardPanel } from './ui/card/CardPanel.tsx';
+import { PrintSheet } from './ui/card/PrintSheet.tsx';
+import { loadCard, saveCard } from './ui/card/store.ts';
 import { ChapterView } from './ui/ChapterView.tsx';
 import { READER_BOOK } from './ui/PassageCard.tsx';
 import { Reader } from './ui/reader/Reader.tsx';
@@ -13,7 +17,7 @@ import { SearchBox } from './ui/SearchBox.tsx';
 import { STRINGS } from './ui/strings.ts';
 import './ui/style.css';
 import { SearchClient } from './worker/client.ts';
-import type { BookData, ChapterView as ChapterData, PresentedResponse, PresentedResult } from './worker/present.ts';
+import type { BookData, CardView, ChapterView as ChapterData, PresentedResponse, PresentedResult } from './worker/present.ts';
 import type { ReadyState } from './worker/protocol.ts';
 
 const PAGE = 10;
@@ -30,6 +34,16 @@ function App() {
   const [bookData, setBookData] = useState<BookData | null>(null);
   const [reader, setReader] = useState<{ verseIdx: number; hit?: { from: number; to: number } } | null>(null);
   const seq = useRef(0);
+
+  // 經文卡（spec 003）：只存在這台裝置；顯示與列印時由 Worker 取出所在段落
+  const [card, setCardState] = useState<Card>(loadCard);
+  const [cardOpen, setCardOpen] = useState(false);
+  const [cardViews, setCardViews] = useState<Array<CardView | null>>([]);
+  const setCard = (next: Card) => {
+    setCardState(next);
+    saveCard(next);
+  };
+  const itemOf = (r: PresentedResult): CardItem => ({ start: [r.startRef.book, r.startRef.chapter, r.startRef.verse], end: [r.endRef.book, r.endRef.chapter, r.endRef.verse] });
 
   const [bootState, setBootState] = useState<BootState>({ kind: 'starting' });
   const clientRef = useRef<SearchClient | null>(null);
@@ -103,6 +117,15 @@ function App() {
     setReader({ verseIdx: from, hit: { from, to } });
   };
 
+  useEffect(() => {
+    if (!ready.keyword || !clientRef.current) return;
+    let live = true;
+    void clientRef.current.card(card.items).then((v) => live && setCardViews(v));
+    return () => {
+      live = false;
+    };
+  }, [card, ready.keyword]);
+
   const status = ready.semantic ? STRINGS.statusSemanticReady : ready.keyword ? STRINGS.statusKeywordReady : STRINGS.statusLoadingText;
   const statusId = ready.semantic ? 'status-semantic-ready' : ready.keyword ? 'status-keyword-ready' : 'status-loading';
 
@@ -114,10 +137,14 @@ function App() {
           <button type="button" class="open-reader" data-testid="open-reader" disabled={!ready.keyword} onClick={() => void openReader()}>
             {STRINGS.readerTitle}
           </button>
+          <button type="button" class="open-reader" data-testid="card-toggle" aria-pressed={cardOpen} onClick={() => setCardOpen(!cardOpen)}>
+            {STRINGS.cardToggle(card.items.length)}
+          </button>
         </div>
         <p class="status" data-testid={statusId}>{status}</p>
         <ProgressBanner state={bootState} />
       </header>
+      {cardOpen && <CardPanel card={card} views={cardViews} onMove={(i, d) => setCard(moveItem(card, i, d))} onRemove={(i) => setCard(removeItem(card, i))} onClear={() => setCard(EMPTY_CARD)} />}
       <SearchBox onSearch={(q) => void run(q, granularity, expand, null)} disabled={!ready.keyword} />
       {chapter && <ChapterView data={chapter.data} hit={chapter.hit} onClose={() => setChapter(null)} />}
       {response && !chapter && (
@@ -139,13 +166,16 @@ function App() {
           filter={filter}
           onFilter={(k) => void run(query, granularity, expand, k)}
           onOpenInReader={(r: PresentedResult) => void openResultInReader(r)}
+          onAddToCard={(r: PresentedResult) => setCard(addItem(card, itemOf(r)))}
+          inCard={(r: PresentedResult) => hasItem(card, itemOf(r))}
           onExpand={(r: PresentedResult) =>
             void clientRef.current?.chapter(r.startRef.book, r.startRef.chapter).then((data) => setChapter({ data, hit: { from: r.startRef.verse, to: r.startRef.chapter === r.endRef.chapter ? r.endRef.verse : 999 } }))
           }
         />
       )}
       <Attribution />
-      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} />}
+      {reader && bookData && <Reader key={JSON.stringify(reader)} data={bookData} start={reader} onBack={() => setReader(null)} onAddToCard={(it) => setCard(addItem(card, it))} />}
+      <PrintSheet views={cardViews} />
     </main>
   );
 }

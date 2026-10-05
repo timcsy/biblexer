@@ -16,15 +16,15 @@ description: "經文卡匯出的任務清單"
 
 ## Phase 2：User Story 1＋2 — 收集、整理、保留、列印（P1）🎯 MVP
 
-- [ ] T005 [US1] [US2] `e2e/card.spec.ts`：加入三段與去重、上移、移除、清空、重新整理（含離線）後保留、列印頁白名單（所有文字節點在 data-kind 白名單內、有書寫欄位與署名、無操作介面）、「節」檢視加入單節呈現整段
-- [ ] T006 [US2] `src/ui/card/store.ts`（localStorage 讀寫，try/catch）
-- [ ] T007 [US1] `src/ui/card/CardPanel.tsx`、`src/ui/card/PrintSheet.tsx`；`src/ui/strings.ts` 新增介面文字（不得含「推薦」「最佳」等，守護測試沿用）；列印樣式（`@media print` 只顯示列印頁）
-- [ ] T008 [US1] 搜尋結果「加入經文卡」（`src/ui/PassageCard.tsx`、`ResultList.tsx`）、頁首開關與面板（`src/main.tsx`）；確認 T005 通過
+- [X] T005 [US1] [US2] `e2e/card.spec.ts`：加入三段與去重、上移、移除、清空、重新整理（含離線）後保留、列印頁白名單（所有文字節點在 data-kind 白名單內、有書寫欄位與署名、無操作介面）、「節」檢視加入單節呈現整段
+- [X] T006 [US2] `src/ui/card/store.ts`（localStorage 讀寫，try/catch）
+- [X] T007 [US1] `src/ui/card/CardPanel.tsx`、`src/ui/card/PrintSheet.tsx`；`src/ui/strings.ts` 新增介面文字（不得含「推薦」「最佳」等，守護測試沿用）；列印樣式（`@media print` 只顯示列印頁）
+- [X] T008 [US1] 搜尋結果「加入經文卡」（`src/ui/PassageCard.tsx`、`ResultList.tsx`）、頁首開關與面板（`src/main.tsx`）；確認 T005 通過
 
 ## Phase 3：User Story 3 — 從閱讀器加入（P2）
 
-- [ ] T009 [US3] E2E：閱讀器停在某段按「加入經文卡」→ 卡片出現該段
-- [ ] T010 [US3] 閱讀器工具列「加入經文卡」（`src/ui/reader/Reader.tsx`，以 `at` 的段落或畫面第一節所在段落）；確認 T009 通過
+- [X] T009 [US3] E2E：閱讀器停在某段按「加入經文卡」→ 卡片出現該段
+- [X] T010 [US3] 閱讀器工具列「加入經文卡」（`src/ui/reader/Reader.tsx`，以 `at` 的段落或畫面第一節所在段落）；確認 T009 通過
 
 ## Phase 4：Polish
 

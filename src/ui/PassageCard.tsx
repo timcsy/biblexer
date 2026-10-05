@@ -26,7 +26,7 @@ export function VerseLine({ v, terms = [] }: { v: PresentedVerse; terms?: readon
 }
 
 // 原則 5：以段落與前後文呈現；原則 6：不顯示任何分數
-export function PassageCard({ r, onExpand, onOpenInReader }: { r: PresentedResult; onExpand?: (r: PresentedResult) => void; onOpenInReader?: (r: PresentedResult) => void }) {
+export function PassageCard({ r, onExpand, onOpenInReader, onAddToCard, inCard }: { r: PresentedResult; onExpand?: (r: PresentedResult) => void; onOpenInReader?: (r: PresentedResult) => void; onAddToCard?: (r: PresentedResult) => void; inCard?: boolean }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard?.writeText(formatCopy(r));
@@ -60,6 +60,11 @@ export function PassageCard({ r, onExpand, onOpenInReader }: { r: PresentedResul
         {onOpenInReader && r.startRef.book === READER_BOOK && (
           <button type="button" class="link" data-testid="open-in-reader" onClick={() => onOpenInReader(r)}>
             {STRINGS.openInReader}
+          </button>
+        )}
+        {onAddToCard && (
+          <button type="button" class="link" data-testid="add-to-card" aria-pressed={inCard ? 'true' : 'false'} disabled={inCard} onClick={() => onAddToCard(r)}>
+            {inCard ? STRINGS.inCard : STRINGS.addToCard}
           </button>
         )}
         <button type="button" class="link" data-testid="copy" onClick={() => void copy()}>
