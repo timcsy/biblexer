@@ -63,7 +63,7 @@ export const STRINGS = {
   canonStyleHyperbolic: '雙曲',
   canonStyleTree: '樹狀',
   canonStyleMindmap: '心智圖',
-  treeHint: '點類別：展開 · 點書卷：顯示各章 · 點章號：進入閱讀 · ＋：回到書卷',
+  treeHint: '點類別：展開 · 點書卷：顯示各章（再點一次：進入）· 點章號：進入閱讀 · 上方長條：跳到任一卷',
   treeCategories: '分類：本工具的正典分類（舊約、新約各四類）',
   canonOrder: '書卷順序：依和合本書卷順序（新教通行順序）',
   parallels: '串珠',

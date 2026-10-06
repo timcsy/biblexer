@@ -2,14 +2,15 @@
 // - 主視圖是由左往右的樹（邏輯圖），往 SpaceTree 靠攏：順序固定、焦點路徑高亮、收起的分支顯示份量、讀得到才顯示、分步動畫
 // - 上方常駐「正典帶」：66 卷依章數比例分段，標出目前位置（我在整本聖經的哪裡）
 // - 借用心智圖的視覺語法（不用放射狀版型）：每類一色、分支由粗漸細、標籤貼著分支末端、多留白
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { BOOKS } from '../../core/canon.ts';
 import { canonStrip, layoutCanonTree, type TreeItem } from '../../reader/canonTree.ts';
 import { STRINGS } from '../strings.ts';
 
 const ROW = 30;
 const PAD = 24;
-const STRIP_H = 54;
+// 上方：正典帶（約 42px）＋操作提示（約 24px）——提示放在上方，不遮住樹的節點
+const STRIP_H = 84;
 /** 分支粗細：越靠近根越粗（心智圖的漸細分支） */
 const BRANCH = { testament: 4.5, category: 3.2, book: 2, chapter: 1.4 } as const;
 
@@ -24,7 +25,7 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
   const rows = Math.max(...items.map((i) => i.row)) + 1;
   const treeW = Math.max(colX[4]! + 120, chipX0 + perRow * chipW);
   const left = Math.max(PAD, (width - treeW) / 2);
-  const top = STRIP_H + PAD;
+  const top = PAD;
   const pos = (i: TreeItem) => ({ x: left + (i.kind === 'chapter' ? chipX0 + ((i.chapter! - 1) % perRow) * chipW : colX[i.col]!), y: top + i.row * ROW });
   const byId = new Map(items.map((i) => [i.id, i]));
   const textW = (i: TreeItem) => [...i.label].length * (narrow ? 13 : 15) + (i.kind === 'book' && i.current ? 22 : 12);
@@ -59,11 +60,23 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
     }
   }
 
+  // 焦點換到下方的類別時，畫面跟過去（等節點滑到新位置後再捲）
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const el = scroller.current?.querySelector(`[data-testid="tree-book"][data-book="${focusBook}"]`);
+      const smooth = typeof matchMedia === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el?.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+    }, 380);
+    return () => clearTimeout(id);
+  }, [focusBook]);
+
   const stripW = Math.min(width - PAD * 2, 1100);
   const stripL = (width - stripW) / 2;
 
   return (
-    <div class="focus-tree-wrap">
+    // 滾輪與拖曳停在這裡，不交給背後的閱讀器手勢（否則樹捲不動、相機卻在動）
+    <div class="focus-tree-root" onWheel={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       {/* 正典帶：我在整本聖經的哪裡 */}
       <div class="canon-strip" data-testid="canon-strip" style={{ left: `${stripL}px`, width: `${stripW}px` }}>
         <div class="strip-bar">
@@ -89,7 +102,12 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
           {/* 「新約」與目前書卷名稱太近時只留書卷名稱 */}
           {Math.abs((strip[focusBook - 1]!.x0 + strip[focusBook - 1]!.x1) / 2 - strip[39]!.x0) * stripW > 70 && <span style={{ left: `${strip[39]!.x0 * 100}%` }}>{STRINGS.newTestament}</span>}
         </div>
+        <p class="tree-hint" data-testid="tree-hint">
+          {STRINGS.treeHint}
+        </p>
       </div>
+      {/* 只有樹捲動；正典帶與提示固定在上方（我在整本聖經的哪裡，永遠看得到） */}
+      <div class="focus-tree-wrap" data-testid="canon-tree-scroll" ref={scroller} style={{ top: `${STRIP_H}px` }}>
       <div class="focus-tree" data-testid="canon-tree" data-focus-book={focusBook} style={{ height: `${top + rows * ROW + PAD + 64}px` }}>
         <svg class="focus-tree-lines" width={width} height={top + rows * ROW + PAD + 64}>
           {branches.map((b) => (
@@ -100,8 +118,15 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
           const p = pos(i);
           const pal = `p-${(i.palette ?? 'none').replace(':', '-')}`;
           const cls = `tree-node ${i.kind} ${pal}${i.current ? ' current' : ''}${i.collapsed !== null ? ' collapsed' : ''}`;
+          // 點章號進入那一章；點目前的書卷進入書首；點其他書卷或收起的類別：焦點移過去
           const click =
-            i.kind === 'chapter' ? () => onEnter(i.book!, i.chapter!) : (i.kind === 'category' && i.collapsed !== null) || (i.kind === 'book' && !i.current) ? () => onFocus(i.book!) : undefined;
+            i.kind === 'chapter'
+              ? () => onEnter(i.book!, i.chapter!)
+              : i.kind === 'book' && i.current
+                ? () => onEnter(i.book!, 1)
+                : (i.kind === 'category' && i.collapsed !== null) || i.kind === 'book'
+                  ? () => onFocus(i.book!)
+                  : undefined;
           return (
             <div
               key={i.id}
@@ -126,9 +151,7 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
           );
         })}
       </div>
-      <p class="hyper-hint" data-testid="tree-hint">
-        {STRINGS.treeHint}
-      </p>
+      </div>
     </div>
   );
 }

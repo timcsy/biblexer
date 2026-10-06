@@ -175,13 +175,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-hint { position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%); margin: 0; padding: 0.3rem 0.8rem; font-size: 0.8rem; color: var(--fg); background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; pointer-events: none; }
 @media (max-width: 520px) { .hyper-hint { white-space: normal; text-align: center; width: calc(100% - 2rem); border-radius: 0.6rem; } }
 /* 正典的焦點樹（原型第五版：依研究調整） */
-.focus-tree-wrap { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+.focus-tree-root { position: absolute; inset: 0;
+  --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
+  --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
+.focus-tree-wrap { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; border-top: 1px solid var(--line);
   --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
   --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
 .p-OT-law { --c: var(--p-OT-law); } .p-OT-history { --c: var(--p-OT-history); } .p-OT-wisdom { --c: var(--p-OT-wisdom); } .p-OT-prophets { --c: var(--p-OT-prophets); }
 .p-NT-gospels { --c: var(--p-NT-gospels); } .p-NT-history { --c: var(--p-NT-history); } .p-NT-epistles { --c: var(--p-NT-epistles); } .p-NT-revelation { --c: var(--p-NT-revelation); }
 .p-OT, .p-NT, .p-none { --c: var(--muted); }
-.canon-strip { position: absolute; top: 12px; height: 42px; z-index: 2; }
+.canon-strip { position: absolute; top: 12px; height: 70px; z-index: 2; }
+.tree-hint { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip-bar { position: relative; height: 14px; border-radius: 4px; overflow: hidden; background: var(--line); }
 .strip-seg { position: absolute; top: 0; height: 100%; background: var(--c); opacity: 0.55; cursor: pointer; border-right: 1px solid color-mix(in srgb, var(--card) 70%, transparent); box-sizing: border-box; }
 .strip-seg:hover { opacity: 0.85; }
