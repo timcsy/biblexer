@@ -6,7 +6,7 @@
 // - 離散的移動（按鍵、按鈕、放手吸附）以過場動畫著陸（van Wijk & Nuij）；手勢開始即中斷；減少動態效果時不播放
 // - 進度提示：第幾章、第幾頁
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel, placeAt } from '../../reader/camera.ts';
+import { cameraForVerse, createContext, descentStops, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel, placeAt } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
@@ -73,6 +73,8 @@ const loadArrangement = (): Mode => {
 };
 /** 正典層 ↔ 書卷層分段過場的時間（毫秒）；以 CSS 變數傳給 style.css，兩邊同一個來源 */
 const MORPH_MS = { focus: 500, move: 1100, unfold: 1000, pause: 150 } as const;
+/** 一層一層下去時，每一層停留的時間（毫秒）：讓讀者看清楚「現在在第幾章、哪一段」 */
+const DESCENT_PAUSE_MS = 500;
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** 長卷模式：精讀、段落輪廓用長卷；書卷、正典層折成每列 6 頁 */
@@ -134,10 +136,69 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   };
   /** 立即更新（手勢中、初始） */
   const set = (c: Camera) => show(settleArrangement(c));
-  const interrupt = () => {
+  /** 停止目前的飛行與分段過場（不影響一層一層下去的流程） */
+  const stopFlight = () => {
     if (anim.current !== null) cancelAnimationFrame(anim.current);
     anim.current = null;
     finishMorph();
+  };
+  /** 手勢一碰：停止一切，正在一層一層下去就直接跳到終點 */
+  const interrupt = () => {
+    stopFlight();
+    finishDescent(true);
+  };
+
+  // 一層一層下去（使用者回饋 2026-10-06）：點章號、點段落時，書卷 → 章 → 段落 → 頁面，每一層都停一下
+  const descentRun = useRef<{ timers: number[]; raf: number; final: { ctx: CameraContext; camera: Camera } } | null>(null);
+  function finishDescent(jump: boolean) {
+    const run = descentRun.current;
+    if (!run) return;
+    descentRun.current = null;
+    run.timers.forEach(clearTimeout);
+    cancelAnimationFrame(run.raf);
+    if (jump) {
+      stopFlight();
+      useCtx(run.final.ctx);
+      show(run.final.camera);
+    }
+  }
+  const descend = (verseIdx: number) => {
+    const c = camRef.current;
+    const x = ctxRef.current;
+    const all = ctxsRef.current;
+    if (!c || !x || !all) return;
+    finishDescent(false);
+    const stops = descentStops(levelOf(c.scale, x.readingScale), verseIdx, (lv) => all[arrangementFor(modeRef.current, styleRef.current, lv)]);
+    const last = stops.at(-1);
+    if (!last) return;
+    // 每一站以該層自己的排列計算：先把相機換算到那個排列（中心所在的頁不動），再飛過去
+    const hop = (st: (typeof stops)[number]) => {
+      const cur = camRef.current!;
+      if (ctxRef.current !== st.ctx) {
+        show(remap(cur, ctxRef.current!, st.ctx));
+        useCtx(st.ctx);
+      }
+      landNow(st.camera);
+    };
+    if (reducedMotion() || stops.length === 1) return hop(last);
+    const run = { timers: [] as number[], raf: 0, final: { ctx: last.ctx, camera: last.camera } };
+    descentRun.current = run;
+    let i = 0;
+    const next = () => {
+      if (descentRun.current !== run) return;
+      const st = stops[i++];
+      if (!st) return void (descentRun.current = null);
+      hop(st);
+      // 等這一站的飛行（或分段過場）結束，停一下再往下一層
+      const waitIdle = () => {
+        if (descentRun.current !== run) return;
+        if (anim.current !== null || morphRun.current !== null) return void (run.raf = requestAnimationFrame(waitIdle));
+        if (i >= stops.length) return void (descentRun.current = null);
+        run.timers.push(window.setTimeout(next, DESCENT_PAUSE_MS));
+      };
+      run.raf = requestAnimationFrame(waitIdle);
+    };
+    next();
   };
 
   // 正典層（焦點樹）↔ 書卷層（章節地圖）的分段過場：「章號格展開成那一章」
@@ -211,9 +272,14 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
       });
     });
   };
-  /** 以過場動畫著陸；目標在目前的 ctx 中計算 */
+  /** 外部操作（按鈕、鍵盤、點擊）的著陸：取消進行中的一層一層下去 */
   const land = (target: Camera) => {
-    interrupt();
+    finishDescent(false);
+    landNow(target);
+  };
+  /** 以過場動畫著陸；目標在目前的 ctx 中計算 */
+  const landNow = (target: Camera) => {
+    stopFlight();
     const cur = camRef.current;
     const from = ctxRef.current;
     if (!cur || !from) return show(target);
@@ -292,6 +358,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
       const f = map[e.key];
       if (!f) return;
       e.preventDefault();
+      // 一層一層下去途中按鍵：直接跳到終點（這一下只用來「跳過」，不另外移動）
+      if (descentRun.current) return finishDescent(true);
       // 動畫進行中再按：以目標為起點，連按時不會落後
       land(f());
     };
@@ -305,7 +373,9 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const x = ctxRef.current;
     if (!c || !x) return;
     const t = tapTarget(c, pt, x);
-    if (t) land(t);
+    if (!t) return;
+    if (t.at?.startsWith('para:')) descend(Number(t.at.slice(5)));
+    else land(t);
   };
   useEffect(() => attachGestures(stage.current!, { camera: () => camRef.current, ctx: () => ctxRef.current, set, land, interrupt, tap }), []);
 
@@ -356,7 +426,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const all = ctxsRef.current;
     if (!all) return;
     const v = data.verses.findIndex((x) => x.ref.chapter === chapter && !x.merged);
-    if (v >= 0) land(cameraForVerse(v, all[arrangementFor(modeRef.current, styleRef.current, 'reading')]));
+    if (v >= 0) descend(v);
   };
 
   /** 目前段落（有段落標示時以它為準，否則以著陸點的第一節所在段落） */

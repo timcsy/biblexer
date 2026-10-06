@@ -246,6 +246,22 @@ export function cameraForVerse(verseIdx: number, ctx: CameraContext): Camera {
   return placeAt(paras.at(-1) ?? pts[0]!, ctx);
 }
 
+const DESCENT: ZoomLevel[] = ['canon', 'book', 'outline', 'reading'];
+
+/**
+ * 一層一層下去（使用者回饋 2026-10-06：「從書卷到章到段落到頁面的過程」要看得到）：
+ * 從目前層級到精讀的某一節，沿途每一層的停靠點——書卷層的那一章 → 段落輪廓的那一段 → 精讀。
+ * 各層的相機以該層自己的排列（ctxFor）計算。
+ */
+export function descentStops(from: ZoomLevel, verseIdx: number, ctxFor: (level: ZoomLevel) => CameraContext): Array<{ level: ZoomLevel; ctx: CameraContext; camera: Camera }> {
+  const lastAtOrBefore = (pts: LandingPoint[]) => pts.filter((p) => p.verseIdx !== null && p.verseIdx <= verseIdx).at(-1) ?? pts[0]!;
+  return DESCENT.slice(DESCENT.indexOf(from) + 1).map((level) => {
+    const ctx = ctxFor(level);
+    const camera = level === 'reading' ? cameraForVerse(verseIdx, ctx) : placeAt(lastAtOrBefore(landingPoints(ctx.layout, level)), ctx);
+    return { level, ctx, camera };
+  });
+}
+
 /**
  * 按鈕：沿結構上下移動一個層級——放大到含目前經節的下一層著陸點（精讀層有 focus 時回到 focus），
  * 縮小到含它的段落、章、書卷。保留 focus。
