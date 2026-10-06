@@ -40,12 +40,12 @@ const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outlin
 const ARRANGEMENT_KEY = 'biblexer.reader.arrangement';
 const CANON_STYLE_KEY = 'biblexer.reader.canonStyle';
 /** 正典層（原型）：方塊、焦點樹、雙曲圓盤——三者並列比較 */
-type CanonStyle = 'tiles' | 'tree' | 'disk';
-const CANON_STYLES: readonly CanonStyle[] = ['tiles', 'tree', 'disk'];
+type CanonStyle = 'tiles' | 'tree' | 'disk' | 'mindmap';
+const CANON_STYLES: readonly CanonStyle[] = ['tiles', 'tree', 'disk', 'mindmap'];
 const loadCanonStyle = (): CanonStyle => {
   try {
     const v = localStorage.getItem(CANON_STYLE_KEY);
-    return v === 'tiles' || v === 'disk' ? v : 'tree';
+    return v === 'tiles' || v === 'disk' || v === 'mindmap' ? v : 'tree';
   } catch {
     return 'tree';
   }
@@ -437,7 +437,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         )}
         {level === 'canon' && (
           <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" onClick={toggleCanonStyle}>
-            {STRINGS.canonStyleLabel}：{canonStyle === 'tree' ? STRINGS.canonStyleTree : canonStyle === 'disk' ? STRINGS.canonStyleHyperbolic : STRINGS.canonStyleTiles}
+            {STRINGS.canonStyleLabel}：{canonStyle === 'tree' ? STRINGS.canonStyleTree : canonStyle === 'disk' ? STRINGS.canonStyleHyperbolic : canonStyle === 'mindmap' ? STRINGS.canonStyleMindmap : STRINGS.canonStyleTiles}
           </button>
         )}
         <span class="reader-zoom">
@@ -471,8 +471,9 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
             }}
           />
         )}
-        {level === 'canon' && canonStyle === 'disk' && ctx && camera && (
+        {level === 'canon' && (canonStyle === 'disk' || canonStyle === 'mindmap') && ctx && camera && (
           <HyperbolicCanon
+            variant={canonStyle === 'mindmap' ? 'mindmap' : 'disk'}
             focusBook={camera.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
             width={ctx.viewport.width}
             height={ctx.viewport.height}

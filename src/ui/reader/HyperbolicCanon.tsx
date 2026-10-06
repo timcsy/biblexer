@@ -19,7 +19,9 @@ function testamentLabels<T extends { s: { x: number; y: number; k: number } }>(x
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: { focusBook: number; width: number; height: number; onFocus: (book: number) => void; onEnter: (book: number, chapter: number) => void }) {
+/** variant：disk＝雙曲圓盤；mindmap＝心智圖風格（幾何相同，只換視覺語言——中心主題、彩色漸細分支、名稱在分支末端） */
+export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter, variant = 'disk' }: { focusBook: number; width: number; height: number; onFocus: (book: number) => void; onEnter: (book: number, chapter: number) => void; variant?: 'disk' | 'mindmap' }) {
+  const mind = variant === 'mindmap';
   const tree = useMemo(() => canonTreeV2(CHAPTER_COUNTS.map((n, i) => [i + 1, n, VERSE_COUNTS[i]!] as [number, number, number])), []);
   const pts = useMemo(() => embedWeighted(tree, TAU), [tree]);
   const bookNode = useMemo(() => new Map(tree.map((n, i) => [n, i] as const).filter(([n]) => n.kind === 'book').map(([n, i]) => [n.book!, i])), [tree]);
@@ -106,7 +108,11 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
       const b = pts[i]!;
       const steps = 10;
       const ps = Array.from({ length: steps + 1 }, (_, t) => screen(geodesicFocus(a, b, t / steps)));
-      return { key: `e${i}`, d: `M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`, chapter: n.kind === 'chapter' };
+      // 心智圖：越靠近中心的分支越粗（以兩端在畫面上的「大小」1−|z|² 平均）
+      const k = (nodes[n.parent]!.s.k + nodes[i]!.s.k) / 2;
+      const book = n.book ?? null;
+      const category = book !== null ? BOOKS[book - 1]!.category : 'root';
+      return { key: `e${i}`, d: `M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`, chapter: n.kind === 'chapter', kind: n.kind, category, width: mind ? 1 + 9 * k : 1.2 };
     });
   // 書卷名稱避讓：越靠近圓心越優先；與已放的名稱重疊就只畫點（名稱太擠會變成雜訊）
   const labeled = new Set<number>();
@@ -123,10 +129,10 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
   }
   return (
     <div class="hyper-wrap">
-      <svg class="hyper-canon" data-testid="hyper-canon" data-focus-book={focusBook} width={width} height={height} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <circle cx={cx} cy={cy} r={R * zoom} class="hyper-disk" />
+      <svg class={mind ? 'hyper-canon mind' : 'hyper-canon'} data-testid="hyper-canon" data-variant={variant} data-focus-book={focusBook} width={width} height={height} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+        {!mind && <circle cx={cx} cy={cy} r={R * zoom} class="hyper-disk" />}
         {edges.map((e) => (
-          <path key={e.key} d={e.d} class={e.chapter ? 'hyper-edge chapter' : 'hyper-edge'} data-testid="hyper-edge" />
+          <path key={e.key} d={e.d} class={`hyper-edge${e.chapter ? ' chapter' : ''} cat-${e.category}`} data-testid="hyper-edge" data-kind={e.kind} data-category={e.category} stroke-width={e.width.toFixed(2)} stroke-linecap="round" />
         ))}
         {testamentLabels(nodes.filter(({ n }) => n.kind === 'testament')).map(({ n, s }) => (
             <text key={`t${n.testament}`} class="hyper-testament" data-testid="hyper-testament" x={s.x} y={s.y} font-size={Math.max(14, 40 * s.k)} text-anchor="middle">
@@ -140,9 +146,18 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
             const focused = n.book === focusBook;
             const size = Math.max(8, 22 * Math.sqrt(s.k));
             return (
-              <g key={`b${n.book}`} class={focused ? 'hyper-book focused' : `hyper-book ${b.testament === 'OT' ? 'ot' : 'nt'}`} data-testid="hyper-book" data-book={n.book} {...(focused ? { 'aria-current': 'location' } : {})} onClick={() => !wasDrag() && onFocus(n.book!)} role="button">
-                <circle cx={s.x} cy={s.y} r={Math.max(2.5, 8 * s.k)} />
-                {labeled.has(n.book!) && (
+              <g key={`b${n.book}`} class={`${focused ? 'hyper-book focused' : `hyper-book ${b.testament === 'OT' ? 'ot' : 'nt'}`} cat-${b.category}`} data-testid="hyper-book" data-book={n.book} {...(focused ? { 'aria-current': 'location' } : {})} onClick={() => !wasDrag() && onFocus(n.book!)} role="button">
+                {mind && focused ? (
+                  <>
+                    <rect x={s.x - 58} y={s.y - 22} width={116} height={44} rx={22} class={`mind-center-box cat-${b.category}`} />
+                    <text x={s.x} y={s.y + 8} font-size={22} text-anchor="middle" class="mind-center" data-testid="mind-center">
+                      {b.name}
+                    </text>
+                  </>
+                ) : (
+                  <circle cx={s.x} cy={s.y} r={Math.max(2.5, 8 * s.k)} />
+                )}
+                {!(mind && focused) && labeled.has(n.book!) && (
                   <text x={s.x} y={s.y - Math.max(5, 11 * s.k)} font-size={size} text-anchor="middle">
                     {s.k > 0.3 ? b.name : b.short}
                   </text>
@@ -153,7 +168,7 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
         {nodes
           .filter(({ n }) => n.kind === 'chapter' && n.book === focusBook)
           .map(({ n, s }) => (
-            <g key={`c${n.book}:${n.chapter}`} class="hyper-chapter" data-testid="hyper-chapter" data-book={n.book} data-chapter={n.chapter} onClick={() => !wasDrag() && onEnter(n.book!, n.chapter!)} role="button">
+            <g key={`c${n.book}:${n.chapter}`} class={`hyper-chapter cat-${BOOKS[n.book! - 1]!.category}`} data-testid="hyper-chapter" data-book={n.book} data-chapter={n.chapter} onClick={() => !wasDrag() && onEnter(n.book!, n.chapter!)} role="button">
               <circle cx={s.x} cy={s.y} r={Math.max(7, 12 * Math.sqrt(s.k))} />
               <text x={s.x} y={s.y + 4} font-size={Math.max(9, 12 * Math.sqrt(s.k))} text-anchor="middle">
                 {n.chapter}

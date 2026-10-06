@@ -191,3 +191,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (prefers-reduced-motion: reduce) { .tree-node { transition: none; } }
 .hyper-edge { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-width: 1.2; pointer-events: none; }
 .hyper-edge.chapter { stroke: color-mix(in srgb, var(--accent) 45%, transparent); }
+/* 心智圖風格（原型第四版）：依類別著色、由粗漸細、中心主題 */
+.hyper-canon.mind .hyper-edge { stroke-opacity: 0.75; }
+.hyper-canon.mind .cat-law { stroke: #b5651d; } .hyper-canon.mind .hyper-book.cat-law circle { fill: #b5651d; }
+.hyper-canon.mind .cat-history { stroke: #2e7d6b; } .hyper-canon.mind .hyper-book.cat-history circle { fill: #2e7d6b; }
+.hyper-canon.mind .cat-wisdom { stroke: #8e6bbf; } .hyper-canon.mind .hyper-book.cat-wisdom circle { fill: #8e6bbf; }
+.hyper-canon.mind .cat-prophets { stroke: #c0504d; } .hyper-canon.mind .hyper-book.cat-prophets circle { fill: #c0504d; }
+.hyper-canon.mind .cat-gospels { stroke: #c9971c; } .hyper-canon.mind .hyper-book.cat-gospels circle { fill: #c9971c; }
+.hyper-canon.mind .cat-epistles { stroke: #3b78b5; } .hyper-canon.mind .hyper-book.cat-epistles circle { fill: #3b78b5; }
+.hyper-canon.mind .cat-revelation { stroke: #7a4b2a; } .hyper-canon.mind .hyper-book.cat-revelation circle { fill: #7a4b2a; }
+.hyper-canon.mind .cat-root { stroke: var(--muted); }
+.hyper-canon.mind .mind-center { fill: #fff; font-weight: bold; }
+.hyper-canon.mind .mind-center-box.cat-law { fill: #b5651d; } .hyper-canon.mind .hyper-chapter.cat-law circle { stroke: #b5651d; fill: color-mix(in srgb, #b5651d 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-history { fill: #2e7d6b; } .hyper-canon.mind .hyper-chapter.cat-history circle { stroke: #2e7d6b; fill: color-mix(in srgb, #2e7d6b 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-wisdom { fill: #8e6bbf; } .hyper-canon.mind .hyper-chapter.cat-wisdom circle { stroke: #8e6bbf; fill: color-mix(in srgb, #8e6bbf 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-prophets { fill: #c0504d; } .hyper-canon.mind .hyper-chapter.cat-prophets circle { stroke: #c0504d; fill: color-mix(in srgb, #c0504d 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-gospels { fill: #c9971c; } .hyper-canon.mind .hyper-chapter.cat-gospels circle { stroke: #c9971c; fill: color-mix(in srgb, #c9971c 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-epistles { fill: #3b78b5; } .hyper-canon.mind .hyper-chapter.cat-epistles circle { stroke: #3b78b5; fill: color-mix(in srgb, #3b78b5 15%, var(--card)); }
+.hyper-canon.mind .mind-center-box.cat-revelation { fill: #7a4b2a; } .hyper-canon.mind .hyper-chapter.cat-revelation circle { stroke: #7a4b2a; fill: color-mix(in srgb, #7a4b2a 15%, var(--card)); }
+.hyper-canon.mind .hyper-book.focused text.mind-center { fill: #fff; }
