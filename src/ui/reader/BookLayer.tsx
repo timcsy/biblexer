@@ -1,16 +1,21 @@
 // 書卷層：全貌（著陸點＝章起點）。章號一律對齊在一條邊上，讓眼睛能沿著讀下來：
 // - 章節地圖（預設）：章號就是每列最左邊的標籤（排列本身已對齊）
 // - 頁面網格：章號移到每一列頁面的左側邊緣；頁面內只在章起點畫一條細橫線
+import { BOOKS } from '../../core/canon.ts';
 import type { Layout } from '../../reader/layout.ts';
 import { WORLD, gridRect, lineRect } from '../../reader/world.ts';
 import { U } from './units.ts';
 
 export function BookLayer({ layout, pages, px, current, aligned, onChapter }: { layout: Layout; pages: number[]; px: number; current?: number; aligned?: boolean; onChapter?: (chapter: number) => void }) {
   const shown = new Set(pages);
+  // 章號與正典層的章號格同一種語言：同樣的格子、同樣的類別色（正典層 ↔ 書卷層不斷裂）
+  const b = BOOKS[layout.book - 1]!;
+  const palette = `${b.testament}:${b.category}`;
   const chip = (chapter: number) => (
     <span
       key={chapter}
-      class={chapter === current ? 'bchap current' : 'bchap'}
+      class={`bchap chipstyle p-${palette.replace(':', '-')}${chapter === current ? ' current' : ''}`}
+      data-palette={palette}
       aria-current={chapter === current ? 'location' : undefined}
       data-testid="book-chapter"
       data-chapter={chapter}

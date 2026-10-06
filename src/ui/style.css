@@ -59,7 +59,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .banner.warn { border-color: var(--accent); color: var(--accent); }
 .top-actions { display: flex; gap: 0.5rem; align-items: center; }
 .open-reader { font-size: 0.9rem; padding: 0.3rem 0.8rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--card); color: var(--fg); cursor: pointer; }
-.reader { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; background: var(--bg); color: var(--fg); }
+.reader { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; background: var(--bg); color: var(--fg);
+  /* 類別色：各層共用（正典帶、焦點樹、書卷層章號格、過場） */
+  --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
+  --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
 .reader-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--line); }
 .reader-bar h2 { font-size: 1rem; margin: 0; color: var(--accent); }
 .reader-level { color: var(--muted); font-size: 0.85rem; }
@@ -175,23 +178,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-hint { position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%); margin: 0; padding: 0.3rem 0.8rem; font-size: 0.8rem; color: var(--fg); background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; pointer-events: none; }
 @media (max-width: 520px) { .hyper-hint { white-space: normal; text-align: center; width: calc(100% - 2rem); border-radius: 0.6rem; } }
 /* 正典的焦點樹（原型第五版：依研究調整） */
-.focus-tree-root { position: absolute; inset: 0;
-  --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
-  --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
-.focus-tree-wrap { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; border-top: 1px solid var(--line);
-  --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
-  --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
+.focus-tree-root { position: absolute; inset: 0; }
+.focus-tree-wrap { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; border-top: 1px solid var(--line); }
 .p-OT-law { --c: var(--p-OT-law); } .p-OT-history { --c: var(--p-OT-history); } .p-OT-wisdom { --c: var(--p-OT-wisdom); } .p-OT-prophets { --c: var(--p-OT-prophets); }
 .p-NT-gospels { --c: var(--p-NT-gospels); } .p-NT-history { --c: var(--p-NT-history); } .p-NT-epistles { --c: var(--p-NT-epistles); } .p-NT-revelation { --c: var(--p-NT-revelation); }
 .p-OT, .p-NT, .p-none { --c: var(--muted); }
-.canon-strip { position: absolute; top: 12px; height: 70px; z-index: 2; }
+.canon-strip { flex: none; height: 36px; padding: 4px 0.75rem 0; box-sizing: border-box; border-bottom: 1px solid var(--line); }
+.tree-head { position: absolute; top: 0; left: 0; right: 0; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0 0.75rem; }
+.strip-labels { height: 16px; }
+.strip-labels span { top: 1px; }
+/* 書卷層的章號：與正典層同一種章號格、同樣的類別色 */
+.bchap.chipstyle { color: var(--fg); font-weight: normal; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); border-radius: 0.3em; }
+.bchap.chipstyle.current { color: var(--card); background: var(--c); border-color: var(--c); }
+.reader.morphing .bchap { visibility: hidden; }
+/* 正典層 → 書卷層的過場：章號格從樹上飛到書卷層對應的列 */
+.level-morph { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.morph-chip { position: fixed; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font: 0.85rem system-ui, sans-serif; color: var(--fg); border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); transform-origin: 0 0; transition: transform 0.45s ease, opacity 0.45s ease; }
 .tree-hint { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.strip-bar { position: relative; height: 14px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.strip-bar { position: relative; height: 12px; border-radius: 4px; overflow: hidden; background: var(--line); }
 .strip-seg { position: absolute; top: 0; height: 100%; background: var(--c); opacity: 0.55; cursor: pointer; border-right: 1px solid color-mix(in srgb, var(--card) 70%, transparent); box-sizing: border-box; }
 .strip-seg:hover { opacity: 0.85; }
 .strip-seg.current { opacity: 1; box-shadow: inset 0 0 0 2px var(--fg); }
-.strip-labels { position: relative; height: 22px; font-size: 0.75rem; color: var(--muted); }
-.strip-labels span { position: absolute; top: 4px; white-space: nowrap; }
+.strip-labels { position: relative; font-size: 0.72rem; color: var(--muted); }
+.strip-labels span { position: absolute; top: 1px; white-space: nowrap; }
 .strip-labels .strip-here { transform: translateX(-50%); color: var(--fg); font-weight: bold; }
 .focus-tree { position: relative; }
 .focus-tree-lines { position: absolute; left: 0; top: 0; pointer-events: none; }

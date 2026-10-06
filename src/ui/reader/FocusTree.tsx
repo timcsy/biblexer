@@ -2,26 +2,25 @@
 // - 主視圖是由左往右的樹（邏輯圖），往 SpaceTree 靠攏：順序固定、焦點路徑高亮、收起的分支顯示份量、讀得到才顯示、分步動畫
 // - 上方常駐「正典帶」：66 卷依章數比例分段，標出目前位置（我在整本聖經的哪裡）
 // - 借用心智圖的視覺語法（不用放射狀版型）：每類一色、分支由粗漸細、標籤貼著分支末端、多留白
-import { useEffect, useMemo, useRef } from 'preact/hooks';
-import { BOOKS } from '../../core/canon.ts';
-import { canonStrip, layoutCanonTree, type TreeItem } from '../../reader/canonTree.ts';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
+import { layoutCanonTree, type TreeItem } from '../../reader/canonTree.ts';
 import { STRINGS } from '../strings.ts';
 
 const ROW = 30;
 const PAD = 24;
-// 上方：正典帶（約 42px）＋操作提示（約 24px）——提示放在上方，不遮住樹的節點
-const STRIP_H = 84;
+// 上方：操作提示（正典帶已改為閱讀器常駐的一列）——提示放在上方，不遮住樹的節點
+const STRIP_H = 30;
 /** 分支粗細：越靠近根越粗（心智圖的漸細分支） */
 const BRANCH = { testament: 4.5, category: 3.2, book: 2, chapter: 1.4 } as const;
 
-export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: number; width: number; height: number; onFocus: (book: number) => void; onEnter: (book: number, chapter: number) => void }) {
+/** onChipRects：回報焦點書卷各章號格的螢幕位置（放大到書卷層時的過場起點） */
+export function FocusTree({ focusBook, width, onFocus, onEnter, onChipRects }: { focusBook: number; width: number; height: number; onFocus: (book: number) => void; onEnter: (book: number, chapter: number) => void; onChipRects?: (rects: Array<{ chapter: number; rect: DOMRect }>) => void }) {
   const narrow = width < 560;
   const colX = narrow ? [0, 44, 96, 186, 276] : [0, 70, 150, 300, 450];
   const chipW = narrow ? 30 : 34;
   const chipX0 = narrow ? colX[3]! + 12 : colX[4]!;
   const perRow = Math.max(3, Math.min(12, Math.floor((width - PAD * 2 - chipX0) / chipW)));
   const items = useMemo(() => layoutCanonTree(focusBook, perRow, narrow), [focusBook, perRow, narrow]);
-  const strip = useMemo(() => canonStrip(), []);
   const rows = Math.max(...items.map((i) => i.row)) + 1;
   const treeW = Math.max(colX[4]! + 120, chipX0 + perRow * chipW);
   const left = Math.max(PAD, (width - treeW) / 2);
@@ -62,6 +61,12 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
 
   // 焦點換到下方的類別時，畫面跟過去（等節點滑到新位置後再捲）
   const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!onChipRects || !scroller.current) return;
+    const chips = [...scroller.current.querySelectorAll<HTMLElement>(`[data-testid="tree-chapter"][data-book="${focusBook}"]`)];
+    onChipRects(chips.map((c) => ({ chapter: Number(c.dataset.chapter), rect: c.getBoundingClientRect() })));
+  });
+
   useEffect(() => {
     const id = setTimeout(() => {
       const el = scroller.current?.querySelector(`[data-testid="tree-book"][data-book="${focusBook}"]`);
@@ -71,37 +76,11 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
     return () => clearTimeout(id);
   }, [focusBook]);
 
-  const stripW = Math.min(width - PAD * 2, 1100);
-  const stripL = (width - stripW) / 2;
 
   return (
     // 滾輪與拖曳停在這裡，不交給背後的閱讀器手勢（否則樹捲不動、相機卻在動）
     <div class="focus-tree-root" onWheel={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-      {/* 正典帶：我在整本聖經的哪裡 */}
-      <div class="canon-strip" data-testid="canon-strip" style={{ left: `${stripL}px`, width: `${stripW}px` }}>
-        <div class="strip-bar">
-          {strip.map((s) => (
-            <span
-              key={s.book}
-              class={`strip-seg p-${s.palette.replace(':', '-')}${s.book === focusBook ? ' current' : ''}`}
-              data-testid="strip-seg"
-              data-book={s.book}
-              title={BOOKS[s.book - 1]!.name}
-              role="button"
-              {...(s.book === focusBook ? { 'aria-current': 'location' } : {})}
-              style={{ left: `${s.x0 * 100}%`, width: `${(s.x1 - s.x0) * 100}%` }}
-              onClick={() => onFocus(s.book)}
-            />
-          ))}
-        </div>
-        <div class="strip-labels">
-          <span>{STRINGS.oldTestament}</span>
-          <span class="strip-here" style={{ left: `${((strip[focusBook - 1]!.x0 + strip[focusBook - 1]!.x1) / 2) * 100}%` }}>
-            {BOOKS[focusBook - 1]!.name}
-          </span>
-          {/* 「新約」與目前書卷名稱太近時只留書卷名稱 */}
-          {Math.abs((strip[focusBook - 1]!.x0 + strip[focusBook - 1]!.x1) / 2 - strip[39]!.x0) * stripW > 70 && <span style={{ left: `${strip[39]!.x0 * 100}%` }}>{STRINGS.newTestament}</span>}
-        </div>
+      <div class="tree-head">
         <p class="tree-hint" data-testid="tree-hint">
           {STRINGS.treeHint}
         </p>

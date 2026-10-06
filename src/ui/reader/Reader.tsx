@@ -12,6 +12,8 @@ import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.t
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
 import { FocusTree } from './FocusTree.tsx';
+import { CanonStrip } from './CanonStrip.tsx';
+import { BOOKS } from '../../core/canon.ts';
 import { HyperbolicCanon } from './HyperbolicCanon.tsx';
 import { bookById } from '../../core/canon.ts';
 import { STRINGS } from '../strings.ts';
@@ -312,6 +314,33 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
 
   const layout: Layout = ctx?.layout ?? layouts.grid;
   const level = ctx && camera ? levelOf(camera.scale, ctx.readingScale) : 'reading';
+
+  // 正典層 → 書卷層的過場：焦點樹的章號格（起點）飛到書卷層對應的章號（終點）；
+  // 相機著陸後才量終點，期間書卷層的章號先隱藏，避免同一個章號同時出現兩次
+  const treeChips = useRef<Array<{ chapter: number; rect: DOMRect }>>([]);
+  const prevLevel = useRef(level);
+  const [morph, setMorph] = useState<{ from: Array<{ chapter: number; rect: DOMRect }>; to: Map<number, DOMRect> | null } | null>(null);
+  useEffect(() => {
+    const was = prevLevel.current;
+    prevLevel.current = level;
+    if (!(was === 'canon' && level === 'book') || reducedMotion() || treeChips.current.length === 0) return;
+    setMorph({ from: treeChips.current, to: null });
+    let raf = 0;
+    let done = 0;
+    const measure = () => {
+      if (anim.current !== null) return void (raf = requestAnimationFrame(measure));
+      const to = new Map<number, DOMRect>();
+      stage.current?.querySelectorAll<HTMLElement>('[data-testid="book-chapter"]').forEach((el) => to.set(Number(el.dataset.chapter), el.getBoundingClientRect()));
+      setMorph((m) => (m ? { ...m, to } : m));
+      done = window.setTimeout(() => setMorph(null), 500);
+    };
+    raf = requestAnimationFrame(measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(done);
+      setMorph(null);
+    };
+  }, [level]);
   const hit = start?.hit ?? null;
 
   let clipH: number | undefined;
@@ -410,7 +439,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class="reader" data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
+    <section class={morph ? 'reader morphing' : 'reader'} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -449,6 +478,17 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           </button>
         </span>
       </header>
+      {/* 一律渲染（不等量測完成），避免閱讀區高度在量測後才改變 */}
+      <CanonStrip
+          focusBook={level === 'canon' && camera?.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
+          onPick={(b) => {
+            if (!ctx) return;
+            if (level === 'canon') {
+              const lp = landingPoints(ctx.layout, 'canon').find((p) => p.id === `book:${b}`);
+              if (lp) land(placeAt(lp, ctx));
+            } else if (b !== data.book) onOpenBook?.(b);
+          }}
+        />
       <div class="reader-stage" ref={stage}>
         <div class="reader-viewport" data-testid="reader-viewport" style={clipH !== undefined ? { height: `${clipH}px` } : { height: '100%' }}>
           <div class="world fold" style={transform ? { transform } : {}}>
@@ -469,7 +509,27 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
               if (b === data.book) enterChapter(ch);
               else onOpenBook?.(b, ch);
             }}
+            onChipRects={(r) => (treeChips.current = r)}
           />
+        )}
+        {morph && (
+          <div class="level-morph" data-testid="level-morph" aria-hidden="true">
+            {morph.from.map(({ chapter, rect }) => {
+              const to = morph.to?.get(chapter);
+              const b = BOOKS[data.book - 1]!;
+              const move = morph.to ? (to ? `translate(${to.left - rect.left}px, ${to.top - rect.top}px) scale(${to.width / rect.width}, ${to.height / rect.height})` : 'none') : 'none';
+              return (
+                <span
+                  key={chapter}
+                  class={`morph-chip p-${b.testament}-${b.category}`}
+                  data-testid="morph-chip"
+                  style={{ left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, transform: move, opacity: morph.to && !to ? 0 : 1 }}
+                >
+                  {chapter}
+                </span>
+              );
+            })}
+          </div>
         )}
         {level === 'canon' && (canonStyle === 'disk' || canonStyle === 'mindmap') && ctx && camera && (
           <HyperbolicCanon
