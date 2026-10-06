@@ -100,3 +100,27 @@ test('焦點換到下方的類別時，畫面跟過去（焦點書卷在可見�
   await page.getByTestId('canon-strip').locator('[data-testid="strip-seg"][data-book="39"]').click();
   await expect(page.locator('[data-testid="tree-book"][data-book="39"]')).toBeInViewport();
 });
+
+test('連線對齊中間：第一列章號格的垂直中心與書卷標籤、連線終點對齊', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitReady(page, false);
+  await openReader(page);
+  const reader = page.getByTestId('reader');
+  for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
+  for (let i = 0; i < 4 && (await reader.getAttribute('data-canon-style')) !== 'tree'; i++) await page.getByTestId('canonstyle-toggle').click();
+  const mid = (r: { y: number; height: number }) => r.y + r.height / 2;
+  const book = (await page.locator('[data-testid="tree-book"][aria-current]').boundingBox())!;
+  const chip = (await page.locator('[data-testid="tree-chapter"][data-chapter="1"]').boundingBox())!;
+  const chip13 = (await page.locator('[data-testid="tree-chapter"][data-chapter="13"]').boundingBox())!;
+  expect(Math.abs(mid(chip) - mid(book))).toBeLessThanOrEqual(2);
+  // 每條連到章號列的線，終點落在該列章號格的垂直中心
+  const ends = await page.locator('.focus-tree-lines path.on-path').evaluateAll((els) =>
+    els.map((e) => {
+      const p = e as SVGPathElement;
+      const pt = p.getPointAtLength(p.getTotalLength());
+      const box = p.ownerSVGElement!.getBoundingClientRect();
+      return box.top + pt.y;
+    }),
+  );
+  for (const target of [mid(chip), mid(chip13)]) expect(ends.some((y) => Math.abs(y - target) <= 2)).toBe(true);
+});

@@ -201,14 +201,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @keyframes tree-in { from { opacity: 0; } to { opacity: 1; } }
 .tree-node[role='button'] { cursor: pointer; }
 .tree-node[role='button']:hover { background: color-mix(in srgb, var(--c, var(--accent)) 16%, transparent); }
-.tree-node.root, .tree-node.testament { font-weight: bold; }
-.tree-node.category { color: var(--c); font-weight: bold; }
-.tree-node.category.collapsed { font-weight: normal; }
+.tree-node.k-root, .tree-node.k-testament { font-weight: bold; }
+.tree-node.k-category { color: var(--c); font-weight: bold; }
+.tree-node.k-category.collapsed { font-weight: normal; }
 .tree-node.collapsed small { margin-left: 0.4em; font-size: 0.75em; color: var(--muted); }
 .size-bar { display: inline-block; height: 6px; margin-left: 0.5em; vertical-align: middle; border-radius: 3px; background: var(--c); opacity: 0.6; }
-.tree-node.book.current { background: var(--c); color: #fff; font-weight: bold; }
-.tree-node.chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); }
-.tree-node.chapter:hover { background: color-mix(in srgb, var(--c) 30%, var(--card)); }
+.tree-node.k-book.current { background: var(--c); color: #fff; font-weight: bold; }
+.tree-node.k-chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); }
+.tree-node.k-chapter:hover { background: color-mix(in srgb, var(--c) 30%, var(--card)); }
 @media (prefers-reduced-motion: reduce) { .tree-node { transition: none; animation: none; } }
 .hyper-edge { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-width: 1.2; pointer-events: none; }
 .hyper-edge.chapter { stroke: color-mix(in srgb, var(--accent) 45%, transparent); }
@@ -231,4 +231,4 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-canon.mind .mind-center-box.cat-epistles { fill: #3b78b5; } .hyper-canon.mind .hyper-chapter.cat-epistles circle { stroke: #3b78b5; fill: color-mix(in srgb, #3b78b5 15%, var(--card)); }
 .hyper-canon.mind .mind-center-box.cat-revelation { fill: #7a4b2a; } .hyper-canon.mind .hyper-chapter.cat-revelation circle { stroke: #7a4b2a; fill: color-mix(in srgb, #7a4b2a 15%, var(--card)); }
 .hyper-canon.mind .hyper-book.focused text.mind-center { fill: #fff; }
-@media (max-width: 560px) { .tree-node.chapter { height: 24px; line-height: 24px; } }
+@media (max-width: 560px) { .tree-node.k-chapter { height: 24px; line-height: 24px; } }

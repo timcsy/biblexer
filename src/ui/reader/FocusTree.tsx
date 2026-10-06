@@ -117,7 +117,8 @@ export function FocusTree({ focusBook, width, onFocus, onEnter }: { focusBook: n
         {items.map((i) => {
           const p = pos(i);
           const pal = `p-${(i.palette ?? 'none').replace(':', '-')}`;
-          const cls = `tree-node ${i.kind} ${pal}${i.current ? ' current' : ''}${i.collapsed !== null ? ' collapsed' : ''}`;
+          // class 加前綴 k-：避免與其他元件的通用名稱（如展開全章的 .chapter）撞名而繼承到樣式
+          const cls = `tree-node k-${i.kind} ${pal}${i.current ? ' current' : ''}${i.collapsed !== null ? ' collapsed' : ''}`;
           // 點章號進入那一章；點目前的書卷進入書首；點其他書卷或收起的類別：焦點移過去
           const click =
             i.kind === 'chapter'
