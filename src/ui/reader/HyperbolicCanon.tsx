@@ -97,6 +97,17 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
   const wasDrag = () => drag.current?.moved === true;
 
   const nodes = tree.map((n, i) => ({ n, i, s: screen(pts[i]!) }));
+  // 連線：父子之間的雙曲直線（測地線，畫面上是弧線）——讓樹的結構看得見（Lamping 等人的雙曲瀏覽器即有連線）
+  const edges = tree
+    .map((n, i) => ({ n, i }))
+    .filter(({ n, i }) => i > 0 && (n.kind !== 'chapter' || n.book === focusBook) && nodes[i]!.s.k > 0.002 && nodes[n.parent]!.s.k > 0.002)
+    .map(({ n, i }) => {
+      const a = pts[n.parent]!;
+      const b = pts[i]!;
+      const steps = 10;
+      const ps = Array.from({ length: steps + 1 }, (_, t) => screen(geodesicFocus(a, b, t / steps)));
+      return { key: `e${i}`, d: `M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`, chapter: n.kind === 'chapter' };
+    });
   // 書卷名稱避讓：越靠近圓心越優先；與已放的名稱重疊就只畫點（名稱太擠會變成雜訊）
   const labeled = new Set<number>();
   const boxes: Array<[number, number, number, number]> = [];
@@ -114,6 +125,9 @@ export function HyperbolicCanon({ focusBook, width, height, onFocus, onEnter }: 
     <div class="hyper-wrap">
       <svg class="hyper-canon" data-testid="hyper-canon" data-focus-book={focusBook} width={width} height={height} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <circle cx={cx} cy={cy} r={R * zoom} class="hyper-disk" />
+        {edges.map((e) => (
+          <path key={e.key} d={e.d} class={e.chapter ? 'hyper-edge chapter' : 'hyper-edge'} data-testid="hyper-edge" />
+        ))}
         {testamentLabels(nodes.filter(({ n }) => n.kind === 'testament')).map(({ n, s }) => (
             <text key={`t${n.testament}`} class="hyper-testament" data-testid="hyper-testament" x={s.x} y={s.y} font-size={Math.max(14, 40 * s.k)} text-anchor="middle">
               {n.testament === 'OT' ? STRINGS.oldTestament : STRINGS.newTestament}

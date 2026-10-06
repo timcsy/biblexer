@@ -189,3 +189,5 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .tree-node.collapsed small { margin-left: 0.15em; font-size: 0.8em; }
 .tree-node.chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); }
 @media (prefers-reduced-motion: reduce) { .tree-node { transition: none; } }
+.hyper-edge { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-width: 1.2; pointer-events: none; }
+.hyper-edge.chapter { stroke: color-mix(in srgb, var(--accent) 45%, transparent); }

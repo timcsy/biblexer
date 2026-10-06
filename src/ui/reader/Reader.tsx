@@ -12,6 +12,7 @@ import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.t
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
 import { FocusTree } from './FocusTree.tsx';
+import { HyperbolicCanon } from './HyperbolicCanon.tsx';
 import { bookById } from '../../core/canon.ts';
 import { STRINGS } from '../strings.ts';
 import { BookLayer } from './BookLayer.tsx';
@@ -38,11 +39,13 @@ export interface ReaderProps {
 const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outline: STRINGS.levelOutline, reading: STRINGS.levelReading } as const;
 const ARRANGEMENT_KEY = 'biblexer.reader.arrangement';
 const CANON_STYLE_KEY = 'biblexer.reader.canonStyle';
-/** 正典層（原型）：方塊或焦點樹（第三版；圓盤版見 HyperbolicCanon.tsx 與 git 歷史） */
-type CanonStyle = 'tiles' | 'tree';
+/** 正典層（原型）：方塊、焦點樹、雙曲圓盤——三者並列比較 */
+type CanonStyle = 'tiles' | 'tree' | 'disk';
+const CANON_STYLES: readonly CanonStyle[] = ['tiles', 'tree', 'disk'];
 const loadCanonStyle = (): CanonStyle => {
   try {
-    return localStorage.getItem(CANON_STYLE_KEY) === 'tiles' ? 'tiles' : 'tree';
+    const v = localStorage.getItem(CANON_STYLE_KEY);
+    return v === 'tiles' || v === 'disk' ? v : 'tree';
   } catch {
     return 'tree';
   }
@@ -76,7 +79,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const [parallelsOpen, setParallelsOpen] = useState(false);
   const [canonStyle, setCanonStyle] = useState<CanonStyle>(loadCanonStyle);
   const toggleCanonStyle = () => {
-    const next: CanonStyle = canonStyle === 'tiles' ? 'tree' : 'tiles';
+    const next = CANON_STYLES[(CANON_STYLES.indexOf(canonStyle) + 1) % CANON_STYLES.length]!;
     try {
       localStorage.setItem(CANON_STYLE_KEY, next);
     } catch {
@@ -389,7 +392,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
-    if (canonStyle === 'tree') return null;
+    if (canonStyle !== 'tiles') return null;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
   }, [canonStyle, level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
@@ -433,8 +436,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           </button>
         )}
         {level === 'canon' && (
-          <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" aria-pressed={canonStyle === 'tree'} onClick={toggleCanonStyle}>
-            {STRINGS.canonStyleLabel}：{canonStyle === 'tree' ? STRINGS.canonStyleTree : STRINGS.canonStyleTiles}
+          <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" onClick={toggleCanonStyle}>
+            {STRINGS.canonStyleLabel}：{canonStyle === 'tree' ? STRINGS.canonStyleTree : canonStyle === 'disk' ? STRINGS.canonStyleHyperbolic : STRINGS.canonStyleTiles}
           </button>
         )}
         <span class="reader-zoom">
@@ -455,6 +458,21 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         </div>
         {level === 'canon' && canonStyle === 'tree' && ctx && camera && (
           <FocusTree
+            focusBook={camera.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
+            width={ctx.viewport.width}
+            height={ctx.viewport.height}
+            onFocus={(b) => {
+              const lp = landingPoints(ctx.layout, 'canon').find((p) => p.id === `book:${b}`);
+              if (lp) land(placeAt(lp, ctx));
+            }}
+            onEnter={(b, ch) => {
+              if (b === data.book) enterChapter(ch);
+              else onOpenBook?.(b, ch);
+            }}
+          />
+        )}
+        {level === 'canon' && canonStyle === 'disk' && ctx && camera && (
+          <HyperbolicCanon
             focusBook={camera.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
             width={ctx.viewport.width}
             height={ctx.viewport.height}
