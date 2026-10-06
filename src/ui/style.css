@@ -199,6 +199,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .reader.morph-focus .tree-node:not([aria-current]), .reader.morph-focus .focus-tree-lines, .reader.morph-focus .tree-head { animation: tree-out var(--morph-focus, 0.5s) ease forwards; }
 .reader.morph-return .tree-node:not([aria-current]), .reader.morph-return .focus-tree-lines, .reader.morph-return .tree-head { animation: tree-out 0s forwards; }
 @keyframes tree-out { to { opacity: 0; } }
+/* 下降途中一路強調目標的章與段；其他的淡下來 */
+.morph-chip.target { z-index: 1; color: var(--card); font-weight: bold; background: var(--c); border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
+.morph-chip.dim { opacity: 0.4; }
+.reader.descending .bchap:not(.current), .reader.descending .olabel:not(.current) { opacity: 0.4; }
+.reader.descending .bchap.current { box-shadow: 0 0 0 0.25em color-mix(in srgb, var(--c) 35%, transparent); }
 .reader.morphing .reader-viewport { transition: clip-path var(--morph-unfold, 1s) cubic-bezier(0.45, 0, 0.25, 1); }
 .reader.morph-move .reader-viewport, .reader.morph-fold .reader-viewport { clip-path: inset(0 calc(100% - var(--morph-clip)) 0 0); }
 .reader.morph-unfold .reader-viewport { clip-path: inset(0 0 0 0); }

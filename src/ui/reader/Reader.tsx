@@ -150,10 +150,14 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
 
   // 一層一層下去（使用者回饋 2026-10-06）：點章號、點段落時，書卷 → 章 → 段落 → 頁面，每一層都停一下
   const descentRun = useRef<{ timers: number[]; raf: number; final: { ctx: CameraContext; camera: Camera } } | null>(null);
+  // 下降途中一路強調目標的章與段：過場的章號格、書卷層的章號、段落輪廓的那一段——飛行途中相機沒有著陸點，
+  // 「目前」若跟著相機算會換來換去，所以由目標決定（使用者回饋 2026-10-06：「原本的章節並沒有被強調」）
+  const [emphasis, setEmphasis] = useState<{ chapter: number; para: number } | null>(null);
   function finishDescent(jump: boolean) {
     const run = descentRun.current;
     if (!run) return;
     descentRun.current = null;
+    setEmphasis(null);
     run.timers.forEach(clearTimeout);
     cancelAnimationFrame(run.raf);
     if (jump) {
@@ -181,19 +185,21 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
       landNow(st.camera);
     };
     if (reducedMotion() || stops.length === 1) return hop(last);
+    const chapter = data.verses[verseIdx]?.ref.chapter;
+    if (chapter !== undefined && last.camera.at?.startsWith('para:')) setEmphasis({ chapter, para: Number(last.camera.at.slice(5)) });
     const run = { timers: [] as number[], raf: 0, final: { ctx: last.ctx, camera: last.camera } };
     descentRun.current = run;
     let i = 0;
     const next = () => {
       if (descentRun.current !== run) return;
       const st = stops[i++];
-      if (!st) return void (descentRun.current = null);
+      if (!st) return finishDescent(false);
       hop(st);
       // 等這一站的飛行（或分段過場）結束，停一下再往下一層
       const waitIdle = () => {
         if (descentRun.current !== run) return;
         if (anim.current !== null || morphRun.current !== null) return void (run.raf = requestAnimationFrame(waitIdle));
-        if (i >= stops.length) return void (descentRun.current = null);
+        if (i >= stops.length) return finishDescent(false);
         run.timers.push(window.setTimeout(next, DESCENT_PAUSE_MS));
       };
       run.raf = requestAnimationFrame(waitIdle);
@@ -551,11 +557,11 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const body = useMemo(() => {
     if (!ctx || !camera) return null;
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
-    if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
-    if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
+    if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(emphasis ? { current: emphasis.para } : camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
+    if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(emphasis ? { current: emphasis.chapter } : progress ? { current: progress.chapter } : {})} />;
     if (canonStyle !== 'tiles') return null;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
-  }, [canonStyle, level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
+  }, [canonStyle, level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines, emphasis]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
   const paperBody = useMemo(
     () =>
@@ -571,7 +577,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class={morph ? `reader morphing morph-${morph.phase}` : 'reader'} style={{ '--morph-focus': `${MORPH_MS.focus}ms`, '--morph-move': `${MORPH_MS.move}ms`, '--morph-unfold': `${MORPH_MS.unfold}ms` }} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
+    <section class={`reader${morph ? ` morphing morph-${morph.phase}` : ''}${emphasis ? ' descending' : ''}`} style={{ '--morph-focus': `${MORPH_MS.focus}ms`, '--morph-move': `${MORPH_MS.move}ms`, '--morph-unfold': `${MORPH_MS.unfold}ms` }} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -657,9 +663,9 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
               return (
                 <span
                   key={chapter}
-                  class={`morph-chip p-${b.testament}-${b.category}`}
+                  class={`morph-chip p-${b.testament}-${b.category}${emphasis ? (emphasis.chapter === chapter ? ' target' : ' dim') : ''}`}
                   data-testid="morph-chip"
-                  style={{ left: `${at.left}px`, top: `${at.top}px`, width: `${at.width}px`, height: `${at.height}px`, transform: move, opacity: morph.phase !== 'focus' && morph.phase !== 'fold' && morph.phase !== 'unfold' && !to ? 0 : 1 }}
+                  style={{ left: `${at.left}px`, top: `${at.top}px`, width: `${at.width}px`, height: `${at.height}px`, transform: move, ...(morph.phase !== 'focus' && morph.phase !== 'fold' && morph.phase !== 'unfold' && !to ? { opacity: 0 } : {}) }}
                 >
                   {chapter}
                 </span>

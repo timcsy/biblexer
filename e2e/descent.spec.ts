@@ -30,6 +30,8 @@ const toTree = async (page: Page) => {
   }
   for (let i = 0; i < 4 && (await reader.getAttribute('data-canon-style')) !== 'tree'; i++) await page.getByTestId('canonstyle-toggle').click();
   await expect(page.getByTestId('canon-tree')).toHaveAttribute('data-phase', 'idle');
+  // 縮小回正典層的過場（若有）結束後才開始
+  await expect(page.getByTestId('level-morph')).toHaveCount(0, { timeout: 5000 });
 };
 
 test('從樹上點羅馬書第 8 章：依序停在 書卷層第 8 章 → 那一段的輪廓 → 精讀', async ({ page }) => {
@@ -76,4 +78,41 @@ test('下降途中按任何鍵：直接跳到終點（精讀那一段）', async
   const reader = page.getByTestId('reader');
   await expect(reader).toHaveAttribute('data-level', 'reading', { timeout: 500 });
   await expect(page.locator('[data-testid="verse"][data-ref="45:8:1"]')).toBeInViewport();
+});
+
+test('下降途中，點的那一章一路被強調：過場的章號格、書卷層的章號、段落輪廓的那一段（飛行中也不例外）', async ({ page }) => {
+  await toTree(page);
+  // 每一個影格取樣一次：目前層級、過場層中第 8 章是否被強調、書卷層／段落輪廓中被標示的是哪一個
+  await page.evaluate(() => {
+    const samples: Array<{ level: string; morph: boolean; morphTarget: string | null; book: string | null; outline: string | null }> = [];
+    (window as unknown as { samples: typeof samples }).samples = samples;
+    const t0 = performance.now();
+    const tick = () => {
+      const r = document.querySelector('[data-testid="reader"]')!;
+      const morph = document.querySelector('[data-testid="level-morph"]');
+      samples.push({
+        level: r.getAttribute('data-level')!,
+        morph: !!morph,
+        morphTarget: morph?.querySelector('.morph-chip.target')?.textContent ?? null,
+        book: document.querySelector('[data-testid="book-chapter"][aria-current]')?.getAttribute('data-chapter') ?? null,
+        outline: document.querySelector('[data-testid="outline-para"][aria-current]')?.getAttribute('data-range') ?? null,
+      });
+      if (performance.now() - t0 < 9000 && r.getAttribute('data-landing') !== (window as unknown as { done?: string }).done) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.locator('[data-testid="tree-chapter"][data-book="45"][data-chapter="8"]').click();
+  const reader = page.getByTestId('reader');
+  await expect(reader).toHaveAttribute('data-level', 'reading', { timeout: 12000 });
+  await expect(reader).not.toHaveAttribute('data-landing', '', { timeout: 4000 });
+  const samples = await page.evaluate(() => (window as unknown as { samples: Array<{ level: string; morph: boolean; morphTarget: string | null; book: string | null; outline: string | null }> }).samples);
+  const inMorph = samples.filter((s) => s.morph);
+  const inBook = samples.filter((s) => !s.morph && s.level === 'book');
+  const inOutline = samples.filter((s) => s.level === 'outline');
+  expect(inMorph.length).toBeGreaterThan(0);
+  expect(inBook.length).toBeGreaterThan(0);
+  expect(inOutline.length).toBeGreaterThan(0);
+  expect(inMorph.filter((s) => s.morphTarget !== '8')).toEqual([]);
+  expect(inBook.filter((s) => s.book !== '8')).toEqual([]);
+  expect(inOutline.filter((s) => !s.outline?.startsWith('8:'))).toEqual([]);
 });
