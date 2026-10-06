@@ -1,6 +1,6 @@
 // 守護：FR-018、FR-019、research R3a、R5a——冊頁長卷的排列、排列切換時的相機換算、過場路徑
 import { describe, expect, test } from 'vitest';
-import { cameraForVerse, createContext, flyPath, landingPoints, placeAt, remap, zoomStep } from '../../src/reader/camera.ts';
+import { cameraForVerse, createContext, flyPath, levelOf, landingPoints, placeAt, remap, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';
 import { WORLD, arrange, gridRect, pageRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
@@ -83,6 +83,16 @@ describe('過場路徑（van Wijk 與 Nuij）', () => {
     expect(f.at(0.5).scale).toBeLessThan(Math.min(a.scale, b.scale));
     expect(f.duration).toBeGreaterThanOrEqual(180);
     expect(f.duration).toBeLessThanOrEqual(700);
+  });
+
+  test('跨層級的縮放（如書卷層 → 頁面）放慢到看得清楚：至少 1.1 秒、不超過 1.8 秒；同層翻頁仍快（使用者回饋 2026-10-06）', () => {
+    const bookLevel = { ...a, scale: ctx.readingScale * 0.15 };
+    const f = flyPath(bookLevel, b, ctx);
+    expect(levelOf(bookLevel.scale, ctx.readingScale)).toBe('book');
+    expect(f.duration).toBeGreaterThanOrEqual(1100);
+    expect(f.duration).toBeLessThanOrEqual(1800);
+    const sameLevel = flyPath(b, { ...b, x: b.x + 50 }, ctx);
+    expect(sameLevel.duration).toBeLessThanOrEqual(700);
   });
 
   test('只換比例（同一中心）也能平順內插', () => {

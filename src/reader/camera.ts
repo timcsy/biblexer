@@ -368,7 +368,10 @@ export function flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: n
       return [ux0 + u * dx, uy0 + u * dy, (w0 * coshr0) / Math.cosh(rho * s + r0)];
     };
   }
-  const duration = Math.min(650, Math.max(180, 180 + 160 * Math.abs(S)));
+  // 同一層內（翻頁、換段）要快；跨層級（如書卷層 → 頁面）放慢，讓讀者看清楚整個轉場、感覺真的「過去了」
+  // （使用者回饋 2026-10-06；正典層 ↔ 書卷層的分段過場約 2.9 秒，見 Reader.tsx 的 MORPH_MS）
+  const crossesLevel = levelOf(a.scale, ctx.readingScale) !== levelOf(b.scale, ctx.readingScale);
+  const duration = crossesLevel ? Math.min(1800, Math.max(1100, 900 + 300 * Math.abs(S))) : Math.min(650, Math.max(180, 180 + 160 * Math.abs(S)));
   return {
     duration,
     at(t) {

@@ -26,15 +26,18 @@ test.describe('有動畫時', () => {
     await openReader(page);
     const reader = page.getByTestId('reader');
     if ((await reader.getAttribute('data-book-style')) !== 'map') await page.getByTestId('bookstyle-toggle').click();
+    // 等相機真的著陸（飛行途中著陸點是空的）再做下一步；跨層級飛行約 1.1～1.8 秒
+    const landed = async (level: string) => {
+      await expect(reader).toHaveAttribute('data-level', level, { timeout: 4000 });
+      await expect(reader).not.toHaveAttribute('data-landing', '', { timeout: 4000 });
+    };
     await page.getByTestId('zoom-out').click();
-    await expect(reader).toHaveAttribute('data-level', 'outline');
-    await page.waitForTimeout(900);
+    await landed('outline');
     await page.getByTestId('zoom-out').click();
-    await expect(reader).toHaveAttribute('data-level', 'book');
-    await page.waitForTimeout(900);
+    await landed('book');
     // 書卷層 → 正典層（若預設不是樹狀，會走一般的相機飛行；切到樹狀後再測）
     await page.getByTestId('zoom-out').click();
-    await expect(reader).toHaveAttribute('data-level', 'canon', { timeout: 3000 });
+    await landed('canon');
     await expect(page.getByTestId('level-morph')).toHaveCount(0, { timeout: 5000 });
     for (let i = 0; i < 4 && (await reader.getAttribute('data-canon-style')) !== 'tree'; i++) await page.getByTestId('canonstyle-toggle').click();
     await expect(page.getByTestId('canon-tree')).toBeVisible();
@@ -97,9 +100,10 @@ test.describe('焦點樹的展開／收合（有動畫時）', () => {
     await waitReady(page, false);
     await openReader(page);
     const reader = page.getByTestId('reader');
-    for (let i = 0; i < 3; i++) {
+    for (const level of ['outline', 'book', 'canon']) {
       await page.getByTestId('zoom-out').click();
-      await page.waitForTimeout(900);
+      await expect(reader).toHaveAttribute('data-level', level, { timeout: 4000 });
+      await expect(reader).not.toHaveAttribute('data-landing', '', { timeout: 4000 });
     }
     for (let i = 0; i < 4 && (await reader.getAttribute('data-canon-style')) !== 'tree'; i++) await page.getByTestId('canonstyle-toggle').click();
     const tree = page.getByTestId('canon-tree');
