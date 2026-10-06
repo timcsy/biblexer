@@ -6,7 +6,7 @@
 // - 離散的移動（按鍵、按鈕、放手吸附）以過場動畫著陸（van Wijk & Nuij）；手勢開始即中斷；減少動態效果時不播放
 // - 進度提示：第幾章、第幾頁
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { cameraForVerse, createContext, descentStops, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel, placeAt } from '../../reader/camera.ts';
+import { cameraForVerse, createContext, descentPace, descentStops, zoomAbout, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel, placeAt } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
@@ -62,11 +62,14 @@ const loadBookStyle = (): BookStyle => {
     return 'map';
   }
 };
-type Mode = 'strip' | 'grid';
+/** rows＝一章一列：每章從新的一頁開始，書卷層到精讀全部同一種排列（草稿〈層級過場的研究〉更好的做法 1） */
+type Mode = 'strip' | 'grid' | 'rows';
+const MODES: Mode[] = ['strip', 'grid', 'rows'];
 
 const loadArrangement = (): Mode => {
   try {
-    return localStorage.getItem(ARRANGEMENT_KEY) === 'grid' ? 'grid' : 'strip';
+    const m = localStorage.getItem(ARRANGEMENT_KEY);
+    return m === 'grid' || m === 'rows' ? m : 'strip';
   } catch {
     return 'strip';
   }
@@ -75,11 +78,20 @@ const loadArrangement = (): Mode => {
 const MORPH_MS = { focus: 500, move: 1100, unfold: 1000, pause: 150 } as const;
 /** 一層一層下去時，每一層停留的時間（毫秒）：讓讀者看清楚「現在在第幾章、哪一段」 */
 const DESCENT_PAUSE_MS = 500;
+/** 走過幾次「一層一層下去」（依熟悉度調整速度；只存在這個瀏覽器） */
+const DESCENT_COUNT_KEY = 'biblexer.reader.descents';
+const loadDescentCount = () => {
+  try {
+    return Number(localStorage.getItem(DESCENT_COUNT_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+};
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** 長卷模式：精讀、段落輪廓用長卷；書卷、正典層折成每列 6 頁 */
 const arrangementFor = (mode: Mode, style: BookStyle, level: ZoomLevel): Arrangement =>
-  level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
+  mode === 'rows' ? 'rows' : level === 'reading' || level === 'outline' ? mode : level === 'book' && style === 'map' ? 'chapters' : 'grid';
 
 export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParallels, loadChapter }: ReaderProps) {
   const [parallelsOpen, setParallelsOpen] = useState(false);
@@ -93,8 +105,13 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     }
     setCanonStyle(next);
   };
-  const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }), [data]);
-  const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters') }), [base]);
+  const [mode, setMode] = useState<Mode>(loadArrangement);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  // 一章一列：每章從新的一頁開始（版面不同，所以整個 base 隨之換）
+  const paged = mode === 'rows';
+  const base = useMemo(() => layoutBook({ book: data.book, verses: data.verses, paragraphStarts: data.paragraphStarts }, undefined, { chapterPage: paged }), [data, paged]);
+  const layouts = useMemo(() => ({ strip: arrange(base, 'strip'), grid: arrange(base, 'grid'), chapters: arrange(base, 'chapters'), rows: arrange(base, 'rows') }), [base]);
   const linesByPage = useMemo(() => {
     const m = new Map<number, Line[]>();
     for (const l of base.lines) (m.get(l.pos.page) ?? m.set(l.pos.page, []).get(l.pos.page)!).push(l);
@@ -103,9 +120,6 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const verseStart = useMemo(() => new Map(base.verses.map((v) => [v.verseIdx, `${v.start.page}:${v.start.column}:${v.start.line}:${v.start.cell}`])), [base]);
 
   const stage = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<Mode>(loadArrangement);
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
   const [bookStyle, setBookStyle] = useState<BookStyle>(loadBookStyle);
   const styleRef = useRef(bookStyle);
   styleRef.current = bookStyle;
@@ -153,11 +167,19 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   // 下降途中一路強調目標的章與段：過場的章號格、書卷層的章號、段落輪廓的那一段——飛行途中相機沒有著陸點，
   // 「目前」若跟著相機算會換來換去，所以由目標決定（使用者回饋 2026-10-06：「原本的章節並沒有被強調」）
   const [emphasis, setEmphasis] = useState<{ chapter: number; para: number } | null>(null);
+  // 依熟悉度調整速度（descentPace）：下降途中的過場、飛行、停頓都乘上這個倍數；下降結束回到 1
+  const [pace, setPace] = useState(1);
+  const paceRef = useRef(1);
+  const setPaceBoth = (v: number) => {
+    paceRef.current = v;
+    setPace(v);
+  };
   function finishDescent(jump: boolean) {
     const run = descentRun.current;
     if (!run) return;
     descentRun.current = null;
     setEmphasis(null);
+    setPaceBoth(1);
     run.timers.forEach(clearTimeout);
     cancelAnimationFrame(run.raf);
     if (jump) {
@@ -182,9 +204,18 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         show(remap(cur, ctxRef.current!, st.ctx));
         useCtx(st.ctx);
       }
-      landNow(st.camera);
+      // 目標（章號標籤、段落起點）就是縮放中心
+      const lp = st.camera.at ? landingPoints(st.ctx.layout, st.level).find((p) => p.id === st.camera.at) : undefined;
+      landNow(st.camera, lp?.anchor);
     };
     if (reducedMotion() || stops.length === 1) return hop(last);
+    const n = loadDescentCount();
+    setPaceBoth(descentPace(n));
+    try {
+      localStorage.setItem(DESCENT_COUNT_KEY, String(n + 1));
+    } catch {
+      /* 不能存就每次都完整播放 */
+    }
     const chapter = data.verses[verseIdx]?.ref.chapter;
     if (chapter !== undefined && last.camera.at?.startsWith('para:')) setEmphasis({ chapter, para: Number(last.camera.at.slice(5)) });
     const run = { timers: [] as number[], raf: 0, final: { ctx: last.ctx, camera: last.camera } };
@@ -200,7 +231,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         if (descentRun.current !== run) return;
         if (anim.current !== null || morphRun.current !== null) return void (run.raf = requestAnimationFrame(waitIdle));
         if (i >= stops.length) return finishDescent(false);
-        run.timers.push(window.setTimeout(next, DESCENT_PAUSE_MS));
+        run.timers.push(window.setTimeout(next, DESCENT_PAUSE_MS * paceRef.current));
       };
       run.raf = requestAnimationFrame(waitIdle);
     };
@@ -246,15 +277,15 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const run = { timers: [] as number[], target: target as Camera | null };
     morphRun.current = run;
     setMorph({ phase: 'focus', chips: treeChips.current.map((c) => ({ chapter: c.chapter, at: c.rect })), clip: 0 });
-    after(run, MORPH_MS.focus, () => {
+    after(run, MORPH_MS.focus * paceRef.current, () => {
       run.target = null;
       show(settleArrangement(target));
       nextFrame(run, () => {
         const to = chipRectsIn('[data-testid="book-chapter"]');
         setMorph((m) => m && { ...m, phase: 'move', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })), clip: clipOf(to.values()) });
-        after(run, MORPH_MS.move + MORPH_MS.pause, () => {
+        after(run, (MORPH_MS.move + MORPH_MS.pause) * paceRef.current, () => {
           setMorph((m) => m && { ...m, phase: 'unfold' });
-          after(run, MORPH_MS.unfold + MORPH_MS.pause, finishMorph);
+          after(run, (MORPH_MS.unfold + MORPH_MS.pause) * paceRef.current, finishMorph);
         });
       });
     });
@@ -267,13 +298,13 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     setMorph({ phase: 'unfold', chips: [...at].map(([chapter, r]) => ({ chapter, at: r })), clip: clipOf(at.values()) });
     nextFrame(run, () => {
       setMorph((m) => m && { ...m, phase: 'fold' });
-      after(run, MORPH_MS.unfold + MORPH_MS.pause, () => {
+      after(run, (MORPH_MS.unfold + MORPH_MS.pause) * paceRef.current, () => {
         run.target = null;
         show(settleArrangement(target));
         nextFrame(run, () => {
           const to = new Map(treeChips.current.map((c) => [c.chapter, c.rect]));
           setMorph((m) => m && { ...m, phase: 'return', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })) });
-          after(run, MORPH_MS.move + MORPH_MS.pause, finishMorph);
+          after(run, (MORPH_MS.move + MORPH_MS.pause) * paceRef.current, finishMorph);
         });
       });
     });
@@ -284,7 +315,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     landNow(target);
   };
   /** 以過場動畫著陸；目標在目前的 ctx 中計算 */
-  const landNow = (target: Camera) => {
+  /** anchor：以這個世界座標的點為縮放中心（它在起點時要在畫面上；否則用一般的最省時路徑） */
+  const landNow = (target: Camera, anchor?: { x: number; y: number }) => {
     stopFlight();
     const cur = camRef.current;
     const from = ctxRef.current;
@@ -306,10 +338,16 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
         return morphOut(target);
       }
     }
-    const path = flyPath(start, to, x);
+    const onScreen = (p: { x: number; y: number }) => {
+      const sx = (p.x - start.x) * start.scale;
+      const sy = (p.y - start.y) * start.scale;
+      return sx >= 0 && sy >= 0 && sx <= x.viewport.width && sy <= x.viewport.height;
+    };
+    const path = anchor && onScreen(anchor) ? zoomAbout(start, to, anchor, x) : flyPath(start, to, x);
+    const duration = path.duration * paceRef.current;
     const t0 = performance.now();
     const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / path.duration);
+      const t = Math.min(1, (now - t0) / duration);
       // 緩入緩出
       const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
       show(path.at(t >= 1 ? 1 : e));
@@ -324,12 +362,13 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const measure = () => {
       interrupt();
       const vp = { width: el.clientWidth, height: el.clientHeight };
-      const next = { strip: createContext(layouts.strip, vp), grid: createContext(layouts.grid, vp), chapters: createContext(layouts.chapters, vp) };
+      const next = { strip: createContext(layouts.strip, vp), grid: createContext(layouts.grid, vp), chapters: createContext(layouts.chapters, vp), rows: createContext(layouts.rows, vp) };
       const prev = ctxRef.current;
       const cam = camRef.current;
       ctxsRef.current = next;
       if (cam && prev) {
-        const same = next[prev.layout === layouts.strip ? 'strip' : prev.layout === layouts.chapters ? 'chapters' : 'grid'];
+        // 版面可能整個換了（切到／離開一章一列）：依目前層級選排列，再以著陸點重新對準
+        const same = next[arrangementFor(modeRef.current, styleRef.current, levelOf(cam.scale, prev.readingScale))];
         useCtx(same);
         set(refit(cam, prev, same));
       } else {
@@ -464,7 +503,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   };
 
   const toggleMode = () => {
-    const next: Mode = mode === 'strip' ? 'grid' : 'strip';
+    const next: Mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]!;
     try {
       localStorage.setItem(ARRANGEMENT_KEY, next);
     } catch {
@@ -577,7 +616,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class={`reader${morph ? ` morphing morph-${morph.phase}` : ''}${emphasis ? ' descending' : ''}`} style={{ '--morph-focus': `${MORPH_MS.focus}ms`, '--morph-move': `${MORPH_MS.move}ms`, '--morph-unfold': `${MORPH_MS.unfold}ms` }} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
+    <section class={`reader${morph ? ` morphing morph-${morph.phase}` : ''}${emphasis ? ' descending' : ''}`} style={{ '--morph-focus': `${MORPH_MS.focus * pace}ms`, '--morph-move': `${MORPH_MS.move * pace}ms`, '--morph-unfold': `${MORPH_MS.unfold * pace}ms` }} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-world={ctx ? (Object.keys(layouts) as Array<keyof typeof layouts>).find((k) => layouts[k] === ctx.layout) ?? '' : ''} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -587,11 +626,13 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           {LEVEL_LABEL[level]}
         </span>
         <button type="button" class="reader-arrangement" data-testid="arrangement-toggle" aria-pressed={mode === 'strip'} title={STRINGS.arrangementLabel} onClick={toggleMode}>
-          {STRINGS.arrangementLabel}：{mode === 'strip' ? STRINGS.arrangementStrip : STRINGS.arrangementGrid}
+          {STRINGS.arrangementLabel}：{mode === 'strip' ? STRINGS.arrangementStrip : mode === 'grid' ? STRINGS.arrangementGrid : STRINGS.arrangementRows}
         </button>
+        {mode !== 'rows' && (
         <button type="button" class="reader-arrangement" data-testid="bookstyle-toggle" aria-pressed={bookStyle === 'map'} onClick={toggleBookStyle}>
           {STRINGS.bookStyleLabel}：{bookStyle === 'map' ? STRINGS.bookStyleMap : STRINGS.bookStyleGrid}
         </button>
+        )}
         {loadParallels && (
           <button type="button" class="reader-arrangement" data-testid="reader-parallels" aria-pressed={parallelsOpen} onClick={() => setParallelsOpen(!parallelsOpen)}>
             {STRINGS.parallels}

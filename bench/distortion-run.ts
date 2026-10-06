@@ -22,11 +22,11 @@ function main(): void {
     paragraphStarts: passages.filter((p) => p.start >= first && p.start <= last).map((p) => p.start - first),
   };
   const base = layoutBook(book);
-  const rows = (['strip', 'grid', 'chapters'] as Arrangement[]).map((a) => ({ arrangement: a, ...measure(arrange(base, a)) }));
+  const rows = (['strip', 'grid', 'chapters'] as Exclude<Arrangement, 'rows'>[]).map((a) => ({ arrangement: a, ...measure(arrange(base, a)) }));
   const result = { dataVersion: manifest.dataVersion, book: 'Romans', lines: base.lines.length, pages: base.pageCount, chapters: base.chapters.length, rows };
   writeFileSync('bench/layout-distortion.json', JSON.stringify(result, null, 2) + '\n');
 
-  const name: Record<Arrangement, string> = { strip: '長卷', grid: '每列六頁（頁面網格）', chapters: '章節地圖' };
+  const name: Record<Exclude<Arrangement, 'rows'>, string> = { strip: '長卷', grid: '每列六頁（頁面網格）', chapters: '章節地圖' };
   const f = (x: number) => x.toFixed(3);
   const md = [
     '# 版面失真：順序距離與結構距離',

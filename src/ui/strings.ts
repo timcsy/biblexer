@@ -88,5 +88,6 @@ export const STRINGS = {
   bookStyleGrid: '頁面網格',
   arrangementStrip: '長卷',
   arrangementGrid: '每列六頁',
+  arrangementRows: '一章一列',
   progress: (chapter: number, page: number, pages: number) => `第 ${chapter} 章 · 第 ${page}／${pages} 頁`,
 } as const;

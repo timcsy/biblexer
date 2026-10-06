@@ -116,3 +116,43 @@ test('下降途中，點的那一章一路被強調：過場的章號格、書�
   expect(inBook.filter((s) => s.book !== '8')).toEqual([]);
   expect(inOutline.filter((s) => !s.outline?.startsWith('8:'))).toEqual([]);
 });
+
+test.describe('一章一列（所有層級同一種排列）', () => {
+  const toRows = async (page: Page) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await waitReady(page, false);
+    await openReader(page);
+    const reader = page.getByTestId('reader');
+    for (let i = 0; i < 3 && (await reader.getAttribute('data-arrangement')) !== 'rows'; i++) await page.getByTestId('arrangement-toggle').click();
+    await expect(reader).toHaveAttribute('data-arrangement', 'rows');
+    await expect(page.getByTestId('arrangement-toggle')).toContainText('一章一列');
+    return reader;
+  };
+
+  test('切到一章一列：精讀時世界的排列就是一章一列（每章從新的一頁開始，見單元測試 reader-rows）', async ({ page }) => {
+    const reader = await toRows(page);
+    await expect(reader).toHaveAttribute('data-world', 'rows');
+  });
+
+  test('從書卷層點第 8 章一路下去：世界的排列從頭到尾都是一章一列（頁的位置不動）', async ({ page }) => {
+    const reader = await toRows(page);
+    for (const level of ['outline', 'book']) {
+      await page.getByTestId('zoom-out').click();
+      await expect(reader).toHaveAttribute('data-level', level, { timeout: 4000 });
+      await expect(reader).not.toHaveAttribute('data-landing', '', { timeout: 4000 });
+    }
+    await expect(reader).toHaveAttribute('data-world', 'rows');
+    await reader.evaluate((r) => {
+      const worlds = new Set<string>();
+      (window as unknown as { worlds: Set<string> }).worlds = worlds;
+      new MutationObserver(() => worlds.add(r.getAttribute('data-world') ?? '')).observe(r, { attributes: true });
+    });
+    await page.locator('[data-testid="book-chapter"][data-chapter="8"]').click();
+    await expect(reader).toHaveAttribute('data-level', 'reading', { timeout: 8000 });
+    await expect(reader).not.toHaveAttribute('data-landing', '', { timeout: 4000 });
+    expect([...(await page.evaluate(() => [...(window as unknown as { worlds: Set<string> }).worlds]))]).toEqual(['rows']);
+    await expect(page.locator('[data-testid="verse"][data-ref="45:8:1"]')).toBeInViewport();
+    // 走過一次，記在這個瀏覽器（依熟悉度調整速度）
+    expect(await page.evaluate(() => localStorage.getItem('biblexer.reader.descents'))).toBe('1');
+  });
+});

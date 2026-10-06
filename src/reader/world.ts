@@ -32,9 +32,10 @@ export const WORLD = {
 
 export function pageRect(layout: Layout, page: number): Rect {
   const { pagesPerRow, columnsPerPage, linesPerColumn } = layout.params;
+  const place = layout.pagePlace?.[page];
   return {
-    x: (page % pagesPerRow) * WORLD.pageWidth,
-    y: Math.floor(page / pagesPerRow) * WORLD.pageHeight,
+    x: place ? place.col * WORLD.pageWidth : (page % pagesPerRow) * WORLD.pageWidth,
+    y: place ? place.row * WORLD.pageHeight : Math.floor(page / pagesPerRow) * WORLD.pageHeight,
     w: columnsPerPage * columnWidth + (columnsPerPage - 1) * columnGap,
     h: linesPerColumn * lineHeight,
   };
@@ -58,7 +59,7 @@ export function lineRect(layout: Layout, pos: LinePos): Rect {
  * 頁面的排列（research R3a、R8）：strip＝冊頁長卷，所有頁排成一列；grid＝每列 6 頁；chapters＝章節地圖。
  * 只改世界中頁的擺放，不改版面（行、經節座標）。
  */
-export type Arrangement = 'grid' | 'strip' | 'chapters';
+export type Arrangement = 'grid' | 'strip' | 'chapters' | 'rows';
 
 /** 章節地圖：一欄幾行（比閱讀時的 16 行短，讓 16 章的列放得進一個畫面） */
 export const MAP_COLUMN_LINES = 6;
@@ -69,6 +70,7 @@ const MAP_BLOCK_GAP = 3; // 段落（塊）之間的縫
 export function arrange(layout: Layout, a: Arrangement): Layout {
   const base: Layout = layout.lineRects ? withoutRects(layout) : layout;
   if (a === 'chapters') return chapterMap(base);
+  if (a === 'rows') return chapterRows(base);
   const pagesPerRow = a === 'strip' ? Math.max(1, layout.pageCount) : DEFAULT_LAYOUT.pagesPerRow;
   return base === layout && layout.params.pagesPerRow === pagesPerRow ? layout : { ...base, params: { ...base.params, pagesPerRow } };
 }
@@ -79,7 +81,28 @@ function withoutRects(layout: Layout): Layout {
   delete copy.bounds;
   delete copy.rows;
   delete copy.blocks;
+  delete copy.pagePlace;
   return copy;
+}
+
+/**
+ * 一章一列（草稿〈層級過場的研究〉更好的做法 1）：每一章一列、章的頁由左往右。
+ * 版面要以 chapterPage 排（每章從新的一頁開始），每一頁才只屬於一章。
+ * 書卷層、段落輪廓、精讀都用這個排列——縮放時頁的位置完全不動，只有大小在變。
+ */
+function chapterRows(layout: Layout): Layout {
+  const place: Array<{ row: number; col: number }> = [];
+  let row = -1;
+  let first = 0;
+  const chapterPages = new Set(layout.chapters.map((c) => layout.lines[c.line]!.pos.page));
+  for (let p = 0; p < layout.pageCount; p++) {
+    if (chapterPages.has(p) || row < 0) {
+      row++;
+      first = p;
+    }
+    place.push({ row, col: p - first });
+  }
+  return { ...layout, pagePlace: place };
 }
 
 /**
@@ -127,6 +150,11 @@ function chapterMap(layout: Layout): Layout {
 /** 本書頁面網格的外框 */
 export function gridRect(layout: Layout): Rect {
   if (layout.bounds) return layout.bounds;
+  if (layout.pagePlace) {
+    const cols = Math.max(1, ...layout.pagePlace.map((p) => p.col + 1));
+    const rows = Math.max(1, ...layout.pagePlace.map((p) => p.row + 1));
+    return { x: 0, y: 0, w: cols * WORLD.pageWidth, h: rows * WORLD.pageHeight };
+  }
   const rows = Math.max(1, Math.ceil(layout.pageCount / layout.params.pagesPerRow));
   return { x: 0, y: 0, w: layout.params.pagesPerRow * WORLD.pageWidth, h: rows * WORLD.pageHeight };
 }

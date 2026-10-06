@@ -31,6 +31,9 @@ test('版面切換：每列六頁與長卷之間切換，經節座標不變；�
   await expect(page.getByTestId('status-keyword-ready')).toBeVisible({ timeout: 120_000 });
   await openReader(page);
   await expect(page.getByTestId('reader')).toHaveAttribute('data-arrangement', 'grid');
+  // 三種版面輪流：長卷 → 每列六頁 → 一章一列 → 長卷
+  await page.getByTestId('arrangement-toggle').click();
+  await expect(page.getByTestId('reader')).toHaveAttribute('data-arrangement', 'rows');
   await page.getByTestId('arrangement-toggle').click();
   await expect(page.getByTestId('reader')).toHaveAttribute('data-arrangement', 'strip');
 });
@@ -101,7 +104,7 @@ test('停在頁中間的段落：畫面仍從頁的第一行開始（不切開�
   for (const arrangement of ['grid', 'strip']) {
     await openReader(page);
     const reader = page.getByTestId('reader');
-    if ((await reader.getAttribute('data-arrangement')) !== arrangement) await page.getByTestId('arrangement-toggle').click();
+    for (let i = 0; i < 3 && (await reader.getAttribute('data-arrangement')) !== arrangement; i++) await page.getByTestId('arrangement-toggle').click();
     // 1:8 所在的行（第 1 頁中間）
     const target = (await reader.locator('[data-testid="verse"][data-ref="45:1:8"]').locator('xpath=ancestor::*[@data-testid="line"]').getAttribute('data-line'))!;
     expect(target, arrangement).not.toMatch(/:0$/);

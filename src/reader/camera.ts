@@ -152,7 +152,7 @@ export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): C
     else {
       const pos = ctx.layout.lines[lp.line!]!.pos;
       // 章節地圖：章那一列的頂端；頁面網格：章所在頁那一列的頂端
-      const rowTop = ctx.layout.lineRects ? lineRect(ctx.layout, pos).y : Math.floor(pos.page / ctx.layout.params.pagesPerRow) * WORLD.pageHeight;
+      const rowTop = ctx.layout.lineRects ? lineRect(ctx.layout, pos).y : pageRect(ctx.layout, pos.page).y;
       y = rowTop - m;
     }
     return { x, y, scale, at: lp.id, ...(focus !== undefined ? { focus } : {}) };
@@ -244,6 +244,42 @@ export function cameraForVerse(verseIdx: number, ctx: CameraContext): Camera {
   const pts = landingPoints(ctx.layout, 'reading');
   const paras = pts.filter((p) => p.id.startsWith('para:') && p.verseIdx! <= verseIdx);
   return placeAt(paras.at(-1) ?? pts[0]!, ctx);
+}
+
+/** 飛行時間：S 為路徑長度（van Wijk 與 Nuij 的單位） */
+function flightDuration(a: Camera, b: Camera, S: number, ctx: CameraContext): number {
+  // 同一層內（翻頁、換段）要快；跨層級（如書卷層 → 頁面）放慢，讓讀者看清楚整個轉場、感覺真的「過去了」
+  // （使用者回饋 2026-10-06；正典層 ↔ 書卷層的分段過場見 Reader.tsx 的 MORPH_MS）
+  const crossesLevel = levelOf(a.scale, ctx.readingScale) !== levelOf(b.scale, ctx.readingScale);
+  return crossesLevel ? Math.min(1800, Math.max(1100, 900 + 300 * Math.abs(S))) : Math.min(650, Math.max(180, 180 + 160 * Math.abs(S)));
+}
+
+/**
+ * 以目標為中心縮放（草稿〈層級過場的研究〉更好的做法 2）：目標點 P 在螢幕上從起點位置平滑移到終點位置，
+ * 比例以等比內插——P 一直留在畫面上，周圍以它為中心放大，不像最省時路徑那樣先拉遠、讓目標離開視野。
+ */
+export function zoomAbout(a: Camera, b: Camera, P: Point, ctx: CameraContext): { duration: number; at(t: number): Camera } {
+  const sa = { x: (P.x - a.x) * a.scale, y: (P.y - a.y) * a.scale };
+  const sb = { x: (P.x - b.x) * b.scale, y: (P.y - b.y) * b.scale };
+  const S = Math.log(b.scale / a.scale) / Math.SQRT2;
+  return {
+    duration: flightDuration(a, b, S, ctx),
+    at(t) {
+      if (t >= 1) return b;
+      const scale = a.scale * (b.scale / a.scale) ** t;
+      const sx = sa.x + (sb.x - sa.x) * t;
+      const sy = sa.y + (sb.y - sa.y) * t;
+      return { x: P.x - sx / scale, y: P.y - sy / scale, scale, ...(b.focus !== undefined ? { focus: b.focus } : {}) };
+    },
+  };
+}
+
+/**
+ * 依熟悉度調整一層一層下去的速度（草稿〈層級過場的研究〉更好的做法 3；專長反轉效應）：
+ * 前 3 次完整播放，之後每次快一些，最快為原本的 0.35 倍。n＝已經走過幾次。
+ */
+export function descentPace(n: number): number {
+  return n < 3 ? 1 : Math.max(0.35, 1 - 0.13 * (n - 2));
 }
 
 const DESCENT: ZoomLevel[] = ['canon', 'book', 'outline', 'reading'];
@@ -386,8 +422,7 @@ export function flyPath(a: Camera, b: Camera, ctx: CameraContext): { duration: n
   }
   // 同一層內（翻頁、換段）要快；跨層級（如書卷層 → 頁面）放慢，讓讀者看清楚整個轉場、感覺真的「過去了」
   // （使用者回饋 2026-10-06；正典層 ↔ 書卷層的分段過場約 2.9 秒，見 Reader.tsx 的 MORPH_MS）
-  const crossesLevel = levelOf(a.scale, ctx.readingScale) !== levelOf(b.scale, ctx.readingScale);
-  const duration = crossesLevel ? Math.min(1800, Math.max(1100, 900 + 300 * Math.abs(S))) : Math.min(650, Math.max(180, 180 + 160 * Math.abs(S)));
+  const duration = flightDuration(a, b, S, ctx);
   return {
     duration,
     at(t) {

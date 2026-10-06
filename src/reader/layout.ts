@@ -75,6 +75,8 @@ export interface Layout {
   rows?: ReadonlyArray<{ chapter: number; rect: { x: number; y: number; w: number; h: number } }>;
   /** 章節地圖：每一塊（一個段落，或段落跨章時在新章的那一部分）與它的第一節 */
   blocks?: ReadonlyArray<{ verseIdx: number; rect: { x: number; y: number; w: number; h: number } }>;
+  /** 一章一列：每一頁在世界中的列與欄（依頁的索引）。有值時頁的位置以它為準 */
+  pagePlace?: ReadonlyArray<{ row: number; col: number }>;
 }
 
 const CLOSING = new Set('，。、；：？！」』）】〉》─…');
@@ -112,7 +114,11 @@ function groups(cells: Cell[]): Cell[][] {
   return out;
 }
 
-export function layoutBook(input: { book: number; verses: readonly BookVerse[]; paragraphStarts: readonly number[] }, params: LayoutParams = DEFAULT_LAYOUT): Layout {
+/**
+ * options.chapterPage：每一章從新的一頁開始（上一章最後一頁剩下的行留白）。
+ * 用於「一章一列」：每一頁只屬於一章，章才能各占一列而所有層級共用同一種排列。
+ */
+export function layoutBook(input: { book: number; verses: readonly BookVerse[]; paragraphStarts: readonly number[] }, params: LayoutParams = DEFAULT_LAYOUT, options: { chapterPage?: boolean } = {}): Layout {
   const { cellsPerLine } = params;
   const paraSet = new Set(input.paragraphStarts);
   const lines: Line[] = [];
@@ -164,6 +170,12 @@ export function layoutBook(input: { book: number; verses: readonly BookVerse[]; 
     if (newChapter || newPara) flush();
     if (newChapter) {
       chapter = v.ref.chapter;
+      if (options.chapterPage) {
+        close();
+        // 補空行到下一頁的第一行
+        const perPage = params.columnsPerPage * params.linesPerColumn;
+        while (lines.length % perPage !== 0) lines.push({ index: lines.length, pos: linePos(lines.length, params), cells: [], paragraphStart: false, chapterStart: false });
+      }
       open({ chapterStart: true });
       cur!.push({ kind: 'chapterLabel', char: `第 ${chapter} 章`, width: 4, verseIdx: null });
       chapters.push({ chapter, line: lines.length });
