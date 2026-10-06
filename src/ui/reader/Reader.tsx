@@ -71,6 +71,8 @@ const loadArrangement = (): Mode => {
     return 'strip';
   }
 };
+/** 正典層 ↔ 書卷層分段過場的時間（毫秒）；以 CSS 變數傳給 style.css，兩邊同一個來源 */
+const MORPH_MS = { focus: 500, move: 1100, unfold: 1000, pause: 150 } as const;
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** 長卷模式：精讀、段落輪廓用長卷；書卷、正典層折成每列 6 頁 */
@@ -145,6 +147,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   // - 章號格與那一列頁面是同一個東西：頁面從章號格往右長出來（物件恆常性）
   // - 縮小時完全反向（可逆才形成心智模型）；手勢一碰就跳到終點；減少動態效果時不播放
   const treeChips = useRef<Array<{ chapter: number; rect: DOMRect }>>([]);
+  // 時間刻意放慢：讓讀者看清楚每一段、真的感覺「轉場過去」（使用者回饋 2026-10-06）；段與段之間留短暫停頓讓眼睛跟上
   const canonStyleRef = useRef(canonStyle);
   canonStyleRef.current = canonStyle;
   type MorphPhase = 'focus' | 'move' | 'unfold' | 'fold' | 'return';
@@ -165,7 +168,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   };
   const clipOf = (rects: Iterable<DOMRect>) => {
     const vp = stage.current?.getBoundingClientRect();
-    return Math.max(0, ...[...rects].map((r) => r.right)) - (vp?.left ?? 0) + 4;
+    // 以章號欄的左緣為界：移動途中整個頁面都藏著，展開時才從章號欄往右長出來（不先漏出第一欄）
+    return Math.max(0, Math.min(...[...rects].map((r) => r.left)) - (vp?.left ?? 0));
   };
   /** 等畫面套用新狀態後再做下一步（兩個影格：一次渲染、一次版面） */
   const nextFrame = (run: { timers: number[] }, f: () => void) => requestAnimationFrame(() => requestAnimationFrame(() => morphRun.current === run && f()));
@@ -175,15 +179,15 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const run = { timers: [] as number[], target: target as Camera | null };
     morphRun.current = run;
     setMorph({ phase: 'focus', chips: treeChips.current.map((c) => ({ chapter: c.chapter, at: c.rect })), clip: 0 });
-    after(run, 300, () => {
+    after(run, MORPH_MS.focus, () => {
       run.target = null;
       show(settleArrangement(target));
       nextFrame(run, () => {
         const to = chipRectsIn('[data-testid="book-chapter"]');
         setMorph((m) => m && { ...m, phase: 'move', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })), clip: clipOf(to.values()) });
-        after(run, 650, () => {
+        after(run, MORPH_MS.move + MORPH_MS.pause, () => {
           setMorph((m) => m && { ...m, phase: 'unfold' });
-          after(run, 550, finishMorph);
+          after(run, MORPH_MS.unfold + MORPH_MS.pause, finishMorph);
         });
       });
     });
@@ -196,13 +200,13 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     setMorph({ phase: 'unfold', chips: [...at].map(([chapter, r]) => ({ chapter, at: r })), clip: clipOf(at.values()) });
     nextFrame(run, () => {
       setMorph((m) => m && { ...m, phase: 'fold' });
-      after(run, 550, () => {
+      after(run, MORPH_MS.unfold + MORPH_MS.pause, () => {
         run.target = null;
         show(settleArrangement(target));
         nextFrame(run, () => {
           const to = new Map(treeChips.current.map((c) => [c.chapter, c.rect]));
           setMorph((m) => m && { ...m, phase: 'return', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })) });
-          after(run, 650, finishMorph);
+          after(run, MORPH_MS.move + MORPH_MS.pause, finishMorph);
         });
       });
     });
@@ -497,7 +501,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class={morph ? `reader morphing morph-${morph.phase}` : 'reader'} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
+    <section class={morph ? `reader morphing morph-${morph.phase}` : 'reader'} style={{ '--morph-focus': `${MORPH_MS.focus}ms`, '--morph-move': `${MORPH_MS.move}ms`, '--morph-unfold': `${MORPH_MS.unfold}ms` }} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
