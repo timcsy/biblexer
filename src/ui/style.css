@@ -193,7 +193,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .reader.morphing .bchap { visibility: hidden; }
 /* 正典層 → 書卷層的過場：章號格從樹上飛到書卷層對應的列 */
 .level-morph { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
-.morph-chip { position: fixed; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font: 0.85rem system-ui, sans-serif; color: var(--fg); border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); transform-origin: 0 0; transition: transform 0.45s ease, opacity 0.45s ease; }
+.morph-chip { position: fixed; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font: 0.85rem system-ui, sans-serif; color: var(--fg); border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); transform-origin: 0 0; transition: transform 0.6s cubic-bezier(0.45, 0, 0.25, 1), opacity 0.3s ease; }
+/* 分段過場：退場（focus）→ 整組移動（move）→ 展開（unfold）；縮小時 unfold → 收回（fold）→ 回到樹上（return） */
+.reader.morphing .tree-node.k-chapter { visibility: hidden; }
+.reader.morph-focus .tree-node:not([aria-current]), .reader.morph-focus .focus-tree-lines, .reader.morph-focus .tree-head { animation: tree-out 0.3s ease forwards; }
+.reader.morph-return .tree-node:not([aria-current]), .reader.morph-return .focus-tree-lines, .reader.morph-return .tree-head { animation: tree-out 0s forwards; }
+@keyframes tree-out { to { opacity: 0; } }
+.reader.morphing .reader-viewport { transition: clip-path 0.5s cubic-bezier(0.45, 0, 0.25, 1); }
+.reader.morph-move .reader-viewport, .reader.morph-fold .reader-viewport { clip-path: inset(0 calc(100% - var(--morph-clip)) 0 0); }
+.reader.morph-unfold .reader-viewport { clip-path: inset(0 0 0 0); }
 .tree-hint { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip-bar { position: relative; height: 12px; border-radius: 4px; overflow: hidden; background: var(--line); }
 .strip-seg { position: absolute; top: 0; height: 100%; background: var(--c); opacity: 0.55; cursor: pointer; border-right: 1px solid color-mix(in srgb, var(--card) 70%, transparent); box-sizing: border-box; }

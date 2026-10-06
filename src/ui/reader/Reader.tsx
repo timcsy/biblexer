@@ -135,6 +135,77 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const interrupt = () => {
     if (anim.current !== null) cancelAnimationFrame(anim.current);
     anim.current = null;
+    finishMorph();
+  };
+
+  // 正典層（焦點樹）↔ 書卷層（章節地圖）的分段過場：「章號格展開成那一章」
+  // 依據（見 knowledge/draft/2026-10-05-混合曲率作為人機介面的基石.md〈層級過場的研究〉）：
+  // - 分段（Heer & Robertson 2007）：退場 → 整組移動 → 展開，每段一件事
+  // - 16 個章號整組移動、保持閱讀順序（人一次只追得了 4～5 個各自移動的物件；共同命運讓整組成為一個東西）
+  // - 章號格與那一列頁面是同一個東西：頁面從章號格往右長出來（物件恆常性）
+  // - 縮小時完全反向（可逆才形成心智模型）；手勢一碰就跳到終點；減少動態效果時不播放
+  const treeChips = useRef<Array<{ chapter: number; rect: DOMRect }>>([]);
+  const canonStyleRef = useRef(canonStyle);
+  canonStyleRef.current = canonStyle;
+  type MorphPhase = 'focus' | 'move' | 'unfold' | 'fold' | 'return';
+  const [morph, setMorph] = useState<{ phase: MorphPhase; chips: Array<{ chapter: number; at: DOMRect; to?: DOMRect }>; clip: number } | null>(null);
+  const morphRun = useRef<{ timers: number[]; target: Camera | null } | null>(null);
+  function finishMorph() {
+    const run = morphRun.current;
+    if (!run) return;
+    morphRun.current = null;
+    run.timers.forEach(clearTimeout);
+    if (run.target) show(settleArrangement(run.target));
+    setMorph(null);
+  }
+  const chipRectsIn = (sel: string) => {
+    const m = new Map<number, DOMRect>();
+    stage.current?.querySelectorAll<HTMLElement>(sel).forEach((el) => m.set(Number(el.dataset.chapter), el.getBoundingClientRect()));
+    return m;
+  };
+  const clipOf = (rects: Iterable<DOMRect>) => {
+    const vp = stage.current?.getBoundingClientRect();
+    return Math.max(0, ...[...rects].map((r) => r.right)) - (vp?.left ?? 0) + 4;
+  };
+  /** 等畫面套用新狀態後再做下一步（兩個影格：一次渲染、一次版面） */
+  const nextFrame = (run: { timers: number[] }, f: () => void) => requestAnimationFrame(() => requestAnimationFrame(() => morphRun.current === run && f()));
+  const after = (run: { timers: number[] }, ms: number, f: () => void) => run.timers.push(window.setTimeout(() => morphRun.current === run && f(), ms));
+  /** 放大：樹上其他節點退場 → 章號格整組排成一欄 → 每格往右展開成那一章 */
+  const morphIn = (target: Camera) => {
+    const run = { timers: [] as number[], target: target as Camera | null };
+    morphRun.current = run;
+    setMorph({ phase: 'focus', chips: treeChips.current.map((c) => ({ chapter: c.chapter, at: c.rect })), clip: 0 });
+    after(run, 300, () => {
+      run.target = null;
+      show(settleArrangement(target));
+      nextFrame(run, () => {
+        const to = chipRectsIn('[data-testid="book-chapter"]');
+        setMorph((m) => m && { ...m, phase: 'move', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })), clip: clipOf(to.values()) });
+        after(run, 650, () => {
+          setMorph((m) => m && { ...m, phase: 'unfold' });
+          after(run, 550, finishMorph);
+        });
+      });
+    });
+  };
+  /** 縮小：頁面收回章號格 → 章號格整組回到樹上 → 樹的其他節點進場 */
+  const morphOut = (target: Camera) => {
+    const run = { timers: [] as number[], target: target as Camera | null };
+    morphRun.current = run;
+    const at = chipRectsIn('[data-testid="book-chapter"]');
+    setMorph({ phase: 'unfold', chips: [...at].map(([chapter, r]) => ({ chapter, at: r })), clip: clipOf(at.values()) });
+    nextFrame(run, () => {
+      setMorph((m) => m && { ...m, phase: 'fold' });
+      after(run, 550, () => {
+        run.target = null;
+        show(settleArrangement(target));
+        nextFrame(run, () => {
+          const to = new Map(treeChips.current.map((c) => [c.chapter, c.rect]));
+          setMorph((m) => m && { ...m, phase: 'return', chips: m.chips.map((c) => ({ ...c, ...(to.get(c.chapter) ? { to: to.get(c.chapter)! } : {}) })) });
+          after(run, 650, finishMorph);
+        });
+      });
+    });
   };
   /** 以過場動畫著陸；目標在目前的 ctx 中計算 */
   const land = (target: Camera) => {
@@ -146,6 +217,19 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     const x = ctxRef.current!;
     const start = x === from ? cur : remap(cur, from, x);
     if (reducedMotion()) return show(to);
+    // 正典層焦點樹 ↔ 書卷層：用分段過場取代相機飛行（章號格是兩層共同的錨點）
+    if (canonStyleRef.current === 'tree') {
+      const lv = (c: Camera) => levelOf(c.scale, from.readingScale);
+      const focusBook = cur.at?.startsWith('book:') ? Number(cur.at.slice(5)) : data.book;
+      if (lv(cur) === 'canon' && lv(to) === 'book' && focusBook === data.book && treeChips.current.length > 0) {
+        if (x !== from) useCtx(from);
+        return morphIn(target);
+      }
+      if (lv(cur) === 'book' && lv(to) === 'canon' && stage.current?.querySelector('[data-testid="book-chapter"]')) {
+        if (x !== from) useCtx(from);
+        return morphOut(target);
+      }
+    }
     const path = flyPath(start, to, x);
     const t0 = performance.now();
     const tick = (now: number) => {
@@ -315,32 +399,6 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const layout: Layout = ctx?.layout ?? layouts.grid;
   const level = ctx && camera ? levelOf(camera.scale, ctx.readingScale) : 'reading';
 
-  // 正典層 → 書卷層的過場：焦點樹的章號格（起點）飛到書卷層對應的章號（終點）；
-  // 相機著陸後才量終點，期間書卷層的章號先隱藏，避免同一個章號同時出現兩次
-  const treeChips = useRef<Array<{ chapter: number; rect: DOMRect }>>([]);
-  const prevLevel = useRef(level);
-  const [morph, setMorph] = useState<{ from: Array<{ chapter: number; rect: DOMRect }>; to: Map<number, DOMRect> | null } | null>(null);
-  useEffect(() => {
-    const was = prevLevel.current;
-    prevLevel.current = level;
-    if (!(was === 'canon' && level === 'book') || reducedMotion() || treeChips.current.length === 0) return;
-    setMorph({ from: treeChips.current, to: null });
-    let raf = 0;
-    let done = 0;
-    const measure = () => {
-      if (anim.current !== null) return void (raf = requestAnimationFrame(measure));
-      const to = new Map<number, DOMRect>();
-      stage.current?.querySelectorAll<HTMLElement>('[data-testid="book-chapter"]').forEach((el) => to.set(Number(el.dataset.chapter), el.getBoundingClientRect()));
-      setMorph((m) => (m ? { ...m, to } : m));
-      done = window.setTimeout(() => setMorph(null), 500);
-    };
-    raf = requestAnimationFrame(measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(done);
-      setMorph(null);
-    };
-  }, [level]);
   const hit = start?.hit ?? null;
 
   let clipH: number | undefined;
@@ -439,7 +497,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const transform = camera ? `translate(${-camera.x * camera.scale}px, ${-camera.y * camera.scale}px) scale(${camera.scale / U})` : undefined;
 
   return (
-    <section class={morph ? 'reader morphing' : 'reader'} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
+    <section class={morph ? `reader morphing morph-${morph.phase}` : 'reader'} data-testid="reader" data-level={level} data-focus={camera?.focus ?? ''} data-landing={camera?.at ?? ''} data-arrangement={mode} data-book-style={bookStyle} data-canon-style={canonStyle}>
       <header class="reader-bar">
         <button type="button" class="link" data-testid="reader-back" onClick={onBack}>
           {STRINGS.readerBack}
@@ -490,7 +548,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           }}
         />
       <div class="reader-stage" ref={stage}>
-        <div class="reader-viewport" data-testid="reader-viewport" style={clipH !== undefined ? { height: `${clipH}px` } : { height: '100%' }}>
+        <div class="reader-viewport" data-testid="reader-viewport" style={{ ...(clipH !== undefined ? { height: `${clipH}px` } : { height: '100%' }), ...(morph ? { '--morph-clip': `${morph.clip}px` } : {}) }}>
           <div class="world fold" style={transform ? { transform } : {}}>
             {paperBody}
             {body}
@@ -513,17 +571,17 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           />
         )}
         {morph && (
-          <div class="level-morph" data-testid="level-morph" aria-hidden="true">
-            {morph.from.map(({ chapter, rect }) => {
-              const to = morph.to?.get(chapter);
+          <div class="level-morph" data-testid="level-morph" data-phase={morph.phase} aria-hidden="true">
+            {morph.chips.map(({ chapter, at, to }) => {
               const b = BOOKS[data.book - 1]!;
-              const move = morph.to ? (to ? `translate(${to.left - rect.left}px, ${to.top - rect.top}px) scale(${to.width / rect.width}, ${to.height / rect.height})` : 'none') : 'none';
+              const moved = (morph.phase === 'move' || morph.phase === 'unfold' || morph.phase === 'return') && to;
+              const move = moved ? `translate(${to.left - at.left}px, ${to.top - at.top}px) scale(${to.width / at.width}, ${to.height / at.height})` : 'none';
               return (
                 <span
                   key={chapter}
                   class={`morph-chip p-${b.testament}-${b.category}`}
                   data-testid="morph-chip"
-                  style={{ left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, transform: move, opacity: morph.to && !to ? 0 : 1 }}
+                  style={{ left: `${at.left}px`, top: `${at.top}px`, width: `${at.width}px`, height: `${at.height}px`, transform: move, opacity: morph.phase !== 'focus' && morph.phase !== 'fold' && morph.phase !== 'unfold' && !to ? 0 : 1 }}
                 >
                   {chapter}
                 </span>
