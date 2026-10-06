@@ -174,3 +174,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-chapter:hover circle { fill: color-mix(in srgb, var(--accent) 40%, var(--card)); }
 .hyper-hint { position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%); margin: 0; padding: 0.3rem 0.8rem; font-size: 0.8rem; color: var(--fg); background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; pointer-events: none; }
 @media (max-width: 520px) { .hyper-hint { white-space: normal; text-align: center; width: calc(100% - 2rem); border-radius: 0.6rem; } }
+/* 正典的焦點樹（原型第三版） */
+.focus-tree-wrap { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; }
+.focus-tree { position: relative; }
+.focus-tree-lines { position: absolute; left: 0; top: 0; pointer-events: none; }
+.focus-tree-lines path { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.tree-node { position: absolute; height: 26px; line-height: 26px; padding: 0 5px; white-space: nowrap; border-radius: 6px; transition: left 0.35s ease, top 0.35s ease; color: var(--fg); }
+.tree-node[role='button'] { cursor: pointer; }
+.tree-node[role='button']:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.tree-node.root, .tree-node.testament { font-weight: bold; }
+.tree-node.current { color: var(--accent); font-weight: bold; }
+.tree-node.book.current { background: var(--accent); color: var(--card); }
+.tree-node.collapsed { color: var(--muted); }
+.tree-node.collapsed small { margin-left: 0.15em; font-size: 0.8em; }
+.tree-node.chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); }
+@media (prefers-reduced-motion: reduce) { .tree-node { transition: none; } }

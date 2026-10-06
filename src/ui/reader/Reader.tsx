@@ -11,7 +11,7 @@ import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
 import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
-import { HyperbolicCanon } from './HyperbolicCanon.tsx';
+import { FocusTree } from './FocusTree.tsx';
 import { bookById } from '../../core/canon.ts';
 import { STRINGS } from '../strings.ts';
 import { BookLayer } from './BookLayer.tsx';
@@ -38,13 +38,13 @@ export interface ReaderProps {
 const LEVEL_LABEL = { canon: STRINGS.levelCanon, book: STRINGS.levelBook, outline: STRINGS.levelOutline, reading: STRINGS.levelReading } as const;
 const ARRANGEMENT_KEY = 'biblexer.reader.arrangement';
 const CANON_STYLE_KEY = 'biblexer.reader.canonStyle';
-/** 正典層（原型）：方塊或雙曲全貌 */
-type CanonStyle = 'tiles' | 'hyperbolic';
+/** 正典層（原型）：方塊或焦點樹（第三版；圓盤版見 HyperbolicCanon.tsx 與 git 歷史） */
+type CanonStyle = 'tiles' | 'tree';
 const loadCanonStyle = (): CanonStyle => {
   try {
-    return localStorage.getItem(CANON_STYLE_KEY) === 'tiles' ? 'tiles' : 'hyperbolic';
+    return localStorage.getItem(CANON_STYLE_KEY) === 'tiles' ? 'tiles' : 'tree';
   } catch {
-    return 'hyperbolic';
+    return 'tree';
   }
 };
 const BOOK_STYLE_KEY = 'biblexer.reader.bookStyle';
@@ -76,7 +76,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
   const [parallelsOpen, setParallelsOpen] = useState(false);
   const [canonStyle, setCanonStyle] = useState<CanonStyle>(loadCanonStyle);
   const toggleCanonStyle = () => {
-    const next: CanonStyle = canonStyle === 'tiles' ? 'hyperbolic' : 'tiles';
+    const next: CanonStyle = canonStyle === 'tiles' ? 'tree' : 'tiles';
     try {
       localStorage.setItem(CANON_STYLE_KEY, next);
     } catch {
@@ -389,7 +389,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
     if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
     if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
-    if (canonStyle === 'hyperbolic') return null;
+    if (canonStyle === 'tree') return null;
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
   }, [canonStyle, level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
@@ -433,8 +433,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
           </button>
         )}
         {level === 'canon' && (
-          <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" aria-pressed={canonStyle === 'hyperbolic'} onClick={toggleCanonStyle}>
-            {STRINGS.canonStyleLabel}：{canonStyle === 'hyperbolic' ? STRINGS.canonStyleHyperbolic : STRINGS.canonStyleTiles}
+          <button type="button" class="reader-arrangement" data-testid="canonstyle-toggle" aria-pressed={canonStyle === 'tree'} onClick={toggleCanonStyle}>
+            {STRINGS.canonStyleLabel}：{canonStyle === 'tree' ? STRINGS.canonStyleTree : STRINGS.canonStyleTiles}
           </button>
         )}
         <span class="reader-zoom">
@@ -453,8 +453,8 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
             {body}
           </div>
         </div>
-        {level === 'canon' && canonStyle === 'hyperbolic' && ctx && camera && (
-          <HyperbolicCanon
+        {level === 'canon' && canonStyle === 'tree' && ctx && camera && (
+          <FocusTree
             focusBook={camera.at?.startsWith('book:') ? Number(camera.at.slice(5)) : data.book}
             width={ctx.viewport.width}
             height={ctx.viewport.height}
@@ -492,6 +492,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
       <p class="reader-attr">
         <span data-testid="segmentation-attribution">{STRINGS.segmentationAttribution}</span>
         {level === 'canon' && <span data-testid="canon-order-attribution">{`；${STRINGS.canonOrder}`}</span>}
+        {level === 'canon' && canonStyle === 'tree' && <span data-testid="canon-category-attribution">{`；${STRINGS.treeCategories}`}</span>}
       </p>
     </section>
   );
