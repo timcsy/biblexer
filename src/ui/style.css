@@ -174,21 +174,38 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-chapter:hover circle { fill: color-mix(in srgb, var(--accent) 40%, var(--card)); }
 .hyper-hint { position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%); margin: 0; padding: 0.3rem 0.8rem; font-size: 0.8rem; color: var(--fg); background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; pointer-events: none; }
 @media (max-width: 520px) { .hyper-hint { white-space: normal; text-align: center; width: calc(100% - 2rem); border-radius: 0.6rem; } }
-/* 正典的焦點樹（原型第三版） */
-.focus-tree-wrap { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; }
+/* 正典的焦點樹（原型第五版：依研究調整） */
+.focus-tree-wrap { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  --p-OT-law: #a0522d; --p-OT-history: #b8860b; --p-OT-wisdom: #8b6c9e; --p-OT-prophets: #b0413e;
+  --p-NT-gospels: #2f7d6d; --p-NT-history: #4a8db7; --p-NT-epistles: #3b5ea8; --p-NT-revelation: #5c7f3a; }
+.p-OT-law { --c: var(--p-OT-law); } .p-OT-history { --c: var(--p-OT-history); } .p-OT-wisdom { --c: var(--p-OT-wisdom); } .p-OT-prophets { --c: var(--p-OT-prophets); }
+.p-NT-gospels { --c: var(--p-NT-gospels); } .p-NT-history { --c: var(--p-NT-history); } .p-NT-epistles { --c: var(--p-NT-epistles); } .p-NT-revelation { --c: var(--p-NT-revelation); }
+.p-OT, .p-NT, .p-none { --c: var(--muted); }
+.canon-strip { position: absolute; top: 12px; height: 42px; z-index: 2; }
+.strip-bar { position: relative; height: 14px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.strip-seg { position: absolute; top: 0; height: 100%; background: var(--c); opacity: 0.55; cursor: pointer; border-right: 1px solid color-mix(in srgb, var(--card) 70%, transparent); box-sizing: border-box; }
+.strip-seg:hover { opacity: 0.85; }
+.strip-seg.current { opacity: 1; box-shadow: inset 0 0 0 2px var(--fg); }
+.strip-labels { position: relative; height: 22px; font-size: 0.75rem; color: var(--muted); }
+.strip-labels span { position: absolute; top: 4px; white-space: nowrap; }
+.strip-labels .strip-here { transform: translateX(-50%); color: var(--fg); font-weight: bold; }
 .focus-tree { position: relative; }
 .focus-tree-lines { position: absolute; left: 0; top: 0; pointer-events: none; }
-.focus-tree-lines path { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.tree-node { position: absolute; height: 26px; line-height: 26px; padding: 0 5px; white-space: nowrap; border-radius: 6px; transition: left 0.35s ease, top 0.35s ease; color: var(--fg); }
+.branch { fill: none; stroke: var(--c); stroke-linecap: round; opacity: 0.28; }
+.branch.on-path { opacity: 0.95; }
+.tree-node { position: absolute; height: 26px; line-height: 26px; padding: 0 6px; white-space: nowrap; border-radius: 13px; color: var(--fg); transition: left 0.35s ease, top 0.35s ease; animation: tree-in 0.3s ease 0.25s both; }
+@keyframes tree-in { from { opacity: 0; } to { opacity: 1; } }
 .tree-node[role='button'] { cursor: pointer; }
-.tree-node[role='button']:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.tree-node[role='button']:hover { background: color-mix(in srgb, var(--c, var(--accent)) 16%, transparent); }
 .tree-node.root, .tree-node.testament { font-weight: bold; }
-.tree-node.current { color: var(--accent); font-weight: bold; }
-.tree-node.book.current { background: var(--accent); color: var(--card); }
-.tree-node.collapsed { color: var(--muted); }
-.tree-node.collapsed small { margin-left: 0.15em; font-size: 0.8em; }
-.tree-node.chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); }
-@media (prefers-reduced-motion: reduce) { .tree-node { transition: none; } }
+.tree-node.category { color: var(--c); font-weight: bold; }
+.tree-node.category.collapsed { font-weight: normal; }
+.tree-node.collapsed small { margin-left: 0.4em; font-size: 0.75em; color: var(--muted); }
+.size-bar { display: inline-block; height: 6px; margin-left: 0.5em; vertical-align: middle; border-radius: 3px; background: var(--c); opacity: 0.6; }
+.tree-node.book.current { background: var(--c); color: #fff; font-weight: bold; }
+.tree-node.chapter { text-align: center; padding: 0; font-size: 0.85rem; font-family: system-ui, sans-serif; border-radius: 6px; background: color-mix(in srgb, var(--c) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); }
+.tree-node.chapter:hover { background: color-mix(in srgb, var(--c) 30%, var(--card)); }
+@media (prefers-reduced-motion: reduce) { .tree-node { transition: none; animation: none; } }
 .hyper-edge { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-width: 1.2; pointer-events: none; }
 .hyper-edge.chapter { stroke: color-mix(in srgb, var(--accent) 45%, transparent); }
 /* 心智圖風格（原型第四版）：依類別著色、由粗漸細、中心主題 */
@@ -210,3 +227,4 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-canon.mind .mind-center-box.cat-epistles { fill: #3b78b5; } .hyper-canon.mind .hyper-chapter.cat-epistles circle { stroke: #3b78b5; fill: color-mix(in srgb, #3b78b5 15%, var(--card)); }
 .hyper-canon.mind .mind-center-box.cat-revelation { fill: #7a4b2a; } .hyper-canon.mind .hyper-chapter.cat-revelation circle { stroke: #7a4b2a; fill: color-mix(in srgb, #7a4b2a 15%, var(--card)); }
 .hyper-canon.mind .hyper-book.focused text.mind-center { fill: #fff; }
+@media (max-width: 560px) { .tree-node.chapter { height: 24px; line-height: 24px; } }

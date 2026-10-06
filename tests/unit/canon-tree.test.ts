@@ -53,7 +53,8 @@ describe('焦點樹的排版', () => {
     const chs = items.filter((i) => i.kind === 'chapter');
     expect(Math.min(...chs.map((c) => c.row))).toBe(rom.row + 1);
     const next = items.find((i) => i.kind === 'book' && i.book === 46)!;
-    expect(next.row).toBe(rom.row + 1 + Math.ceil(16 / 5));
+    // 章號格之後空一列，與下一卷分開
+    expect(next.row).toBe(rom.row + 1 + Math.ceil(16 / 5) + 1);
     expect(chs.every((c) => c.col === 3)).toBe(true);
   });
 
@@ -61,5 +62,29 @@ describe('焦點樹的排版', () => {
     const g = layoutCanonTree(1, 10);
     expect(ofKind(g, 'book').map((b) => b.book)).toEqual([1, 2, 3, 4, 5]);
     expect(ofKind(g, 'chapter').length).toBe(50);
+  });
+});
+
+describe('第五版：份量、配色、正典帶', () => {
+  test('收起的類別帶著卷數與章數（份量條用）；律法書 5 卷 187 章', () => {
+    const law = layoutCanonTree(45, 10).find((i) => i.id === 'c:OT:law')!;
+    expect([law.collapsed, law.chapters]).toEqual([5, 187]);
+  });
+
+  test('配色鍵＝約＋類別（舊約、新約都有歷史書，要分開）；書卷沿用所屬類別的鍵', () => {
+    const items = layoutCanonTree(45, 10);
+    const keys = items.filter((i) => i.kind === 'category').map((i) => i.palette);
+    expect(new Set(keys).size).toBe(8);
+    expect(items.find((i) => i.kind === 'book' && i.book === 45)!.palette).toBe('NT:epistles');
+  });
+
+  test('正典帶：66 段依章數比例、依正典順序、首尾相接且總長為 1', async () => {
+    const { canonStrip } = await import('../../src/reader/canonTree.ts');
+    const segs = canonStrip();
+    expect(segs.map((s) => s.book)).toEqual(Array.from({ length: 66 }, (_, i) => i + 1));
+    expect(segs[0]!.x0).toBe(0);
+    expect(segs.at(-1)!.x1).toBeCloseTo(1, 12);
+    for (let i = 1; i < 66; i++) expect(segs[i]!.x0).toBeCloseTo(segs[i - 1]!.x1, 12);
+    expect((segs[18]!.x1 - segs[18]!.x0) / (segs[30]!.x1 - segs[30]!.x0)).toBeCloseTo(150, 6);
   });
 });
