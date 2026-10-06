@@ -92,3 +92,92 @@ export function sarkarEmbed(tree: readonly TreeNode[], tau: number): Point[] {
   }
   return pts;
 }
+
+// ── 第二版（原型）：約的半球、各層邊長、依篇幅分配角度、拖曳焦點 ──
+
+export interface CanonNodeV2 extends TreeNode {
+  kind: 'root' | 'testament' | 'book' | 'chapter';
+  testament: 'OT' | 'NT' | null;
+  book: number | null;
+  chapter: number | null;
+  /** 篇幅（節數）：決定分到的角度 */
+  weight: number;
+}
+
+/** 正典樹第二版：根 → 約（舊約、新約）→ 書卷 → 章。books：[書卷, 章數, 節數]，依正典順序 */
+export function canonTreeV2(books: ReadonlyArray<[book: number, chapters: number, verses: number]>): CanonNodeV2[] {
+  const t: CanonNodeV2[] = [{ parent: -1, kind: 'root', testament: null, book: null, chapter: null, weight: 0 }];
+  for (const tm of ['OT', 'NT'] as const) {
+    const mine = books.filter(([b]) => (tm === 'OT' ? b <= 39 : b >= 40));
+    if (!mine.length) continue;
+    const ti = t.push({ parent: 0, kind: 'testament', testament: tm, book: null, chapter: null, weight: mine.reduce((s, [, , v]) => s + v, 0) }) - 1;
+    for (const [book, chapters, verses] of mine) {
+      const bi = t.push({ parent: ti, kind: 'book', testament: tm, book, chapter: null, weight: verses }) - 1;
+      for (let c = 1; c <= chapters; c++) t.push({ parent: bi, kind: 'chapter', testament: tm, book, chapter: c, weight: verses / chapters });
+    }
+  }
+  t[0]!.weight = t.filter((n) => n.kind === 'testament').reduce((s, n) => s + n.weight, 0);
+  return t;
+}
+
+const PARENT_GAP = Math.PI / 2; // 子節點避開指向父節點的方向（留一個扇形）
+
+/**
+ * 加權嵌入：各層邊長不同（約 τt、書卷 τb、章 τc——章緊貼書卷）；子節點分到的角度與篇幅成比例；
+ * 根的兩個子節點固定為舊約在左（角度 π）、新約在右（角度 0），換焦點後方向不變。
+ */
+export function embedWeighted(tree: readonly CanonNodeV2[], tau: { testament: number; book: number; chapter: number }): Point[] {
+  const ch: number[][] = tree.map(() => []);
+  for (let i = 1; i < tree.length; i++) ch[tree[i]!.parent]!.push(i);
+  const pts: Point[] = new Array(tree.length);
+  pts[0] = [0, 0];
+  const radius = (k: CanonNodeV2['kind']) => Math.tanh((k === 'testament' ? tau.testament : k === 'book' ? tau.book : tau.chapter) / 2);
+  for (let v = 0; v < tree.length; v++) {
+    const kids = ch[v]!;
+    if (!kids.length) continue;
+    const zv = pts[v]!;
+    const angles: number[] = [];
+    if (v === 0) {
+      for (const c of kids) angles.push(tree[c]!.testament === 'OT' ? Math.PI : 0);
+    } else {
+      const wp = focusOn(zv, pts[tree[v]!.parent]!);
+      const toParent = Math.atan2(wp[1], wp[0]);
+      const start = toParent + PARENT_GAP / 2;
+      const span = 2 * Math.PI - PARENT_GAP;
+      const total = kids.reduce((s, c) => s + tree[c]!.weight, 0);
+      let a = start;
+      for (const c of kids) {
+        const w = (span * tree[c]!.weight) / total;
+        angles.push(a + w / 2);
+        a += w;
+      }
+    }
+    kids.forEach((c, k) => {
+      const r = radius(tree[c]!.kind);
+      pts[c] = unfocus(zv, [r * Math.cos(angles[k]!), r * Math.sin(angles[k]!)]);
+    });
+  }
+  return pts;
+}
+
+/** 拖曳：手指在圓盤座標中移動 d，畫面內容跟著移動——焦點往反方向移（保持在圓盤內） */
+export function dragFocus(f: Point, d: Point): Point {
+  const g = unfocus(f, [-d[0], -d[1]]);
+  const n = Math.hypot(g[0], g[1]);
+  return n < 0.999 ? g : [(g[0] / n) * 0.999, (g[1] / n) * 0.999];
+}
+
+/** 放手：吸附到雙曲距離最近的書卷 */
+export function nearestBook(f: Point, tree: readonly CanonNodeV2[], pts: readonly Point[]): number {
+  let best = -1;
+  let bestD = Infinity;
+  tree.forEach((n, i) => {
+    if (n.kind !== 'book') return;
+    const d = poincareDistance(f, pts[i]!);
+    if (d < bestD) {
+      bestD = d;
+      best = n.book!;
+    }
+  });
+  return best;
+}

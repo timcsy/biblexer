@@ -8,6 +8,8 @@ test('正典層點創世記：開啟創世記書首；標題是書卷名稱', as
   const reader = page.getByTestId('reader');
   for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
   await expect(reader).toHaveAttribute('data-level', 'canon');
+  // 這裡測的是方塊檢視（雙曲全貌另見 e2e/hyperbolic.spec.ts）
+  if ((await reader.getAttribute('data-canon-style')) === 'hyperbolic') await page.getByTestId('canonstyle-toggle').click();
   // 正典層以目前書卷（羅馬書）為中心；先用方向鍵移到創世記，再點它
   for (let i = 0; i < 44; i++) await page.keyboard.press('ArrowLeft');
   await expect(reader).toHaveAttribute('data-landing', 'book:1');

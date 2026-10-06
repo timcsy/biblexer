@@ -128,6 +128,8 @@ test('正典層：66 卷依正典順序；點羅馬書回到精讀（其他卷�
   await openReader(page);
   for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
   await expect(page.getByTestId('reader')).toHaveAttribute('data-level', 'canon');
+  // 這裡測的是方塊檢視（雙曲全貌另見 e2e/hyperbolic.spec.ts）
+  if ((await page.getByTestId('reader').getAttribute('data-canon-style')) === 'hyperbolic') await page.getByTestId('canonstyle-toggle').click();
   const tiles = page.getByTestId('canon-book');
   await expect(tiles).toHaveCount(66);
   expect(await tiles.evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-book'))))).toEqual(Array.from({ length: 66 }, (_, i) => i + 1));

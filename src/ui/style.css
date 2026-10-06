@@ -164,3 +164,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-chapter { cursor: pointer; }
 .hyper-chapter circle { fill: color-mix(in srgb, var(--accent) 18%, var(--card)); stroke: var(--accent); }
 .hyper-chapter text { fill: var(--fg); font-family: system-ui, sans-serif; }
+/* 雙曲全貌第二版：看得出能操作 */
+.hyper-wrap { position: absolute; inset: 0; overflow: hidden; }
+.hyper-canon { cursor: grab; touch-action: none; }
+.hyper-canon:active { cursor: grabbing; }
+.hyper-testament { fill: var(--muted); opacity: 0.35; font-weight: bold; pointer-events: none; }
+.hyper-book:hover circle, .hyper-chapter:hover circle { stroke: var(--accent); stroke-width: 3; }
+.hyper-book:hover text { fill: var(--accent); }
+.hyper-chapter:hover circle { fill: color-mix(in srgb, var(--accent) 40%, var(--card)); }
+.hyper-hint { position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%); margin: 0; padding: 0.3rem 0.8rem; font-size: 0.8rem; color: var(--fg); background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; pointer-events: none; }
+@media (max-width: 520px) { .hyper-hint { white-space: normal; text-align: center; width: calc(100% - 2rem); border-radius: 0.6rem; } }

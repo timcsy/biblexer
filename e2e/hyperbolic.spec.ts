@@ -25,3 +25,27 @@ test('雙曲全貌：目前書卷在圓心；點另一卷換焦點；點該卷�
   await expect(page.getByTestId('reader')).toHaveAttribute('data-level', 'reading');
   await expect(page.locator('[data-testid="verse"][data-ref="46:13:1"]')).toBeInViewport();
 });
+
+test('第二版：一進來就看到操作提示與舊約／新約；拖曳後放手吸附到最近的書卷', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitReady(page, false);
+  await openReader(page);
+  const reader = page.getByTestId('reader');
+  for (let i = 0; i < 3; i++) await page.getByTestId('zoom-out').click();
+  await expect(reader).toHaveAttribute('data-canon-style', 'hyperbolic');
+  await expect(page.getByTestId('hyper-hint')).toContainText('點書卷');
+  await expect(page.getByTestId('hyper-testament')).toHaveCount(2);
+  const disk = page.getByTestId('hyper-canon');
+  const box = (await disk.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  // 往右拖一大段：焦點往左移（舊約方向）；放手後吸附到某一卷（不是羅馬書）
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + box.width * 0.35, cy, { steps: 12 });
+  await page.mouse.up();
+  await expect(disk).not.toHaveAttribute('data-focus-book', '45');
+  const focus = Number(await disk.getAttribute('data-focus-book'));
+  expect(focus).toBeGreaterThanOrEqual(1);
+  await expect(reader).toHaveAttribute('data-landing', `book:${focus}`);
+});

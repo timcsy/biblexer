@@ -42,9 +42,9 @@ const CANON_STYLE_KEY = 'biblexer.reader.canonStyle';
 type CanonStyle = 'tiles' | 'hyperbolic';
 const loadCanonStyle = (): CanonStyle => {
   try {
-    return localStorage.getItem(CANON_STYLE_KEY) === 'hyperbolic' ? 'hyperbolic' : 'tiles';
+    return localStorage.getItem(CANON_STYLE_KEY) === 'tiles' ? 'tiles' : 'hyperbolic';
   } catch {
-    return 'tiles';
+    return 'hyperbolic';
   }
 };
 const BOOK_STYLE_KEY = 'biblexer.reader.bookStyle';
