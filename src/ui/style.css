@@ -214,7 +214,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .focus-tree-lines { position: absolute; left: 0; top: 0; pointer-events: none; }
 .branch { fill: none; stroke: var(--c); stroke-linecap: round; opacity: 0.28; }
 .branch.on-path { opacity: 0.95; }
-.tree-node { position: absolute; height: 26px; line-height: 26px; padding: 0 6px; white-space: nowrap; border-radius: 13px; color: var(--fg); transition: left 0.35s ease, top 0.35s ease; animation: tree-in 0.3s ease 0.25s both; }
+.tree-node { position: absolute; height: 26px; line-height: 26px; padding: 0 6px; white-space: nowrap; border-radius: 13px; color: var(--fg); transition: left 0.35s cubic-bezier(0.45, 0, 0.25, 1), top 0.35s cubic-bezier(0.45, 0, 0.25, 1); animation: tree-in 0.3s ease both; }
+/* 展開／收合的三段：leave → move → enter（時間與 FocusTree.tsx 的 LEAVE_MS／MOVE_MS／ENTER_MS 一致） */
+.focus-tree[data-phase='leave'] .tree-node.leaving, .focus-tree[data-phase='leave'] .focus-tree-lines { animation: tree-out 0.18s ease forwards; }
+.focus-tree[data-phase='move'] .tree-node.entering, .focus-tree[data-phase='move'] .focus-tree-lines { animation: none; opacity: 0; }
+.focus-tree[data-phase='enter'] .tree-node.entering, .focus-tree[data-phase='enter'] .focus-tree-lines { animation: tree-in 0.3s ease both; }
+.focus-tree:not([data-phase='idle']) .tree-node { pointer-events: none; }
 @keyframes tree-in { from { opacity: 0; } to { opacity: 1; } }
 .tree-node[role='button'] { cursor: pointer; }
 .tree-node[role='button']:hover { background: color-mix(in srgb, var(--c, var(--accent)) 16%, transparent); }

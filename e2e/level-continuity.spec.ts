@@ -79,3 +79,40 @@ test.describe('有動畫時', () => {
     await expect(page.getByTestId('reader')).not.toHaveAttribute('data-level', 'canon');
   });
 });
+
+test.describe('焦點樹的展開／收合（有動畫時）', () => {
+  test.use({ reducedMotion: 'no-preference' });
+  test('三段：退場 → 移動（不畫線）→ 進場；連線只在節點靜止時出現', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await waitReady(page, false);
+    await openReader(page);
+    const reader = page.getByTestId('reader');
+    for (let i = 0; i < 3; i++) {
+      await page.getByTestId('zoom-out').click();
+      await page.waitForTimeout(900);
+    }
+    for (let i = 0; i < 4 && (await reader.getAttribute('data-canon-style')) !== 'tree'; i++) await page.getByTestId('canonstyle-toggle').click();
+    const tree = page.getByTestId('canon-tree');
+    await expect(tree).toHaveAttribute('data-phase', 'idle');
+    // 在頁面裡記錄每一次階段變化與當時連線的不透明度（退場只有 0.18 秒，輪詢會漏掉）
+    await tree.evaluate((t) => {
+      const log: Array<{ phase: string; lines: string; at: number }> = [];
+      (window as unknown as { phaseLog: typeof log }).phaseLog = log;
+      const t0 = performance.now();
+      new MutationObserver(() => {
+        const lines = t.querySelector('.focus-tree-lines')!;
+        log.push({ phase: t.getAttribute('data-phase')!, lines: getComputedStyle(lines).opacity, at: performance.now() - t0 });
+      }).observe(t, { attributes: true, attributeFilter: ['data-phase'] });
+    });
+    await page.locator('[data-testid="tree-category"]', { hasText: '律法書' }).click();
+    await expect(tree).toHaveAttribute('data-focus-book', '1');
+    await page.waitForTimeout(1200);
+    const log = await page.evaluate(() => (window as unknown as { phaseLog: Array<{ phase: string; lines: string; at: number }> }).phaseLog);
+    expect(log.map((e) => e.phase)).toEqual(['leave', 'move', 'enter', 'idle']);
+    // 移動時不畫線（連線不會伸進空白處）；點下去立刻有反應（不先等看不見的相機飛行）
+    expect(log[1]!.lines).toBe('0');
+    expect(log[0]!.at).toBeLessThan(150);
+    await expect(page.locator('[data-testid="tree-book"][data-book="1"]')).toHaveAttribute('aria-current', 'location');
+    await expect(tree.locator('.tree-node.leaving')).toHaveCount(0);
+  });
+});

@@ -2,7 +2,7 @@
 // - 主視圖是由左往右的樹（邏輯圖），往 SpaceTree 靠攏：順序固定、焦點路徑高亮、收起的分支顯示份量、讀得到才顯示、分步動畫
 // - 上方常駐「正典帶」：66 卷依章數比例分段，標出目前位置（我在整本聖經的哪裡）
 // - 借用心智圖的視覺語法（不用放射狀版型）：每類一色、分支由粗漸細、標籤貼著分支末端、多留白
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { layoutCanonTree, type TreeItem } from '../../reader/canonTree.ts';
 import { STRINGS } from '../strings.ts';
 
@@ -10,6 +10,10 @@ const ROW = 30;
 const PAD = 24;
 // 上方：操作提示（正典帶已改為閱讀器常駐的一列）——提示放在上方，不遮住樹的節點
 const STRIP_H = 30;
+/** 展開／收合三段的時間（毫秒）；與 style.css 的 .focus-tree[data-phase] 一致 */
+const LEAVE_MS = 180;
+const MOVE_MS = 350;
+const ENTER_MS = 300;
 /** 分支粗細：越靠近根越粗（心智圖的漸細分支） */
 const BRANCH = { testament: 4.5, category: 3.2, book: 2, chapter: 1.4 } as const;
 
@@ -20,7 +24,31 @@ export function FocusTree({ focusBook, width, onFocus, onEnter, onChipRects }: {
   const chipW = narrow ? 30 : 34;
   const chipX0 = narrow ? colX[3]! + 12 : colX[4]!;
   const perRow = Math.max(3, Math.min(12, Math.floor((width - PAD * 2 - chipX0) / chipW)));
-  const items = useMemo(() => layoutCanonTree(focusBook, perRow, narrow), [focusBook, perRow, narrow]);
+  // 換焦點的分段過場（展開／收合）：退場（要消失的節點與所有連線淡出）→ 移動（留下的節點滑到新位置，不畫線）
+  // → 進場（新節點與連線一起淡入）。連線只在節點靜止時出現，不會伸進空白處（見草稿〈層級過場的研究〉：分段、一致性）
+  const [view, setView] = useState<{ book: number; phase: 'idle' | 'leave' | 'move' | 'enter'; leaving: Set<string>; entering: Set<string> }>({ book: focusBook, phase: 'idle', leaving: new Set(), entering: new Set() });
+  const viewBook = useRef(view.book);
+  viewBook.current = view.book;
+  useEffect(() => {
+    const from = viewBook.current;
+    if (focusBook === from) return;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return setView({ book: focusBook, phase: 'idle', leaving: new Set(), entering: new Set() });
+    const cur = layoutCanonTree(from, perRow, narrow);
+    const next = layoutCanonTree(focusBook, perRow, narrow);
+    const curIds = new Set(cur.map((i) => i.id));
+    const nextIds = new Set(next.map((i) => i.id));
+    const leaving = new Set(cur.filter((i) => !nextIds.has(i.id)).map((i) => i.id));
+    const entering = new Set(next.filter((i) => !curIds.has(i.id)).map((i) => i.id));
+    setView({ book: from, phase: 'leave', leaving, entering });
+    const timers = [
+      setTimeout(() => setView({ book: focusBook, phase: 'move', leaving, entering }), LEAVE_MS),
+      setTimeout(() => setView({ book: focusBook, phase: 'enter', leaving, entering }), LEAVE_MS + MOVE_MS),
+      setTimeout(() => setView({ book: focusBook, phase: 'idle', leaving: new Set(), entering: new Set() }), LEAVE_MS + MOVE_MS + ENTER_MS),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [focusBook]);
+  const items = useMemo(() => layoutCanonTree(view.book, perRow, narrow), [view.book, perRow, narrow]);
   const rows = Math.max(...items.map((i) => i.row)) + 1;
   const treeW = Math.max(colX[4]! + 120, chipX0 + perRow * chipW);
   const left = Math.max(PAD, (width - treeW) / 2);
@@ -72,7 +100,7 @@ export function FocusTree({ focusBook, width, onFocus, onEnter, onChipRects }: {
       const el = scroller.current?.querySelector(`[data-testid="tree-book"][data-book="${focusBook}"]`);
       const smooth = typeof matchMedia === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       el?.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
-    }, 380);
+    }, LEAVE_MS + MOVE_MS);
     return () => clearTimeout(id);
   }, [focusBook]);
 
@@ -87,7 +115,7 @@ export function FocusTree({ focusBook, width, onFocus, onEnter, onChipRects }: {
       </div>
       {/* 只有樹捲動；正典帶與提示固定在上方（我在整本聖經的哪裡，永遠看得到） */}
       <div class="focus-tree-wrap" data-testid="canon-tree-scroll" ref={scroller} style={{ top: `${STRIP_H}px` }}>
-      <div class="focus-tree" data-testid="canon-tree" data-focus-book={focusBook} style={{ height: `${top + rows * ROW + PAD + 64}px` }}>
+      <div class="focus-tree" data-testid="canon-tree" data-focus-book={focusBook} data-phase={view.phase} style={{ height: `${top + rows * ROW + PAD + 64}px` }}>
         <svg class="focus-tree-lines" width={width} height={top + rows * ROW + PAD + 64}>
           {branches.map((b) => (
             <path key={b.id} d={b.d} class={`branch p-${b.palette.replace(':', '-')}${b.onPath ? ' on-path' : ''}`} stroke-width={b.width} {...(b.onPath ? { 'data-testid': 'tree-path' } : {})} />
@@ -97,7 +125,7 @@ export function FocusTree({ focusBook, width, onFocus, onEnter, onChipRects }: {
           const p = pos(i);
           const pal = `p-${(i.palette ?? 'none').replace(':', '-')}`;
           // class 加前綴 k-：避免與其他元件的通用名稱（如展開全章的 .chapter）撞名而繼承到樣式
-          const cls = `tree-node k-${i.kind} ${pal}${i.current ? ' current' : ''}${i.collapsed !== null ? ' collapsed' : ''}`;
+          const cls = `tree-node k-${i.kind} ${pal}${i.current ? ' current' : ''}${i.collapsed !== null ? ' collapsed' : ''}${view.leaving.has(i.id) ? ' leaving' : ''}${view.entering.has(i.id) ? ' entering' : ''}`;
           // 點章號進入那一章；點目前的書卷進入書首；點其他書卷或收起的類別：焦點移過去
           const click =
             i.kind === 'chapter'

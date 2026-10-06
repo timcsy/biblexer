@@ -560,8 +560,12 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
             width={ctx.viewport.width}
             height={ctx.viewport.height}
             onFocus={(b) => {
+              // 樹蓋住了背後的世界，相機飛行看不見、只會讓點擊延遲反應——直接換焦點，由樹自己的三段過場呈現
               const lp = landingPoints(ctx.layout, 'canon').find((p) => p.id === `book:${b}`);
-              if (lp) land(placeAt(lp, ctx));
+              if (lp) {
+                interrupt();
+                show(placeAt(lp, ctx));
+              }
             }}
             onEnter={(b, ch) => {
               if (b === data.book) enterChapter(ch);
