@@ -1,7 +1,7 @@
 // 相機：層級、著陸點、吸附（research R4；根公理「連續地探索，離散地著陸」）
 // 版面不動（layout.ts）；視窗大小只改變相機（原則 1）。每個層級的著陸點集合都由文本結構定義（原則 3）。
 import type { Layout } from './layout.ts';
-import { WORLD, bookTiles, columnRect, gridRect, lineRect, pageRect } from './world.ts';
+import { WORLD, bookTiles, columnRect, gridRect, lineIndexOf, lineRect, pageRect } from './world.ts';
 
 export type ZoomLevel = 'canon' | 'book' | 'outline' | 'reading';
 export const LEVELS: readonly ZoomLevel[] = ['canon', 'book', 'outline', 'reading'];
@@ -407,11 +407,24 @@ const SCRUB_MAGNET = 0.012; // 拖到章刻度這個距離內就吸到該章開�
  * 拖動進度條（FR-020）：對應紙本的「按比例翻開 → 看頁眉 → 微調」。
  * 位置 f∈[0,1] 依行數比例對應到某一頁的頂端；接近章刻度時吸到該章開頭。
  */
-export function scrubTarget(f: number, ctx: CameraContext): { chapter: number; page: number; camera: Camera } {
+export function scrubTarget(f: number, ctx: CameraContext, marks: readonly number[] = []): { chapter: number; page: number; camera: Camera; mark?: number } {
   const { layout } = ctx;
   const n = layout.lines.length;
   const x = Math.min(1, Math.max(0, f));
   const near = layout.chapters.filter((ch) => Math.abs(ch.line / n - x) <= SCRUB_MAGNET).sort((a, b) => Math.abs(a.line / n - x) - Math.abs(b.line / n - x))[0];
+  // 讀者的記號（spec 006 FR-005）：與章刻度相同的吸附距離；兩者都在附近時取較近者
+  const markLine = (v: number) => {
+    const p = layout.verses.find((vp) => vp.verseIdx === v);
+    return p ? lineIndexOf(layout, p.start) : null;
+  };
+  const mark = marks
+    .map((v) => ({ v, line: markLine(v) }))
+    .filter((m): m is { v: number; line: number } => m.line !== null && Math.abs(m.line / n - x) <= SCRUB_MAGNET)
+    .sort((a, b) => Math.abs(a.line / n - x) - Math.abs(b.line / n - x))[0];
+  if (mark && (!near || Math.abs(mark.line / n - x) < Math.abs(near.line / n - x))) {
+    const line = layout.lines[mark.line]!;
+    return { chapter: layout.chapters.filter((ch) => ch.line <= mark.line).at(-1)?.chapter ?? 1, page: line.pos.page + 1, camera: cameraForVerse(mark.v, ctx), mark: mark.v };
+  }
   if (near) {
     return { chapter: near.chapter, page: layout.lines[near.line]!.pos.page + 1, camera: cameraForVerse(firstVerseFrom(layout, near.line) ?? 0, ctx) };
   }

@@ -13,6 +13,10 @@ export interface ReadingLayerProps {
   hit: { from: number; to: number } | null;
   /** 目前停的段落所占的行（左側標示線）；畫面停在框頂端，段落以標記呈現 */
   markLines?: ReadonlySet<number>;
+  /** 讀者的記號（書內經節索引；spec 006） */
+  marked?: ReadonlySet<number>;
+  /** 點節號：切換記號 */
+  onToggleMark?: (verseIdx: number) => void;
 }
 
 const refOf = (data: BookData, i: number) => {
@@ -29,7 +33,7 @@ function CellView({ c }: { c: Cell }) {
   );
 }
 
-function LineView({ line, layout, data, verseStart, hit }: { line: Line } & Omit<ReadingLayerProps, 'pages' | 'linesByPage'>) {
+function LineView({ line, layout, data, verseStart, hit, marked, onToggleMark }: { line: Line } & Omit<ReadingLayerProps, 'pages' | 'linesByPage'>) {
   const r = lineRect(layout, line.pos);
   // 依經節切成片段；含節號的片段承載該節的 data-pos
   const frags: Array<{ verseIdx: number | null; cells: Cell[] }> = [];
@@ -45,8 +49,23 @@ function LineView({ line, layout, data, verseStart, hit }: { line: Line } & Omit
         if (f.verseIdx === null) return f.cells.map((c, j) => <CellView key={`${k}-${j}`} c={c} />);
         const isHit = hit !== null && f.verseIdx >= hit.from && f.verseIdx <= hit.to;
         const head = f.cells[0]!.kind === 'verseNum';
+        const isMarked = marked?.has(f.verseIdx) ?? false;
+        const vi = f.verseIdx;
         return (
-          <span key={k} class={isHit ? 'vfrag hit' : 'vfrag'} data-ref={refOf(data, f.verseIdx)} data-hit={isHit ? 'true' : 'false'} {...(head ? { 'data-testid': 'verse', 'data-pos': verseStart.get(f.verseIdx) } : {})}>
+          <span
+            key={k}
+            class={`vfrag${isHit ? ' hit' : ''}${isMarked ? ' marked' : ''}`}
+            data-ref={refOf(data, f.verseIdx)}
+            data-hit={isHit ? 'true' : 'false'}
+            data-marked={isMarked ? 'true' : 'false'}
+            {...(head ? { 'data-testid': 'verse', 'data-pos': verseStart.get(f.verseIdx) } : {})}
+            // 點節號切換記號（spec 006 FR-001）；點經文本身不做任何事
+            onClick={(e) => {
+              if (!onToggleMark || !(e.target as HTMLElement).closest('.verseNum')) return;
+              e.stopPropagation();
+              onToggleMark(vi);
+            }}
+          >
             {f.cells.map((c, j) => (
               <CellView key={j} c={c} />
             ))}
@@ -93,7 +112,7 @@ export function ReadingLayer(props: ReadingLayerProps) {
               return <div key={`mark-${l.index}`} class="para-mark" data-testid="para-mark" data-line={`${l.pos.page}:${l.pos.column}:${l.pos.line}`} style={{ left: `${(r.x - 0.55) * U}px`, top: `${r.y * U}px`, width: `${0.2 * U}px`, height: `${WORLD.lineHeight * U}px` }} />;
             }),
         )}
-      {props.pages.flatMap((p) => (props.linesByPage.get(p) ?? []).map((line) => <LineView key={line.index} line={line} layout={props.layout} data={props.data} verseStart={props.verseStart} hit={props.hit} />))}
+      {props.pages.flatMap((p) => (props.linesByPage.get(p) ?? []).map((line) => <LineView key={line.index} line={line} layout={props.layout} data={props.data} verseStart={props.verseStart} hit={props.hit} {...(props.marked ? { marked: props.marked } : {})} {...(props.onToggleMark ? { onToggleMark: props.onToggleMark } : {})} />))}
     </>
   );
 }

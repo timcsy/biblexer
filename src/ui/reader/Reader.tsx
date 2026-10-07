@@ -8,7 +8,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { cameraForVerse, createContext, flyPath, landingPoints, levelOf, refit, remap, scrubTarget, snap, step, tapTarget, zoomStep, type Camera, type CameraContext, type ZoomLevel } from '../../reader/camera.ts';
 import { layoutBook, type Layout, type Line } from '../../reader/layout.ts';
-import { WORLD, arrange, pageRect, type Arrangement } from '../../reader/world.ts';
+import { WORLD, arrange, lineIndexOf, pageRect, type Arrangement } from '../../reader/world.ts';
 import type { BookData, ChapterView, ParallelsView } from '../../worker/present.ts';
 import { ParallelsPanel } from './ParallelsPanel.tsx';
 import { bookById } from '../../core/canon.ts';
@@ -17,6 +17,9 @@ import { BookLayer } from './BookLayer.tsx';
 import { CanonLayer } from './CanonLayer.tsx';
 import { attachGestures } from './gestures.ts';
 import { LineBars, OutlineLayer } from './OutlineLayer.tsx';
+import { MarkBars } from './MarkBars.tsx';
+import { loadMarks, saveMarks } from './marks-store.ts';
+import { marksInBook, toggleMark as toggleMarkRef } from '../../core/marks.ts';
 import { PageSheets, ReadingLayer, RowSheets } from './ReadingLayer.tsx';
 import { U } from './units.ts';
 
@@ -202,7 +205,7 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     if (!all) return;
     const r = el.getBoundingClientRect();
     const read = all[arrangementFor(modeRef.current, styleRef.current, 'reading')];
-    const t = scrubTarget((clientX - r.left) / r.width, read);
+    const t = scrubTarget((clientX - r.left) / r.width, read, [...markedRef.current]);
     if (ctxRef.current !== read) useCtx(read);
     interrupt();
     show(t.camera);
@@ -359,17 +362,51 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
     return set;
   }, [level, camera?.at, base]);
 
+  // 讀者自己的記號（spec 006）：只存在裝置上；點節號切換
+  const [marks, setMarks] = useState(loadMarks);
+  const marked = useMemo(() => {
+    const set = new Set<number>();
+    for (const m of marksInBook(marks, data.book)) {
+      const i = data.verses.findIndex((v) => v.ref.chapter === m.chapter && v.ref.verse === m.verse);
+      if (i >= 0) set.add(i);
+    }
+    return set;
+  }, [marks, data]);
+  const markedRef = useRef(marked);
+  markedRef.current = marked;
+  const toggleMark = (verseIdx: number) => {
+    const r = data.verses[verseIdx]?.ref;
+    if (!r) return;
+    setMarks((cur) => {
+      const next = toggleMarkRef(cur, r);
+      saveMarks(next);
+      return next;
+    });
+  };
+
   // 縮放、平移期間只改 transform；層的內容只在頁或層級改變時重畫（標籤字級除外）
   const pagesKey = pages.join(',');
   const pxKey = level === 'reading' ? 0 : Math.round(px * 100) / 100;
   const paper = level === 'outline' || level === 'book';
   const body = useMemo(() => {
     if (!ctx || !camera) return null;
-    if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} {...(markLines ? { markLines } : {})} />;
-    if (level === 'outline') return <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />;
-    if (level === 'book') return <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />;
+    if (level === 'reading') return <ReadingLayer layout={layout} data={data} pages={pages} linesByPage={linesByPage} verseStart={verseStart} hit={hit} marked={marked} onToggleMark={toggleMark} {...(markLines ? { markLines } : {})} />;
+    if (level === 'outline')
+      return (
+        <>
+          <MarkBars layout={layout} marked={marked} px={pxKey} />
+          <OutlineLayer layout={layout} data={data} pages={pages} px={pxKey} {...(camera.at?.startsWith('para:') ? { current: Number(camera.at.slice(5)) } : {})} {...(markLines ? { markLines } : {})} />
+        </>
+      );
+    if (level === 'book')
+      return (
+        <>
+          <MarkBars layout={layout} marked={marked} px={pxKey} />
+          <BookLayer layout={layout} pages={pages} px={pxKey} aligned={!layout.lineRects} onChapter={enterChapter} {...(progress ? { current: progress.chapter } : {})} />
+        </>
+      );
     return <CanonLayer layout={layout} px={pxKey} onEnter={enterTile} />;
-  }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines]);
+  }, [level, pagesKey, pxKey, layout, !ctx || !camera, progress?.chapter, markLines, marked]);
   // 段落輪廓與書卷層共用的頁面底色與行長條：元素在兩層之間保留，排列切換時以 CSS 動畫折疊
   const paperBody = useMemo(
     () =>
@@ -441,6 +478,12 @@ export function Reader({ data, start, onBack, onOpenBook, onAddToCard, loadParal
                 {(c.chapter === 1 || c.chapter % labelStep === 0) && <small>{c.chapter}</small>}
               </span>
             ))}
+            {/* 讀者的記號：像紙本側邊的書籤（spec 006 FR-004） */}
+            {base.verses
+              .filter((v) => marked.has(v.verseIdx))
+              .map((v) => (
+                <span key={`mark-${v.verseIdx}`} class="scrub-mark" data-testid="scrub-mark" style={{ left: `${(lineIndexOf(base, v.start) / base.lines.length) * 100}%` }} />
+              ))}
             <span class="scrub-thumb" data-testid="scrub-thumb" style={{ left: `${pr.fraction * 100}%` }} />
           </div>
         </div>
