@@ -1,7 +1,7 @@
 // 一章一列（使用者 2026-10-06「都做看看」；草稿〈層級過場的研究〉更好的做法 1）：
 // 每一章從新的一頁開始、一章一列，書卷層到精讀全部同一種排列——下降時頁面位置完全不動（空間穩定）
 import { describe, expect, test } from 'vitest';
-import { createContext, descentPace, levelOf, zoomAbout } from '../../src/reader/camera.ts';
+import { LEVEL_SCALE, createContext, descentPace, landingPoints, levelOf, placeAt, zoomAbout } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';
 import { WORLD, arrange, gridRect, pageRect } from '../../src/reader/world.ts';
 import { sampleBook } from './reader-fixture.ts';
@@ -86,5 +86,31 @@ describe('依熟悉度調整速度（descentPace）', () => {
     expect(descentPace(4)).toBeLessThan(descentPace(3));
     expect(descentPace(100)).toBe(0.35);
     for (let n = 0; n < 30; n++) expect(descentPace(n + 1)).toBeLessThanOrEqual(descentPace(n));
+  });
+});
+
+describe('一章一列的書卷層：盡量放下整卷（2026-10-07）', () => {
+  const rows = arrange(layoutBook(book, undefined, { chapterPage: true }), 'rows');
+  const ctx = createContext(rows, { width: 1440, height: 800 });
+  const lp = landingPoints(rows, 'book')[7]!;
+  const cam = placeAt(lp, ctx);
+  test('比例比標準書卷層小（看得到更多列），但仍在書卷層的範圍內', () => {
+    expect(cam.scale).toBeLessThan(LEVEL_SCALE.book * ctx.readingScale);
+    expect(levelOf(cam.scale, ctx.readingScale)).toBe('book');
+    expect(cam.scale).toBeGreaterThanOrEqual(0.065 * ctx.readingScale - 1e-12);
+  });
+  test('放得下時整卷都在畫面上；放不下時至少看得到比標準比例多的列', () => {
+    const g = gridRect(rows);
+    const visibleRows = ctx.viewport.height / cam.scale / WORLD.pageHeight;
+    const standardRows = ctx.viewport.height / (LEVEL_SCALE.book * ctx.readingScale) / WORLD.pageHeight;
+    if (g.h * cam.scale <= ctx.viewport.height) {
+      expect(cam.y).toBeLessThanOrEqual(g.y);
+      expect(cam.y + ctx.viewport.height / cam.scale).toBeGreaterThanOrEqual(g.y + g.h);
+    } else expect(visibleRows).toBeGreaterThan(standardRows);
+  });
+  test('其他排列的書卷層不受影響', () => {
+    const grid = arrange(layoutBook(book), 'grid');
+    const g = createContext(grid, { width: 1440, height: 800 });
+    expect(placeAt(landingPoints(grid, 'book')[0]!, g).scale).toBe(LEVEL_SCALE.book * g.readingScale);
   });
 });

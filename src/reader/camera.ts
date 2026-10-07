@@ -120,9 +120,24 @@ function firstVerseFrom(layout: Layout, line: number): number | null {
   return null;
 }
 
+/** 一章一列的書卷層最小比例：再小就進入正典層（levelOf 的界線是 0.06） */
+const ROWS_BOOK_MIN = 0.065;
+
+/**
+ * 該層級的比例。一章一列（pagePlace）的書卷層：一章一列會很高（羅馬書 16 列），
+ * 所以縮到剛好放得下整卷，但不低於 ROWS_BOOK_MIN（仍在書卷層）。其他情況為標準比例。
+ */
+function levelScale(level: ZoomLevel, ctx: CameraContext): number {
+  const standard = LEVEL_SCALE[level] * ctx.readingScale;
+  if (level !== 'book' || !ctx.layout.pagePlace) return standard;
+  const g = gridRect(ctx.layout);
+  const fit = Math.min((ctx.viewport.width - 2 * SCREEN_MARGIN) / g.w, (ctx.viewport.height - 2 * SCREEN_MARGIN) / g.h);
+  return Math.min(standard, Math.max(ROWS_BOOK_MIN * ctx.readingScale, fit));
+}
+
 /** 把相機放在某個著陸點上（該層級的標準比例） */
 export function placeAt(lp: LandingPoint, ctx: CameraContext, focus?: string): Camera {
-  const scale = LEVEL_SCALE[lp.level] * ctx.readingScale;
+  const scale = levelScale(lp.level, ctx);
   const vw = ctx.viewport.width / scale;
   if (lp.level === 'reading') {
     const pos = ctx.layout.lines[lp.line!]!.pos;
