@@ -14,4 +14,4 @@
 - [X] T012 Worker：`ParallelsView` 改為分層（quote、tsk、semantic），語意未就緒時前兩層照常（`tests/unit/book.test.ts` 或新測試）；實作 engine
 - [X] T013 `e2e/parallels.spec.ts` 新增（先紅）：羅 1 章第一層含哈 2:4 與署名；羅 8:28 段 TSK 層含創 50:20、無英文分組標題；關閉 TSK 層後重開面板不出現
 - [X] T014 `ParallelsPanel` 分層呈現、署名、每層開關；字串；確認 T013 通過
-- [ ] T015 全部測試；README 署名與授權；vision 階段 3 第一條成功標準；知識回流
+- [X] T015 全部測試；README 署名與授權；vision 階段 3 第一條成功標準；知識回流
