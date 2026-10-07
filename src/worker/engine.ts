@@ -12,8 +12,9 @@ import type { Embedder, Pooling } from '../embed/embedder.ts';
 import { EngineError, type Engine, type ReadyState } from './protocol.ts';
 import { resolveItem, type CardItem } from '../core/card.ts';
 import { parallels } from '../core/parallels.ts';
+import { decodeXrefs, xrefsForPassage, type XrefTable } from '../core/xrefs.ts';
 import { formatRange } from '../core/refs.ts';
-import { presentResponse, presentVerses, type BookData, type CardView, type ChapterView, type ParallelsView } from './present.ts';
+import { presentResponse, presentVerses, type BookData, type CardView, type ChapterView, type ParallelItem, type ParallelsView } from './present.ts';
 
 export interface ModelInfo {
   id: string;
@@ -44,6 +45,19 @@ export function createEngine(deps: EngineDeps): Engine {
   let parts: Omit<Parameters<typeof buildCorpus>[0], 'vectors'> | null = null;
   const get = (key: string, phase: 'text' | 'vectors' = 'text') =>
     deps.fetchBytes(base + manifest!.files[key]!.path, (l, t) => deps.onProgress?.(phase, l, t));
+
+  // 串珠參照表（明引、TSK）：第一次開串珠時才載入；不依賴語意模型（FR-013）
+  let xrefs: Promise<{ quote: XrefTable | null; tsk: XrefTable | null }> | null = null;
+  const loadXrefs = () =>
+    (xrefs ??= (async () => {
+      const one = async (key: string) => {
+        if (!manifest?.files[key]) return null;
+        const b = await get(key);
+        return decodeXrefs(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+      };
+      const [quote, tsk] = await Promise.all([one('xrefUbs'), one('xrefTsk')]);
+      return { quote, tsk };
+    })());
 
   const requireCorpus = () => {
     if (!corpus) throw new EngineError('NOT_DOWNLOADED', '資料尚未載入');
@@ -101,16 +115,27 @@ export function createEngine(deps: EngineDeps): Engine {
 
     async parallels(book, verseIdx): Promise<ParallelsView> {
       const c = requireCorpus();
-      if (!c.vectors) return { semanticReady: false, model: null, items: [] };
+      const semanticReady = !!c.vectors;
+      const model = semanticReady ? (manifest?.model?.id ?? null) : null;
       const first = verses.findIndex((v) => v.ref.book === book);
       const global = first + verseIdx;
       const pid = c.passages.findIndex((p) => p.start <= global && global <= p.end);
-      if (first < 0 || pid < 0) return { semanticReady: true, model: manifest?.model?.id ?? null, items: [] };
-      const items = parallels(c, pid, 8).map((id) => {
-        const p = c.passages[id]!;
-        return { tier: 'semantic' as const, label: formatRange(verses[p.start]!.ref, verses[p.end]!.ref), startRef: verses[p.start]!.ref, endRef: verses[p.end]!.ref, verses: presentVerses(verses, p.start, p.end, () => true) };
-      });
-      return { semanticReady: true, model: manifest?.model?.id ?? null, items };
+      if (first < 0 || pid < 0) return { semanticReady, model, items: [] };
+      const p0 = c.passages[pid]!;
+      const item = (tier: ParallelItem['tier'], s: number, e: number): ParallelItem => ({ tier, label: formatRange(verses[s]!.ref, verses[e]!.ref), startRef: verses[s]!.ref, endRef: verses[e]!.ref, verses: presentVerses(verses, s, e, () => true) });
+      // 順序：明引 → TSK → 語意近鄰（FR-009）；參照只呈現所指的經節範圍（FR-011）
+      const x = await loadXrefs();
+      const items: ParallelItem[] = [];
+      for (const tier of ['quote', 'tsk'] as const) {
+        const t = x[tier];
+        if (t) for (const [s, e] of xrefsForPassage(t, p0.start, p0.end)) items.push(item(tier, s, e));
+      }
+      if (semanticReady)
+        for (const id of parallels(c, pid, 8)) {
+          const p = c.passages[id]!;
+          items.push(item('semantic', p.start, p.end));
+        }
+      return { semanticReady, model, items };
     },
 
     async card(items: CardItem[]): Promise<Array<CardView | null>> {

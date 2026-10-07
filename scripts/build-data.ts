@@ -7,6 +7,7 @@ import { buildKeywordFile } from './build-keyword.ts';
 import { buildLexiconFile } from './build-lexicon.ts';
 import { buildPassageFiles } from './build-passages.ts';
 import { buildText } from './build-text.ts';
+import { buildXrefFiles } from './build-xrefs.ts';
 import { copyRuntime } from './copy-runtime.ts';
 import { SOURCES, fetchSources } from './fetch-sources.ts';
 import { DATA_DIR } from './lib/paths.ts';
@@ -19,8 +20,9 @@ async function main() {
   const pass = buildPassageFiles(src.ebible, text.verses);
   const keyword = buildKeywordFile(text.verses, pass.units);
   const lexicon = await buildLexiconFile(src.moedict, text.dbPath, text.verses);
+  const xrefs = buildXrefFiles(src, text.verses);
 
-  const files = { ...text.files, ...pass.files, keyword, lexicon };
+  const files = { ...text.files, ...pass.files, keyword, lexicon, ...xrefs.files };
   const dataVersion = createHash('sha256')
     .update(Object.values(files).map((f) => f.path).join('|'))
     .digest('hex')
@@ -28,7 +30,10 @@ async function main() {
 
   // 保留 write-manifest 寫入的模型與向量（若資料版本相同）
   const prev = existsSync(MANIFEST_PATH) ? (JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) as Record<string, unknown>) : null;
-  const keep = prev && prev.dataVersion === dataVersion ? prev : null;
+  // 模型與向量只取決於經文與檢索單元：這兩者不變就保留（串珠參照表等其他資料改變不必重算向量）
+  const prevAll = (prev?.files ?? {}) as Record<string, { path?: string }>;
+  const sameUnits = !!prev && (['verses', 'units'] as const).every((k) => prevAll[k]?.path === (files as Record<string, { path: string }>)[k]?.path);
+  const keep = prev && (prev.dataVersion === dataVersion || sameUnits) ? prev : null;
   const prevFiles = (keep?.files ?? {}) as Record<string, unknown>;
 
   const manifest = {

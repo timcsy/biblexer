@@ -31,5 +31,49 @@
     },
     "use": "只取詞條的「近義」關係，用於查詢詞彙擴充；不改動、不散布詞條內容。",
     "license": "CC BY-ND 3.0 TW（中華民國教育部）。依授權註明出處；只使用近義關係、不改作詞條內容（使用者已同意此用法）。"
+  },
+  "ubs": {
+    "name": "UBS Parallel Passages Database（© 2023 United Bible Societies）",
+    "url": "https://raw.githubusercontent.com/ubsicap/ubs-open-license/c5ac61afd99510e2cedd4cbf70ecd72e753a0fce/parallel%20passages/ParallelPassages.xml",
+    "file": "ubs-ParallelPassages.xml",
+    "hash": {
+      "algo": "sha256",
+      "value": "d43e7554556c1a1c5e2464e6b5ad8a4ab9118ada11060bf6b200abf3d0d0a394"
+    },
+    "use": "串珠第一層：只取同一組同時含舊約與新約經節者（新約明引舊約）；不取逐字對應的數字。舊約經節依 UBS 編號對照表換算為英文編號。",
+    "license": "CC BY-SA 4.0。產出的 xref-ubs 資料檔依同一授權發布，獨立成檔並附授權全文（xref-ubs-license）。"
+  },
+  "ubsLicense": {
+    "name": "UBS Parallel Passages Database 授權全文（CC BY-SA 4.0）",
+    "url": "https://raw.githubusercontent.com/ubsicap/ubs-open-license/c5ac61afd99510e2cedd4cbf70ecd72e753a0fce/parallel%20passages/LICENSE.md",
+    "file": "ubs-ParallelPassages-LICENSE.md",
+    "hash": {
+      "algo": "sha256",
+      "value": "7abe19ec9bb73b36141b999b861d24ad855e808bafe0f81e84cce28556f6c297"
+    },
+    "use": "原樣隨 xref-ubs 資料檔發布。",
+    "license": "CC BY-SA 4.0 授權文本。"
+  },
+  "versification": {
+    "name": "UBS versification_json：英文編號對照（eng.json）",
+    "url": "https://raw.githubusercontent.com/ubsicap/versification_json/0833abd5252e810fc76e80919a3109ed9c9cc3ae/examples/eng.json",
+    "file": "versification-eng.json",
+    "hash": {
+      "algo": "sha256",
+      "value": "5162023f8e0604fce96a49d7fb8cea73ef699928846d10d62210bd4882e81338"
+    },
+    "use": "把 UBS 的原文編號（舊約 BHS）換算為英文編號（和合本相同，只差約 7:53）；只在建置時使用、不發布。",
+    "license": "MIT（© 2019 United Bible Societies Institute for Computer Assisted Publishing）。"
+  },
+  "tsk": {
+    "name": "Treasury of Scripture Knowledge（CrossWire SWORD 模組 TSK 1.4）",
+    "url": "https://www.crosswire.org/ftpmirror/pub/sword/packages/rawzip/TSK.zip",
+    "file": "TSK.zip",
+    "hash": {
+      "algo": "sha256",
+      "value": "6784c7099465995a8e66f02ead82b0bca66603c1bdeaf8332949774b7bfd4293"
+    },
+    "use": "一般串珠：只取經節參照；不取英文分組標題、英文旁註與章首大綱。經節用 KJV 編號。",
+    "license": "Public Domain（約 1830 年 Bagster 彙編，取自 Canne、Blayney、Scott 等人的旁註）。"
   }
 }

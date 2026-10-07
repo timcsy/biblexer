@@ -1,8 +1,9 @@
 // 守護：FR-018、FR-019、research R3a、R5a——冊頁長卷的排列、排列切換時的相機換算、過場路徑
 import { describe, expect, test } from 'vitest';
-import { cameraForVerse, createContext, flyPath, levelOf, landingPoints, placeAt, remap, zoomStep } from '../../src/reader/camera.ts';
+import { cameraForVerse, createContext, flyPath, levelOf, landingPoints, placeAt, remap, scrubTarget, zoomStep } from '../../src/reader/camera.ts';
 import { layoutBook } from '../../src/reader/layout.ts';
-import { WORLD, arrange, gridRect, pageRect } from '../../src/reader/world.ts';
+import { WORLD, arrange, gridRect, lineIndexOf, pageRect } from '../../src/reader/world.ts';
+const lineIndexOfPos = (p: { page: number; column: number; line: number }) => lineIndexOf(strip, p);
 import { sampleBook } from './reader-fixture.ts';
 
 const base = layoutBook(sampleBook(16, 30));
@@ -125,5 +126,34 @@ describe('書卷層：看全貌', () => {
         expect(c.y).toBeGreaterThan(rowTop - WORLD.pageHeight / 2);
       }
     }
+  });
+});
+
+describe('拖動進度條吸到記號（spec 006 FR-005）', () => {
+  const ctx = createContext(strip, vp);
+  const n = strip.lines.length;
+  // 第 5 章中間的一節：它所在的行
+  const target = strip.verses.find((v) => base.lines[lineIndexOfPos(v.start)]!.cells.some((c) => c.verseIdx === v.verseIdx) && v.verseIdx > 0 && Math.abs(lineIndexOfPos(v.start) / n - 0.5) < 0.05)!;
+  const f = lineIndexOfPos(target.start) / n;
+
+  test('拖到記號附近：吸到那一節（相機停在它所在的段落）', () => {
+    const t = scrubTarget(f + 0.005, ctx, [target.verseIdx]);
+    expect(t.camera).toEqual(cameraForVerse(target.verseIdx, ctx));
+    expect(t.mark).toBe(target.verseIdx);
+  });
+
+  test('沒有記號時行為不變', () => {
+    expect(scrubTarget(f + 0.005, ctx, [])).toEqual(scrubTarget(f + 0.005, ctx));
+  });
+
+  test('記號與章刻度都在附近：吸到較近者', () => {
+    const ch = strip.chapters[4]!;
+    // 章首那一節（緊接在章號標籤之後）做記號：與章刻度只差一行，兩者都在吸附距離內
+    const v = strip.verses.find((x) => lineIndexOfPos(x.start) === ch.line + 1)!;
+    const fc = ch.line / n;
+    const fv = lineIndexOfPos(v.start) / n;
+    expect(fv - fc).toBeLessThan(0.012);
+    expect(scrubTarget(fc, ctx, [v.verseIdx]).mark).toBeUndefined();
+    expect(scrubTarget(fv, ctx, [v.verseIdx]).mark).toBe(v.verseIdx);
   });
 });

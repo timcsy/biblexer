@@ -102,6 +102,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .scrub-label.active { color: var(--card); background: var(--accent); }
 .scrub-track { position: relative; height: 26px; pointer-events: auto; cursor: pointer; touch-action: none; }
 .scrub-rail { position: absolute; left: 0; right: 0; bottom: 6px; height: 4px; border-radius: 2px; background: var(--line); }
+/* 讀者的記號（spec 006）：精讀時的底色、拉遠時的色條、進度條上的書籤點 */
+.vfrag.marked { background: color-mix(in srgb, var(--mark, #d9a400) 22%, transparent); border-radius: 2px; }
+.vfrag .verseNum { cursor: pointer; }
+.mark-bar { position: absolute; background: var(--mark, #d9a400); border-radius: 2px; pointer-events: none; }
+.scrub-mark { position: absolute; bottom: 2px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--mark, #d9a400); box-shadow: 0 0 0 1px var(--card); pointer-events: none; }
 .scrub-tick { position: absolute; bottom: 4px; width: 1px; height: 8px; background: var(--muted); }
 .scrub-tick small { position: absolute; bottom: 9px; left: -0.5em; font-size: 0.6rem; color: var(--muted); font-family: system-ui, sans-serif; }
 .scrub-thumb { position: absolute; bottom: 2px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--bg); }
@@ -149,6 +154,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .parallels-head h3 { margin: 0; font-size: 1rem; color: var(--accent); }
 .parallels-basis, .parallels-note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0.6rem; }
 .parallels-list { list-style: none; padding: 0; margin: 0; }
+.parallels-layer { border-top: 1px solid var(--line); padding-top: 0.4rem; margin-top: 0.4rem; }
+.parallels-layer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.parallels-layer-head h4 { margin: 0; font-size: 0.9rem; }
 .parallel-open { display: block; width: 100%; text-align: left; background: none; border: none; border-top: 1px solid var(--line); padding: 0.5rem 0; color: var(--fg); cursor: pointer; font: inherit; }
 .parallel-label { display: block; font-weight: bold; color: var(--accent); font-size: 0.9rem; }
 .parallel-excerpt { display: block; font-size: 0.85rem; color: var(--muted); }
