@@ -146,6 +146,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .parallels-head h3 { margin: 0; font-size: 1rem; color: var(--accent); }
 .parallels-basis, .parallels-note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0.6rem; }
 .parallels-list { list-style: none; padding: 0; margin: 0; }
+.parallels-layer { border-top: 1px solid var(--line); padding-top: 0.4rem; margin-top: 0.4rem; }
+.parallels-layer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.parallels-layer-head h4 { margin: 0; font-size: 0.9rem; }
 .parallel-open { display: block; width: 100%; text-align: left; background: none; border: none; border-top: 1px solid var(--line); padding: 0.5rem 0; color: var(--fg); cursor: pointer; font: inherit; }
 .parallel-label { display: block; font-weight: bold; color: var(--accent); font-size: 0.9rem; }
 .parallel-excerpt { display: block; font-size: 0.85rem; color: var(--muted); }
