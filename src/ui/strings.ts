@@ -65,6 +65,7 @@ export const STRINGS = {
   parallelsTskBasis: '資料：Treasury of Scripture Knowledge（約 1830 年 Bagster 彙編，取自 Canne、Blayney、Scott 等人的旁註；公共領域）',
   parallelsLayerHide: '收起',
   parallelsLayerShow: '展開',
+  parallelsShowAll: (n: number) => `顯示全部（${n} 筆）`,
   parallelsBasis: (model: string) => `依據：語意相似度（${model || '語意模型'}）；不含本章，可展開全章比對`,
   parallelsNotReady: '語意檢索準備中…',
   parallelsClose: '關閉',

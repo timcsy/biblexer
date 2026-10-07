@@ -15,6 +15,8 @@ const excerpt = (it: ParallelItem) => it.verses.flatMap((v) => v.parts.filter((p
 type Tier = ParallelItem['tier'];
 const TIERS: Tier[] = ['quote', 'tsk', 'semantic'];
 const HIDDEN_KEY = 'biblexer.parallels.hidden';
+/** TSK 一段常有上百筆：預設只顯示前幾筆，其餘按「顯示全部」才展開，不把語意近鄰推到很下面 */
+const TSK_PREVIEW = 10;
 const loadHidden = (): Set<Tier> => {
   try {
     return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? '[]') as Tier[]);
@@ -27,10 +29,12 @@ export function ParallelsPanel({ source, load, loadChapter, onClose }: { source:
   const [view, setView] = useState<ParallelsView | null>(null);
   const [open, setOpen] = useState<{ item: ParallelItem; chapter?: ChapterView } | null>(null);
   const [hidden, setHidden] = useState<Set<Tier>>(loadHidden);
+  const [showAll, setShowAll] = useState(false);
   useEffect(() => {
     let live = true;
     setView(null);
     setOpen(null);
+    setShowAll(false);
     void load(source.verseIdx).then((v) => live && setView(v));
     return () => {
       live = false;
@@ -59,9 +63,10 @@ export function ParallelsPanel({ source, load, loadChapter, onClose }: { source:
   const basis = (tier: Tier) => (tier === 'quote' ? STRINGS.parallelsQuoteBasis : tier === 'tsk' ? STRINGS.parallelsTskBasis : STRINGS.parallelsBasis(view?.model ?? ''));
 
   const layer = (tier: Tier) => {
-    const items = view!.items.filter((it) => it.tier === tier);
+    const all = view!.items.filter((it) => it.tier === tier);
+    const items = tier === 'tsk' && !showAll ? all.slice(0, TSK_PREVIEW) : all;
     // 明引、TSK：這一段沒有參照就不顯示該層；語意近鄰：一律顯示（準備中、沒有找到）
-    if (tier !== 'semantic' && items.length === 0) return null;
+    if (tier !== 'semantic' && all.length === 0) return null;
     const shown = !hidden.has(tier);
     return (
       <section key={tier} class="parallels-layer" data-testid="parallels-layer" data-tier={tier}>
@@ -90,6 +95,11 @@ export function ParallelsPanel({ source, load, loadChapter, onClose }: { source:
                   </li>
                 ))}
               </ol>
+              {items.length < all.length && (
+                <button type="button" class="link" data-testid="parallels-show-all" onClick={() => setShowAll(true)}>
+                  {STRINGS.parallelsShowAll(all.length)}
+                </button>
+              )}
             </>
           ))}
       </section>

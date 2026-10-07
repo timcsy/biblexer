@@ -94,7 +94,11 @@ test('哈 2:4：第一層反過來列出引用它的新約（含羅 1:17）', as
 test('羅 8:28：TSK 層含創 50:20、沒有英文分組標題；關閉這一層後重開面板仍關著', async ({ page }) => {
   const panel = await openParallelsAt(page, '萬事都互相效力', '45:8:28');
   const tsk = panel.locator('[data-testid="parallels-layer"][data-tier="tsk"]');
-  await expect(tsk.locator('[data-testid="parallel-item"][data-start="1:50:20"]')).toBeVisible({ timeout: 30_000 });
+  // TSK 參照很多：預設只顯示前 10 筆，其餘按「顯示全部」才展開（不把語意近鄰推到很下面）
+  await expect(tsk.getByTestId('parallel-item')).toHaveCount(10, { timeout: 30_000 });
+  await tsk.getByTestId('parallels-show-all').click();
+  expect(await tsk.getByTestId('parallel-item').count()).toBeGreaterThan(10);
+  await expect(tsk.locator('[data-testid="parallel-item"][data-start="1:50:20"]')).toBeVisible();
   await expect(tsk.getByTestId('parallels-attribution')).toContainText('Treasury of Scripture Knowledge');
   // 清單本身只有出處與經文：沒有英文（TSK 的英文分組標題、旁註都不取）
   const listText = await tsk.locator('[data-testid="parallel-item"]').allInnerTexts();

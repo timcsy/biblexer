@@ -68,7 +68,7 @@
 - **FR-005**：開啟、比對、關閉的整個過程 MUST NOT 改變閱讀器的著陸點與相機位置。
 - **FR-006**：串珠的計算 MUST 完全在裝置上進行，不新增網路請求。
 - **FR-007**：第一層 MUST 列出目前段落各節在 UBS Parallel Passages Database 中的明引關係（同一組同時含舊約與新約經節者），雙向：新約段落列出所引的舊約，舊約段落列出引用它的新約；MUST 署名「UBS Parallel Passages Database，© 2023 United Bible Societies，CC BY-SA 4.0」並註明「只收明引」。
-- **FR-008**：TSK 層 MUST 列出目前段落各節在 TSK 中的參照，依 TSK 原有順序、去除重複；MUST 署名「Treasury of Scripture Knowledge（約 1830 年 Bagster 彙編，取自 Canne、Blayney、Scott 等人的旁註；公共領域）」；MUST NOT 顯示 TSK 的英文分組標題與英文旁註。
+- **FR-008**：TSK 層 MUST 列出目前段落各節在 TSK 中的參照，依 TSK 原有順序、去除重複；MUST 署名「Treasury of Scripture Knowledge（約 1830 年 Bagster 彙編，取自 Canne、Blayney、Scott 等人的旁註；公共領域）」；MUST NOT 顯示 TSK 的英文分組標題與英文旁註。一段的參照超過 10 筆時，預設只顯示前 10 筆，並提供「顯示全部（N 筆）」（2026-10-07 依 /goal 授權照建議：羅 8:26–30 一段有 176 筆，會把語意近鄰推到很下面）。
 - **FR-009**：層的順序 MUST 為 第一層（明引）→ TSK → 語意近鄰；每一層 MUST 有中性標題與自己的署名；某層在這一段沒有參照時不顯示。
 - **FR-010**：每一層 MUST 可以由讀者關閉與重新開啟，選擇記在這個瀏覽器。
 - **FR-011**：參照的每一筆 MUST 顯示所指的經節範圍（不擴大為整段），點開後原位展開，並可展開全章（原則 5，同 FR-004）。
