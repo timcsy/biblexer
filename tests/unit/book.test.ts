@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { encodePassages, encodeUnits, encodeVerses } from '../../src/core/artifacts.ts';
 import { buildKeywordIndex, serializeKeywordIndex } from '../../src/core/bm25.ts';
 import { buildUnits } from '../../src/core/passages.ts';
+import { encodeXrefs } from '../../src/core/xrefs.ts';
 import { createEngine } from '../../src/worker/engine.ts';
 
 const v = (book: number, chapter: number, verse: number, display: string, merged = false) => ({ ref: { book, chapter, verse }, display, notes: [], merged, variant: false });
@@ -25,14 +26,20 @@ const passages = [
 ];
 const units = buildUnits(passages, { skipVerse: (i) => verses[i]!.merged });
 
-function engineWithData() {
+function engineWithData(withXrefs = false) {
   const files: Record<string, Uint8Array> = {
     'verses.json': new TextEncoder().encode(encodeVerses(verses)),
     'passages.bin': encodePassages(passages),
     'units.bin': encodeUnits(units),
     'keyword.bin': serializeKeywordIndex(buildKeywordIndex(units.filter((u) => u.scale === 'verse').map((u) => verses[u.start]!.display))),
   };
-  const manifest = { files: Object.fromEntries(['verses', 'passages', 'units', 'keyword'].map((k) => [k, { path: Object.keys(files).find((f) => f.startsWith(k))!, bytes: 0 }])) };
+  if (withXrefs) {
+    // 明引：羅 1:2（流水號 2）→ 徒 28:31（0）；TSK：羅 1:2 → 林前 1:1（5）、羅 1:2–3 自己（與段落重疊，不列）、徒 28:31（0）
+    files['xrefUbs.bin'] = encodeXrefs([[], [], [[0, 0]], [], [], []]);
+    files['xrefTsk.bin'] = encodeXrefs([[], [], [[5, 5], [2, 3], [0, 0]], [], [], []]);
+  }
+  const keys = ['verses', 'passages', 'units', 'keyword', ...(withXrefs ? ['xrefUbs', 'xrefTsk'] : [])];
+  const manifest = { files: Object.fromEntries(keys.map((k) => [k, { path: Object.keys(files).find((f) => f.startsWith(k))!, bytes: 0 }])) };
   files['manifest.json'] = new TextEncoder().encode(JSON.stringify(manifest));
   return createEngine({
     fetchBytes: async (url) => files[url.split('/').pop()!]!,
@@ -95,5 +102,25 @@ describe('串珠（spec 004）', () => {
     const e = engineWithData();
     await e.init('/data/manifest.json', undefined, false);
     expect(await e.parallels(45, 0)).toEqual({ semanticReady: false, model: null, items: [] });
+  });
+
+  test('FR-009、FR-013：語意未就緒時，明引層與 TSK 層照常；順序為明引 → TSK；與段落重疊的參照不列', async () => {
+    const e = engineWithData(true);
+    await e.init('/data/manifest.json', undefined, false);
+    // 羅 1:2 所在段落（1:2–3），書內相對索引 1
+    const view = await e.parallels(45, 1);
+    expect(view.semanticReady).toBe(false);
+    expect(view.items.map((it) => [it.tier, it.label])).toEqual([
+      ['quote', '使徒行傳 28:31'],
+      ['tsk', '哥林多前書 1:1'],
+      ['tsk', '使徒行傳 28:31'],
+    ]);
+  });
+
+  test('FR-011：每一筆只呈現所指的經節範圍（不擴大為整段）', async () => {
+    const e = engineWithData(true);
+    await e.init('/data/manifest.json', undefined, false);
+    const view = await e.parallels(45, 1);
+    expect(view.items[0]!.verses.map((x) => `${x.ref.book}:${x.ref.chapter}:${x.ref.verse}`)).toEqual(['44:28:31']);
   });
 });

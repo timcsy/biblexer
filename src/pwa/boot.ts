@@ -18,7 +18,8 @@ interface Manifest {
 }
 
 const MANIFEST_URL = '/data/manifest.json';
-const TEXT_KEYS = ['books', 'verses', 'passages', 'units', 'keyword', 'lexicon'];
+// 串珠參照表（明引、TSK）與 UBS 授權全文也在第一批：不依賴語意模型，離線可用（spec 004 FR-006、FR-012、FR-013）
+const TEXT_KEYS = ['books', 'verses', 'passages', 'units', 'keyword', 'lexicon', 'xrefUbs', 'xrefUbsLicense', 'xrefTsk'];
 
 export function assetUrls(m: Manifest, variant: '.asyncify' | ''): { text: string[]; heavy: string[] } {
   const text = TEXT_KEYS.filter((k) => m.files[k]).map((k) => `/data/${m.files[k]!.path}`);

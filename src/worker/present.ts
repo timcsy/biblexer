@@ -55,7 +55,8 @@ export interface CardView {
 
 /** 串珠（spec 004）：分層；目前只有語意近鄰層 */
 export interface ParallelItem {
-  tier: 'quotation' | 'semantic';
+  /** quote＝新約引用舊約（UBS 明引）；tsk＝TSK 串珠；semantic＝語意近鄰（spec 004 FR-009 的順序） */
+  tier: 'quote' | 'tsk' | 'semantic';
   label: string;
   startRef: StoredVerse['ref'];
   endRef: StoredVerse['ref'];
