@@ -11,7 +11,7 @@ void self.skipWaiting();
 clientsClaim();
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
+registerRoute(new NavigationRoute(createHandlerBoundToURL(`${BASE}index.html`)));
 
 // 部署在子路徑時，資源在 BASE 之下（如 /biblexer/data/）
 const ASSETS = new RegExp(`^${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(data|models|ort)/`);
