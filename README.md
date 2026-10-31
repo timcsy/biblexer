@@ -74,6 +74,10 @@ npm run lint && npm run typecheck
 
 驗證步驟見 [`specs/001-offline-hybrid-search/quickstart.md`](specs/001-offline-hybrid-search/quickstart.md)；資料來源與授權見 [`docs/資料來源.md`](docs/資料來源.md)。
 
+## 部署
+
+推送到 `prototype-hyperbolic` 分支時，GitHub Actions（`.github/workflows/pages.yml`）會在 CI 上從頭建出所有資料與語意向量，並部署到 GitHub Pages（`https://timcsy.github.io/biblexer/`）。網站可放在子路徑：建置時以 `BASE_PATH` 指定（預設 `/`）。也可以在 Actions 頁面手動執行。
+
 ## 專案文件
 
 - 規格、計畫、任務：`specs/001-offline-hybrid-search/`、`specs/002-fixed-geometry-reader/`

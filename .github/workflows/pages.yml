@@ -1,0 +1,69 @@
+# 部署到 GitHub Pages：在 CI 上從頭建出資料（經文、段落、串珠、詞彙表、語意向量），以子路徑 /<repo>/ 建置網站。
+# 第一次要計算約 5 萬個檢索單元的向量（約一小時以上）；之後來源與向量都從快取取得。
+# 注意：網站含信望愛和合本資料（其下載目錄標示「僅作為測試用途」，見 docs/資料來源.md）；公開發佈是使用者的決定。
+name: 部署到 GitHub Pages
+
+on:
+  push:
+    # 部署功能最完整的分支；要改成部署主線，把這裡改成 main
+    branches: [prototype-hyperbolic]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # 來源檔（雜湊核對）、模型、向量（依內容命名）都可安全地沿用舊快取
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/sources
+            .cache/models
+            .cache/vectors
+          key: data-${{ hashFiles('scripts/sources.json', 'bench/arms.json', 'scripts/**/*.ts', 'src/core/**/*.ts') }}
+          restore-keys: data-
+
+      - name: 建置資料（下載並核對來源 → 經文、段落、關鍵字、詞彙表、串珠參照表）
+        run: npm run build:data
+      - name: 語意向量（只跑評測選定的模型，並確認檢查點查詢仍命中）
+        run: |
+          ARM=$(node -e "console.log(JSON.parse(require('fs').readFileSync('bench/report.json','utf8')).selected)")
+          npm run bench -- --arm "$ARM"
+          npx tsx scripts/write-manifest.ts ".cache/bench-$ARM.report.json"
+      - name: 單元測試
+        run: npm test
+      - name: 建置網站（子路徑 /<repo>/）
+        run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+      - run: touch dist/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
