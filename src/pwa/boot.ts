@@ -1,4 +1,5 @@
 // 開機流程（data-model「狀態轉換：應用程式載入」、FR-017～020）
+import { BASE } from '../base.ts';
 import { ortFiles, ortVariant } from '../embed/env.ts';
 import { DownloadError, cacheNameFor, downloadAll, isComplete } from './download.ts';
 
@@ -17,16 +18,16 @@ interface Manifest {
   files: Record<string, { path: string }>;
 }
 
-const MANIFEST_URL = '/data/manifest.json';
+const MANIFEST_URL = `${BASE}data/manifest.json`;
 // 串珠參照表（明引、TSK）與 UBS 授權全文也在第一批：不依賴語意模型，離線可用（spec 004 FR-006、FR-012、FR-013）
 const TEXT_KEYS = ['books', 'verses', 'passages', 'units', 'keyword', 'lexicon', 'xrefUbs', 'xrefUbsLicense', 'xrefTsk'];
 
 export function assetUrls(m: Manifest, variant: '.asyncify' | ''): { text: string[]; heavy: string[] } {
-  const text = TEXT_KEYS.filter((k) => m.files[k]).map((k) => `/data/${m.files[k]!.path}`);
+  const text = TEXT_KEYS.filter((k) => m.files[k]).map((k) => `${BASE}data/${m.files[k]!.path}`);
   const ort = ortFiles(variant);
   const heavy = [
-    ...(m.files.vectors ? [`/data/${m.files.vectors.path}`] : []),
-    ...(m.model ? m.model.files.map((f) => `/models/${m.model!.id}/${f}`) : []),
+    ...(m.files.vectors ? [`${BASE}data/${m.files.vectors.path}`] : []),
+    ...(m.model ? m.model.files.map((f) => `${BASE}models/${m.model!.id}/${f}`) : []),
     ...(m.model ? [ort.mjs, ort.wasm] : []),
   ];
   return { text, heavy };
@@ -36,7 +37,7 @@ export const versionOf = (m: Manifest): string => `${m.dataVersion}-${m.model?.r
 
 async function ensureServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
-  await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE });
   await navigator.serviceWorker.ready;
   if (navigator.serviceWorker.controller) return;
   // 首次安裝：等 clientsClaim 接管頁面，之後建立的 Worker 才會經由 Service Worker 取得快取

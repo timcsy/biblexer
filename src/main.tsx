@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { BASE } from './base.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { boot, type BootState } from './pwa/boot.ts';
 import { ProgressBanner } from './ui/ProgressBanner.tsx';
@@ -64,7 +65,7 @@ function App() {
       onState: setBootState,
       initWorker: (semantic) => {
         clientRef.current = newClient();
-        clientRef.current.init('/data/manifest.json', semantic);
+        clientRef.current.init(`${BASE}data/manifest.json`, semantic);
       },
       loadSemantic: () => clientRef.current?.loadSemantic(),
     });
