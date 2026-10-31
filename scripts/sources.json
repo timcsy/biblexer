@@ -16,7 +16,7 @@
     "file": "cmn-cu89s_usfm.zip",
     "hash": {
       "algo": "sha256",
-      "value": "68df122e9195e071dc286f19ef53e530fcaadb3a16a7dc34b8430b7062f70598"
+      "value": "496f17f4daa62ab125968e9e55118bd3a9c5086a6835a2846da4dc529d470ba0"
     },
     "use": "只用分段邊界（\\p、\\b、\\m 之後的第一節）。不使用任何文字、標點、標題或註腳。",
     "license": "eBible.org 標示為 Public Domain；新標點和合本（1988）之分段是否屬公有領域有灰色地帶，本專案只取邊界位置。"
