@@ -76,7 +76,7 @@ npm run lint && npm run typecheck
 
 ## 部署
 
-推送到 `prototype-hyperbolic` 分支時，GitHub Actions（`.github/workflows/pages.yml`）會在 CI 上從頭建出所有資料與語意向量，並部署到 GitHub Pages（`https://timcsy.github.io/biblexer/`）。網站可放在子路徑：建置時以 `BASE_PATH` 指定（預設 `/`）。也可以在 Actions 頁面手動執行。
+推送到 `main` 時，GitHub Actions（`.github/workflows/pages.yml`）會在 CI 上從頭建出所有資料與語意向量，並部署到 GitHub Pages（`https://timcsy.github.io/biblexer/`）。網站可放在子路徑：建置時以 `BASE_PATH` 指定（預設 `/`）。也可以在 Actions 頁面手動執行。
 
 ## 專案文件
 

@@ -5,8 +5,7 @@ name: 部署到 GitHub Pages
 
 on:
   push:
-    # 部署功能最完整的分支；要改成部署主線，把這裡改成 main
-    branches: [prototype-hyperbolic]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
