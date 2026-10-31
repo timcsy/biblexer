@@ -31,7 +31,12 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#fbf8f2',
         theme_color: '#7a4b2a',
-        icons: [],
+        // 可安裝成 App（PWA）：Android 需要 192 與 512 的圖示；maskable 給自適應圖示裁切（主體在安全區內）
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
       },
       devOptions: { enabled: false },
     }),
