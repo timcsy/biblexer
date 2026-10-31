@@ -75,7 +75,13 @@ export async function boot(cb: BootCallbacks): Promise<void> {
     cb.initWorker(true);
     return;
   }
-  await ensureServiceWorker();
+  // Service Worker 是離線的輔助：註冊失敗（例如部署設定錯誤）時記下警告、照常繼續——資料仍由頁面下載並存進快取，
+  // 只是沒有離線攔截。不能讓它卡住整個網站（2026-10-31 部署時曾因此停在「正在載入經文」）。
+  try {
+    await ensureServiceWorker();
+  } catch (e) {
+    console.warn('Service Worker 註冊失敗，改為不經 Service Worker 繼續：', e);
+  }
   const loaded = await loadManifest();
   if (!loaded) {
     cb.onState({ kind: 'need-download' });
