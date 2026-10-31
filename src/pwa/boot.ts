@@ -1,7 +1,7 @@
 // 開機流程（data-model「狀態轉換：應用程式載入」、FR-017～020）
 import { BASE } from '../base.ts';
 import { ortFiles, ortVariant } from '../embed/env.ts';
-import { DownloadError, cacheNameFor, downloadAll, isComplete } from './download.ts';
+import { DownloadError, cacheNameFor, downloadAll, dropOtherVersions, isComplete } from './download.ts';
 
 export type BootState =
   | { kind: 'starting' }
@@ -16,6 +16,8 @@ interface Manifest {
   dataVersion: string;
   model?: { id: string; revision: string; files: string[] };
   files: Record<string, { path: string }>;
+  /** 模型與 ORT 檔的內容雜湊（public/ 之下的相對路徑） */
+  integrity?: Record<string, string>;
 }
 
 const MANIFEST_URL = `${BASE}data/manifest.json`;
@@ -35,10 +37,26 @@ export function assetUrls(m: Manifest, variant: '.asyncify' | ''): { text: strin
 
 export const versionOf = (m: Manifest): string => `${m.dataVersion}-${m.model?.revision.slice(0, 8) ?? 'none'}`;
 
-async function ensureServiceWorker(): Promise<void> {
+/**
+ * 已安裝的 App 在背景換上新版時通知：頁面原本就由 Service Worker 控制、之後控制者換了 → 新版已接手，重新載入即可使用。
+ * 第一次安裝（原本沒有控制者）的接管不算更新。只通知一次。
+ */
+export function watchForUpdate(container: EventTarget & { controller: unknown }, onUpdate: () => void): void {
+  if (!container.controller) return;
+  container.addEventListener('controllerchange', () => onUpdate(), { once: true });
+}
+
+async function ensureServiceWorker(onUpdate?: () => void): Promise<void> {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
-  await navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE });
-  await navigator.serviceWorker.ready;
+  const reg = await navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE });
+  if (onUpdate) watchForUpdate(navigator.serviceWorker, onUpdate);
+  // 裝成 App 後常整天開著：從背景回到前景時主動檢查一次更新
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void reg.update().catch(() => {});
+  });
+  // Service Worker 被瀏覽器擋下（設定、部分隱私模式）時 ready 永遠不會完成：最多等 5 秒，之後照常繼續
+  const ready = await Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise<false>((r) => setTimeout(() => r(false), 5000))]);
+  if (!ready) throw new Error('Service Worker 未就緒');
   if (navigator.serviceWorker.controller) return;
   // 首次安裝：等 clientsClaim 接管頁面，之後建立的 Worker 才會經由 Service Worker 取得快取
   await new Promise<void>((resolve) => {
@@ -65,6 +83,8 @@ export interface BootCallbacks {
   /** 建立 Worker 並載入文字資料；semantic 為 true 時一併載入語意 */
   initWorker(semantic: boolean): void;
   loadSemantic(): void;
+  /** 背景換上新版後通知（重新載入即可使用） */
+  onUpdateReady?(): void;
 }
 
 export async function boot(cb: BootCallbacks): Promise<void> {
@@ -78,7 +98,7 @@ export async function boot(cb: BootCallbacks): Promise<void> {
   // Service Worker 是離線的輔助：註冊失敗（例如部署設定錯誤）時記下警告、照常繼續——資料仍由頁面下載並存進快取，
   // 只是沒有離線攔截。不能讓它卡住整個網站（2026-10-31 部署時曾因此停在「正在載入經文」）。
   try {
-    await ensureServiceWorker();
+    await ensureServiceWorker(cb.onUpdateReady);
   } catch (e) {
     console.warn('Service Worker 註冊失敗，改為不經 Service Worker 繼續：', e);
   }
@@ -103,10 +123,14 @@ export async function boot(cb: BootCallbacks): Promise<void> {
     return;
   }
   try {
-    await downloadAll(text, { version, caches, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'text', loaded: l, total: t }) });
+    // 內容沒變的檔案從舊版本搬過來（資料檔名帶雜湊；模型與 ORT 依 integrity）
+    const integrity = Object.fromEntries(Object.entries(manifest.integrity ?? {}).map(([p, h]) => [`${BASE}${p}`, h]));
+    await downloadAll(text, { version, caches, integrity, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'text', loaded: l, total: t }) });
     await (await caches.open(cacheNameFor(version))).put(MANIFEST_URL, response);
     cb.initWorker(false);
-    await downloadAll(heavy, { version, caches, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'semantic', loaded: l, total: t }) });
+    await downloadAll(heavy, { version, caches, integrity, onProgress: (l, t) => cb.onState({ kind: 'downloading', phase: 'semantic', loaded: l, total: t }) });
+    // 全部完成後才刪除舊版本（兩批下載都要能從舊版本搬檔案）
+    await dropOtherVersions(version, caches);
     cb.loadSemantic();
     cb.onState({ kind: 'ready' });
     void navigator.storage?.persist?.();

@@ -78,6 +78,12 @@ npm run lint && npm run typecheck
 
 推送到 `main` 時，GitHub Actions（`.github/workflows/pages.yml`）會在 CI 上從頭建出所有資料與語意向量，並部署到 GitHub Pages（`https://timcsy.github.io/biblexer/`）。網站可放在子路徑：建置時以 `BASE_PATH` 指定（預設 `/`）。也可以在 Actions 頁面手動執行。
 
+### 已安裝的 App 怎麼更新
+
+- 連網開啟時在背景檢查新版；新版接手後畫面會提示「已更新到新版本」，按「重新載入」即可。App 從背景回到前景時也會檢查一次。
+- 資料只下載有變的檔案：資料檔名帶內容雜湊，同名即同內容；模型與 ORT 依 manifest 的 `integrity` 比對。全部下載完成才刪除舊版本，離線時沿用舊版。
+- 個人資料（記號、經文卡、設定）存在裝置上，更新時保留。
+
 ## 專案文件
 
 - 規格、計畫、任務：`specs/001-offline-hybrid-search/`、`specs/002-fixed-geometry-reader/`

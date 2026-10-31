@@ -269,3 +269,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .hyper-canon.mind .mind-center-box.cat-revelation { fill: #7a4b2a; } .hyper-canon.mind .hyper-chapter.cat-revelation circle { stroke: #7a4b2a; fill: color-mix(in srgb, #7a4b2a 15%, var(--card)); }
 .hyper-canon.mind .hyper-book.focused text.mind-center { fill: #fff; }
 @media (max-width: 560px) { .tree-node.k-chapter { height: 24px; line-height: 24px; } }
+
+/* 背景更新完成的提示 */
+.update-ready { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 30; box-shadow: 0 2px 10px color-mix(in srgb, var(--fg) 20%, transparent); margin: 0; padding: 0.5rem 0.9rem; border-radius: 0.5rem; background: color-mix(in srgb, var(--accent) 12%, var(--card)); color: var(--fg); font-size: 0.9rem; }

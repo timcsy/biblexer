@@ -49,6 +49,7 @@ function App() {
   const itemOf = (r: PresentedResult): CardItem => ({ start: [r.startRef.book, r.startRef.chapter, r.startRef.verse], end: [r.endRef.book, r.endRef.chapter, r.endRef.verse] });
 
   const [bootState, setBootState] = useState<BootState>({ kind: 'starting' });
+  const [updateReady, setUpdateReady] = useState(false);
   const clientRef = useRef<SearchClient | null>(null);
   const newClient = () => {
     const worker = new Worker(new URL('./worker/search.worker.ts', import.meta.url), { type: 'module' });
@@ -68,6 +69,7 @@ function App() {
         clientRef.current.init(`${BASE}data/manifest.json`, semantic);
       },
       loadSemantic: () => clientRef.current?.loadSemantic(),
+      onUpdateReady: () => setUpdateReady(true),
     });
   }, []);
 
@@ -152,6 +154,14 @@ function App() {
         </div>
         <p class="status" data-testid={statusId}>{status}</p>
         <ProgressBanner state={bootState} />
+        {updateReady && (
+          <p class="update-ready" data-testid="update-ready" role="status">
+            {STRINGS.updateReady}{' '}
+            <button type="button" class="link" onClick={() => location.reload()}>
+              {STRINGS.updateReload}
+            </button>
+          </p>
+        )}
       </header>
       {cardOpen && <CardPanel card={card} views={cardViews} onMove={(i, d) => setCard(moveItem(card, i, d))} onRemove={(i) => setCard(removeItem(card, i))} onClear={() => setCard(EMPTY_CARD)} />}
       <SearchBox onSearch={(q) => void run(q, granularity, expand, null)} disabled={!ready.keyword} />

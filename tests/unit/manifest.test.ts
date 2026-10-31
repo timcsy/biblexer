@@ -42,6 +42,11 @@ describe('composeManifest', () => {
     expect(m.segmentation.id).toBe('cu89-paragraphs');
   });
 
+  test('寫入模型與 ORT 檔的內容雜湊（integrity，依相對路徑）：更新時內容沒變的檔案可以不重新下載', () => {
+    const m = composeManifest(prev, { selected: 'bge-small-trad' }, [arm], { path: 'v', bytes: 1 }, { 'models/x/a.onnx': 'aaa', 'ort/o.wasm': 'bbb' });
+    expect(m.integrity).toEqual({ 'models/x/a.onnx': 'aaa', 'ort/o.wasm': 'bbb' });
+  });
+
   test('評測沒有選出任何臂時拋出錯誤', () => {
     expect(() => composeManifest(prev, { selected: null }, [arm], { path: 'v', bytes: 1 })).toThrow();
   });

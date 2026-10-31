@@ -1,6 +1,7 @@
 // 依評測選中的臂：把向量與模型放進 public/，並在 manifest 寫入 model 區塊（contracts/data-artifacts.md）
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import { loadArms, type Arm } from '../bench/lib.ts';
 import { MODELS_CACHE } from './fetch-models.ts';
 import { textKey, vectorCachePath } from './build-vectors.ts';
@@ -16,7 +17,8 @@ export interface ManifestLike {
   [k: string]: unknown;
 }
 
-export function composeManifest<M extends ManifestLike>(prev: M, report: { selected: string | null }, arms: readonly ArmLike[], vectors: WrittenFile) {
+/** integrity：模型與 ORT 檔（檔名不帶雜湊）的內容雜湊，依相對路徑——更新時內容沒變的檔案不必重新下載 */
+export function composeManifest<M extends ManifestLike>(prev: M, report: { selected: string | null }, arms: readonly ArmLike[], vectors: WrittenFile, integrity: Record<string, string> = {}) {
   if (!report.selected) throw new Error('評測沒有選出任何臂，不能寫入 manifest');
   const arm = arms.find((a) => a.id === report.selected);
   if (!arm) throw new Error(`找不到臂：${report.selected}`);
@@ -35,6 +37,7 @@ export function composeManifest<M extends ManifestLike>(prev: M, report: { selec
       files: arm.files.map((f) => f.path),
     },
     files: { ...prev.files, vectors },
+    integrity,
   };
 }
 
@@ -62,7 +65,18 @@ function main() {
     cpSync(join(MODELS_CACHE, arm.model, f.path), dest);
   }
 
-  writeFileSync(manifestPath, JSON.stringify(composeManifest(prev, report, arms, vectors), null, 2));
+  // 模型與 ORT 的內容雜湊（public/ 之下的相對路徑）
+  const integrity: Record<string, string> = {};
+  const walk = (dir: string) => {
+    for (const f of readdirSync(dir)) {
+      const p = join(dir, f);
+      if (statSync(p).isDirectory()) walk(p);
+      else integrity[relative(PUBLIC_DIR, p).split(sep).join('/')] = createHash('sha256').update(readFileSync(p)).digest('hex').slice(0, 16);
+    }
+  };
+  for (const d of ['models', 'ort']) if (existsSync(join(PUBLIC_DIR, d))) walk(join(PUBLIC_DIR, d));
+
+  writeFileSync(manifestPath, JSON.stringify(composeManifest(prev, report, arms, vectors, integrity), null, 2));
   console.log(`manifest 已指定模型 ${arm.model}（${arm.id}）`);
 }
 
